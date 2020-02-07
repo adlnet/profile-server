@@ -1,0 +1,282 @@
+.profile-radio-button
+{
+
+}
+td {
+    line-height: normal;
+}
+.usa-radio__label .title
+{
+    display: inline;
+    font-weight: bolder;
+}
+.usa-radio__label .description
+{
+    text-indent: 0;
+}
+
+div.usa-radio:first-of-type
+{
+    margin-top:10px;
+}
+
+@media (min-width: 30em)
+{
+
+    .usa-form {
+        max-width: 35rem;
+    }
+}
+
+@media (min-width: 40em)
+{
+    .usa-section {
+        padding-bottom: 4rem;
+        padding-top: 3rem;
+   
+    }
+}
+
+@media (min-width: 64em)
+{
+    .usa-header--extended .usa-logo {
+        font-size: 2.13rem;
+        margin: 0rem 0 0.5rem;
+        max-width: 50%;
+    }
+    .usa-header+.usa-section, .usa-header+main {
+        border-top: 2px solid #dcdee0;
+    }
+    
+    .usa-header--extended .usa-nav {
+         border-top: none; 
+        padding: 0;
+        width: 100%;
+    }
+   
+    .usa-nav__primary>.usa-nav__primary-item>a {
+        font-weight: 400;
+    }
+    .usa-nav__primary>.usa-nav__primary-item>a {
+        font-weight: 400;
+    }
+    .usa-nav__primary>.usa-nav__primary-item>a.usa-nav__link.usa-current
+    {
+        font-weight: 700;
+    }
+  
+    .usa-header+.usa-section, .usa-header+main {
+    border-top: none;
+    }
+}
+#main-content
+{
+    padding-top: 0;
+}
+.main-content
+{
+    padding-top: 2em;
+    border-top: 2px solid #dfdfdf;
+}
+form.usa-search>.usa-select
+{
+    border: 2px solid #005ea2;
+    border-radius: 6px;
+    font-weight: 700;
+    color: #005ea2
+}   
+.profile-form-frame
+{
+    border: 1px solid #d9d9d9;
+    padding: 0em 2em 2em 2em;
+}
+.profile-form-frame > form > h2:first-child
+{
+    font-size:24px;
+    display: inline-block;
+    margin-bottom: 0px;
+}
+.profile-form-frame > form > label:first-of-type
+{
+  
+    display: inline-block;
+    color: gray;
+    font-size: 15px;
+    float: right;
+}
+
+.profile-form-frame > form > p:first-of-type
+{
+    margin-top: 0em;
+    margin-bottom: 2em;
+}
+.profile-form-frame > form  label.usa-label
+{
+    color: #767676;
+    font-size: .9em;
+}
+.profile-lightbox {
+    position: fixed;
+    background: rgba(0,0,0,0.2);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.profile-lightbox-inner > form {
+    width: 525px;
+}
+.profile-lightbox-inner
+{
+  
+    position: fixed;
+    background:white;
+    min-width: 10px;
+    min-height: 10px;
+    border:1px solid black;
+    padding:1em 1.5em;
+    
+}
+.profile-lightbox-close {
+    position: absolute;
+    top: 10px;
+    right: 19px;
+    font-size: 2em;
+    cursor: pointer;
+}
+
+label+button.usa-button.usa-button--outline {
+    margin-top: .5em;
+}
+
+.translationRow
+{
+    padding: .4em 0em;
+    border-bottom: 1px solid #aeaeae;
+}
+
+.translationRow:first-child
+{
+    
+    border-top: 1px solid #aeaeae;
+    margin-top: .5em;
+}
+
+.translationRow > button.usa-button {
+    float: right;
+    margin-left: 1em;
+    margin-top: 0;
+    font-weight: 700;
+}
+
+.schema .disabled
+{
+    background: #e5e5e5;
+    pointer-events: none;
+}
+.schema .usa-radio__label .title
+{
+    display: inline;
+    font-weight: normal;
+}
+
+.grid-row.profile-edit
+{
+    
+    position: relative;
+}
+h2.profile-edit
+{
+    position: absolute;
+    right:0;
+}
+
+h2.profile-edit button
+{
+   margin-right:0;
+}
+
+.usa-nav__inner
+{
+    border-bottom: 2px solid #dfdfdf;
+}
+.outer-alert
+{   
+    max-width: 64em;
+    margin: auto;
+    margin-bottom: 1.5em;
+}
+
+.sequence-steps
+{
+   
+    display: flex;
+    width: 100%;
+    justify-content: stretch;
+    justify-items: stretch;
+    
+}
+
+.sequence-step
+{
+    flex-grow: 1;
+    margin: .5em .5em;
+    cursor: pointer;
+}
+
+.sequence-step:first-child 
+{
+    
+    margin-left: 1em;
+}
+
+.sequence-step:last-child 
+{
+    
+    margin-right: 1em;
+}
+
+.active > .sequence-step-bar
+{
+    border-bottom:7px solid #005ea2;
+}
+
+.sequence-step-title
+{
+    color: #005ea2;
+    font-size: 17px;
+    font-weight: bolder;
+    margin-top: .5em;
+}
+
+.sequence-step-bar
+{
+    border-bottom:7px solid #DFDFDF;
+}
+
+.active > .sequence-step-title
+{
+    color: #005ea2;
+}
+
+.sequence-step-title
+{
+    color: #CFCFCF;
+    font-size: 17px;
+    font-weight: bolder;
+    margin-top: .5em;
+}
+.spinroot
+{}
+.visible-step
+{
+   
+}
+.hidden-step
+{
+    display: none !important;
+}

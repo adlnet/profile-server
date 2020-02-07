@@ -1,0 +1,10 @@
+<html>
+    <head>
+        <script src="/public/js/react.development.min.js"></script>
+    </head>
+    <body>
+        <div id="react-root">
+            <i class="fa fa-refresh fa-spin"></i></div>
+        </body>
+        <script src="/public/index.js"></script>    
+</html>
