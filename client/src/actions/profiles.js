@@ -1,24 +1,21 @@
-/** ***********************************************************************
+/** ***************************************************************
+* Copyright 2020 Advanced Distributed Learning (ADL)
 *
-* Veracity Technology Consultants 
-* __________________
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
 *
-*  2019 Veracity Technology Consultants
-*  All Rights Reserved.
+*     http://www.apache.org/licenses/LICENSE-2.0
 *
-* NOTICE:  All information contained herein is, and remains
-* the property of Veracity Technology Consultants and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Veracity Technology Consultants
-* and its suppliers and may be covered by U.S. and Foreign Patents,
-* patents in process, and are protected by trade secret or copyright law.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Veracity Technology Consultants.
-*/
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**************************************************************** */
 import API from '../api';
 import history from '../history'
-import {CLEAR_TEMPLATE_RESULTS} from "./templates";
+import { CLEAR_TEMPLATE_RESULTS } from "./templates";
 
 export const START_GET_PROFILE = 'START_GET_PROFILE';
 export const START_GET_PROFILES = 'START_GET_PROFILES';
@@ -43,7 +40,7 @@ export const ERROR_DELETE_PROFILE = 'ERROR_DELETE_PROFILE';
 export const SELECT_PROFILE = 'SELECT_PROFILE';
 
 export function createProfile(organizationId, profile) {
-    return async function(dispatch) {
+    return async function (dispatch) {
         dispatch({
             type: START_CREATE_PROFILE,
             profile,
@@ -57,13 +54,13 @@ export function createProfile(organizationId, profile) {
         });
 
         dispatch(getProfiles(organizationId));
-       
+
         history.push(`/organization/${organizationId}/profile/${newProfile.uuid}`)
     };
 }
 
 export function editProfile(organizationId, profile) {
-    return async function(dispatch) {
+    return async function (dispatch) {
         dispatch({
             type: START_UPDATE_PROFILE,
             profile,
@@ -77,44 +74,39 @@ export function editProfile(organizationId, profile) {
         });
 
         dispatch(reloadCurrentProfile());
-       
-        
     };
 }
-export function deleteProfile(orgId,profile) {
-    return async function(dispatch) {
+export function deleteProfile(orgId, profile) {
+    return async function (dispatch) {
         dispatch({
             type: START_DELETE_PROFILE,
-            profileId:profile.uuid,
+            profileId: profile.uuid,
         });
 
-        await API.deleteProfile(orgId,profile);
+        await API.deleteProfile(orgId, profile);
 
         dispatch({
             type: FINISH_DELETE_PROFILE,
-            profileId:profile.uuid,
+            profileId: profile.uuid,
         });
-        
+
         dispatch(getProfiles(orgId));
-       
     };
 }
 
 export function removeTemplate(template) {
-    return async function(dispatch,getState) {
+    return async function (dispatch, getState) {
         let state = getState();
         let orgId = state.application.selectedOrganizationId;
         let profileId = state.application.selectedProfileId;
         let profile = state.application.selectedProfile;
 
-    
-        
         dispatch({
             type: START_UPDATE_PROFILE,
             profileId: profileId,
         });
 
-        await API.deleteTemplate(orgId,profileId,template);
+        await API.deleteTemplate(orgId, profileId, template);
 
         dispatch({
             type: FINISH_UPDATE_PROFILE,
@@ -122,12 +114,11 @@ export function removeTemplate(template) {
         });
 
         dispatch(reloadCurrentProfile());
-       
     };
 }
 
 export function removeConcept(concept) {
-    return async function(dispatch,getState) {
+    return async function (dispatch, getState) {
         let state = getState();
         let orgId = state.application.selectedOrganizationId;
         let profileId = state.application.selectedProfileId;
@@ -138,7 +129,7 @@ export function removeConcept(concept) {
             profileId: profileId,
         });
 
-        await API.deleteConcept(orgId,profileId,concept);
+        await API.deleteConcept(orgId, profileId, concept);
 
         dispatch({
             type: FINISH_UPDATE_PROFILE,
@@ -146,13 +137,11 @@ export function removeConcept(concept) {
         });
 
         dispatch(reloadCurrentProfile())
-      
-        
     };
 }
 
 export function reloadCurrentProfile() {
-    return async function(dispatch,getState) {
+    return async function (dispatch, getState) {
         let state = getState();
         let orgId = state.application.selectedOrganizationId;
         let profileId = state.application.selectedProfileId;
@@ -161,7 +150,7 @@ export function reloadCurrentProfile() {
             profileId: profileId,
         });
 
-        const profile = await API.getProfile(orgId,profileId);
+        const profile = await API.getProfile(orgId, profileId);
 
         dispatch({
             type: FINISH_GET_PROFILE,
@@ -175,14 +164,14 @@ export function reloadCurrentProfile() {
     };
 }
 
-export function selectProfile(orgId,profileId) {
-    return async function(dispatch) {
+export function selectProfile(orgId, profileId) {
+    return async function (dispatch) {
         dispatch({
             type: START_GET_PROFILE,
             profileId: profileId,
         });
 
-        const profile = await API.getProfile(orgId,profileId);
+        const profile = await API.getProfile(orgId, profileId);
 
         dispatch({
             type: FINISH_GET_PROFILE,
@@ -196,9 +185,8 @@ export function selectProfile(orgId,profileId) {
     };
 }
 
-export function addSelectedTemplateResults()
-{
-    return async function(dispatch, getState) {
+export function addSelectedTemplateResults() {
+    return async function (dispatch, getState) {
         let state = getState();
         let templates = state.searchResults.selectedTemplates;
         dispatch({
@@ -206,8 +194,8 @@ export function addSelectedTemplateResults()
             profileId: state.application.selectedProfileId,
         });
 
-        for(let i of templates)
-            await API.createTemplate(state.application.selectedOrganizationId,state.application.selectedProfileId,i);
+        for (let i of templates)
+            await API.createTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, i);
 
         dispatch({
             type: FINISH_UPDATE_PROFILE,
@@ -224,20 +212,20 @@ export function addSelectedTemplateResults()
 }
 
 //The o and p allow for the initial bootstrap to work
-export function populateProfile(o,p) {
-    return async function(dispatch,getState) {
+export function populateProfile(o, p) {
+    return async function (dispatch, getState) {
         let state = getState();
         let orgId = o || state.application.selectedOrganizationId;
         let profileId = p || state.application.selectedProfileId;
-        if(!orgId || !profileId) return;
+        if (!orgId || !profileId) return;
         dispatch({
             type: START_POPULATE_PROFILE,
             profileId: profileId,
         });
 
-        const concepts = await API.getConcepts(orgId,profileId);
-        const templates = await API.getTemplates(orgId,profileId);
-        const patterns = await API.getPatterns(orgId,profileId);
+        const concepts = await API.getConcepts(orgId, profileId);
+        const templates = await API.getTemplates(orgId, profileId);
+        const patterns = await API.getPatterns(orgId, profileId);
 
         dispatch({
             type: FINISH_POPULATE_PROFILE,
@@ -246,20 +234,18 @@ export function populateProfile(o,p) {
             templates,
             patterns
         });
-
-        
     };
 }
 
 export function getProfiles(organizationId) {
-    return async function(dispatch) {
+    return async function (dispatch) {
         dispatch({
             type: START_GET_PROFILES,
             organizationId,
         });
 
         const profiles = await API.getProfiles(organizationId);
-       
+
         dispatch({
             type: FINISH_GET_PROFILES,
             profiles,
@@ -268,9 +254,8 @@ export function getProfiles(organizationId) {
     };
 }
 
-export function addSelectedPatternResults()
-{
-    return async function(/* dispatch, getState */) {
+export function addSelectedPatternResults() {
+    return async function (/* dispatch, getState */) {
         // let state = getState();
         // let templates = state.searchResults.selectedTemplates;
         // dispatch({

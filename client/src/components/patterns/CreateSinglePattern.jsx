@@ -14,34 +14,44 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
+import { useDispatch } from 'react-redux';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 
-import { Sequence, Step } from '../../components/sequence';
-import DefinePattern from './DefinePattern';
-import AddComponents from './AddComponents';
-import ArrangeOrder from './ArrangeOrder';
+import { createPattern } from '../../actions/patterns';
 
-export default function CreateSequencePattern(props) {
-    // const dispatch = useDispatch();
-    props.updateType('Sequence');
+import { Sequence, Step } from '../sequence';
+import DefinePattern from './DefinePattern';
+import AddComponent from './AddComponent';
+
+export default function CreateSinglePattern(props) {
+    const dispatch = useDispatch();
+    props.updateType();
 
     return (
         <Formik
-            initialValues={{ name: '', description: '', 'more-information': '', tags: '', primaryorsecondary: 'primary', choice: '1' }}
+            initialValues={{
+                name: '',
+                description: '', 'more-information': '',
+                tags: '',
+                primaryorsecondary: 'primary',
+                componentuuid: ''
+            }}
             validationSchema={Yup.object({
                 name: Yup.string()
-                    .max(15, 'Must be 20 characters or less')
                     .required('Required'),
                 description: Yup.string()
                     .required('Required')
             })}
-            onSubmit={(values) => {
-                // dispatch(createPattern(values));
-                console.log(values);
+            onSubmit={(values, actions) => {
+                let pattern = { ...values, type: props.type };
+                pattern[props.type] = values.componentuuid;
+                pattern.primary = values.primaryorsecondary === "primary";
+                dispatch(createPattern(pattern));
+                actions.setSubmitting(false);
             }}
         >
-            {() => (<>
+            {(props) => (<>
                 <Sequence>
                     <div className="profile-form-frame">
                         <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
@@ -49,11 +59,8 @@ export default function CreateSequencePattern(props) {
                                 <Step title="Define Pattern">
                                     <DefinePattern />
                                 </Step>
-                                <Step title="Add Components">
-                                    <AddComponents />
-                                </Step>
-                                <Step title="Arrange Order">
-                                    <ArrangeOrder type="Sequence" />
+                                <Step title="Add Component">
+                                    <AddComponent {...props} />
                                 </Step>
                             </fieldset>
                         </Form>

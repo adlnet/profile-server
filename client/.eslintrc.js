@@ -10,7 +10,7 @@ module.exports = {
         "notice/notice": ["error",
             {
                 "templateFile": "./license.js",
-                "mustMatch": "Veracity Technology Consultants"
+                "onNonMatchingHeader": "replace"
             }
         ],
         "react/prop-types": [1, { skipUndeclared: true }]

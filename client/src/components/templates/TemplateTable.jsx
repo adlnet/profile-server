@@ -1,37 +1,34 @@
-/** ***********************************************************************
+/** ***************************************************************
+* Copyright 2020 Advanced Distributed Learning (ADL)
 *
-* Veracity Technology Consultants
-* __________________
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
 *
-*  2019 Veracity Technology Consultants
-*  All Rights Reserved.
+*     http://www.apache.org/licenses/LICENSE-2.0
 *
-* NOTICE:  All information contained herein is, and remains
-* the property of Veracity Technology Consultants and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Veracity Technology Consultants
-* and its suppliers and may be covered by U.S. and Foreign Patents,
-* patents in process, and are protected by trade secret or copyright law.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Veracity Technology Consultants.
-*/
-
-import React, { useEffect }  from 'react';
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**************************************************************** */
+import React, { useEffect } from 'react';
 import { useRouteMatch, NavLink } from 'react-router-dom';
 import TemplateTableRow from "./TemplateTableRow";
-import {useDispatch,useSelector} from "react-redux";
-import {getTemplates} from "../../actions/templates";
+import { useDispatch, useSelector } from "react-redux";
+import { getTemplates } from "../../actions/templates";
 
 export default function TemplateTable() {
     let { url } = useRouteMatch();
     const templates = useSelector((state) => state.templates);
-    
+
     const dispatch = useDispatch();
     const match = useRouteMatch();
-   
+
     useEffect(() => {
-        dispatch(getTemplates(match.params.organizationId, match.params.profileId)); return},
+        dispatch(getTemplates(match.params.organizationId, match.params.profileId)); return
+    },
         [dispatch, match.params.organizationId, match.params.profileId]
     );
 
@@ -51,19 +48,19 @@ export default function TemplateTable() {
                         <th width="5%" scope="col"></th>
                     </tr>
                 </thead>
-                <tbody style={{lineHeight: 3}}>
+                <tbody style={{ lineHeight: 3 }}>
                     {(templates && templates.length > 0) ?
-                        templates.map( (template, i) => <TemplateTableRow template={template} key={i} {...template} url={url} /> ) :
+                        templates.map((template, i) => <TemplateTableRow template={template} key={i} {...template} url={url} />) :
                         <tr key={1}><td className="font-sans-xs" colSpan="4">There are no statement templates associated with this profile. Add statement templates manually or import from a JSON file.</td></tr>
-                    }       
+                    }
                 </tbody>
             </table>
         </div>
         <div className="grid-row padding-top-2">
             <div className="desktop:grid-col-3">
-                <NavLink exact 
-                            to={`${url}/add`}
-                            className="usa-button">
+                <NavLink exact
+                    to={`${url}/add`}
+                    className="usa-button">
                     <span>Add Statement Template</span>
                 </NavLink>
             </div>

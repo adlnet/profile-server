@@ -1,54 +1,50 @@
-/** ***********************************************************************
+/** ***************************************************************
+* Copyright 2020 Advanced Distributed Learning (ADL)
 *
-* Veracity Technology Consultants
-* __________________
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
 *
-*  2019 Veracity Technology Consultants
-*  All Rights Reserved.
+*     http://www.apache.org/licenses/LICENSE-2.0
 *
-* NOTICE:  All information contained herein is, and remains
-* the property of Veracity Technology Consultants and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Veracity Technology Consultants
-* and its suppliers and may be covered by U.S. and Foreign Patents,
-* patents in process, and are protected by trade secret or copyright law.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Veracity Technology Consultants.
-*/
-
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**************************************************************** */
 import React from 'react';
-import { useRouteMatch,  Route, Switch } from 'react-router-dom';
+import { useRouteMatch, Route, Switch } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 import CreateConceptForm from "./CreateConceptForm";
-import {createConcept, addSelectedConceptsToProfile} from "../../actions/concepts";
+import { createConcept, addSelectedConceptsToProfile } from "../../actions/concepts";
 import EditableConceptTable from "./EditableConceptTable"
 import ConceptDetail from "./ConceptDetails"
 import AddConcepts from "./AddConcepts"
 
 export default function Concepts() {
     const { path, url } = useRouteMatch();
-    
-    const concepts = useSelector( (state) => state.concepts)
+
+    const concepts = useSelector((state) => state.concepts)
     const dispatch = useDispatch();
-    
+
     return (
         <div>
             <Switch>
                 <Route exact path={path}>
-                    <EditableConceptTable addConceptLinkPath={url+"/add"} concepts={concepts} url={`${url}`} />
+                    <EditableConceptTable addConceptLinkPath={url + "/add"} concepts={concepts} url={`${url}`} />
                 </Route>
                 <Route exact path={`${path}/create`}>
-                    <CreateConceptForm onCreated={(concept)=>dispatch(createConcept(concept))}></CreateConceptForm>
+                    <CreateConceptForm onCreated={(concept) => dispatch(createConcept(concept))}></CreateConceptForm>
                 </Route>
                 <Route exact path={`${path}/add`}>
-                    <AddConcepts createUrl={`${url}/create`} addToName="Profile" onAdd={()=>dispatch(addSelectedConceptsToProfile())}></AddConcepts>
+                    <AddConcepts createUrl={`${url}/create`} addToName="Profile" onAdd={() => dispatch(addSelectedConceptsToProfile())}></AddConcepts>
                 </Route>
                 <Route exact path={`${path}/:conceptId`}>
-                    <ConceptDetail  />
+                    <ConceptDetail />
                 </Route>
-                
+
             </Switch>
         </div>
     );

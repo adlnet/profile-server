@@ -1,21 +1,18 @@
-/** ***********************************************************************
+/** ***************************************************************
+* Copyright 2020 Advanced Distributed Learning (ADL)
 *
-* Veracity Technology Consultants
-* __________________
+* Licensed under the Apache License, Version 2.0 (the "License");
+* you may not use this file except in compliance with the License.
+* You may obtain a copy of the License at
 *
-*  2019 Veracity Technology Consultants
-*  All Rights Reserved.
+*     http://www.apache.org/licenses/LICENSE-2.0
 *
-* NOTICE:  All information contained herein is, and remains
-* the property of Veracity Technology Consultants and its suppliers,
-* if any.  The intellectual and technical concepts contained
-* herein are proprietary to Veracity Technology Consultants
-* and its suppliers and may be covered by U.S. and Foreign Patents,
-* patents in process, and are protected by trade secret or copyright law.
-* Dissemination of this information or reproduction of this material
-* is strictly forbidden unless prior written permission is obtained
-* from Veracity Technology Consultants.
-*/
+* Unless required by applicable law or agreed to in writing, software
+* distributed under the License is distributed on an "AS IS" BASIS,
+* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+* See the License for the specific language governing permissions and
+* limitations under the License.
+**************************************************************** */
 import React, { useState } from 'react'
 
 function genSteps(children, selected, setSelected) {
@@ -24,7 +21,7 @@ function genSteps(children, selected, setSelected) {
     for (let i in children) {
         i = parseInt(i)
         steps.push(
-            <div onClick={() => setSelected(i)} className={selected == i ? "sequence-step active" : "sequence-step"}>
+            <div key={i} onClick={() => setSelected(i)} className={selected == i ? "sequence-step active" : "sequence-step"}>
                 <div className="sequence-step-bar"></div>
                 <div className="sequence-step-title">{i + 1 + ". " + (children[i].props.title || "No Title Prop")}.</div>
             </div>
@@ -64,6 +61,7 @@ function renderStep(children, step, setStep) {
                 props.previousStep = (e) => { e.preventDefault(); setStep(step - 1); };
             props.step = step;
             props.stepNum = i;
+            props.key = i;
             if (i != step) props.hidden = true;
             i = i + 1;
             let newChild = React.cloneElement(child, props)
@@ -102,13 +100,11 @@ export function Step(props) {
     let newChildren = [...props.children];
     let buttons = [];
 
-    // add key to items in this newChildren array
-    // set prevent default on buttons
     if (props.previousStep)
         buttons.push(<button key="1" onClick={props.previousStep} className="usa-button usa-button--primary"> Prev </button>)
     if (props.nextStep)
         buttons.push(<button key="2" onClick={props.nextStep} className="usa-button usa-button--primary"> Next </button>)
-    newChildren.push(<div>{buttons}</div>)
+    newChildren.push(<div key="1children">{buttons}</div>)
     return <div className={props.hidden ? "hidden-step" : ""}>
 
         {newChildren}

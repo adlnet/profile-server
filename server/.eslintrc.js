@@ -1,28 +1,28 @@
 module.exports = {
-    extends: ['airbnb', 'plugin:security/recommended',"eslint:recommended",
-    "plugin:react/recommended"],
+    extends: ['airbnb', 'plugin:security/recommended', "eslint:recommended",
+        "plugin:react/recommended"],
     env: {
         node: true,
     },
-    plugins: ['security','notice'],
+    plugins: ['security', 'notice'],
     globals: {
         it: true,
         describe: true,
-        before:true,
-        after:true,
-        TimeRange:true,
-        BarChart:true,
-        PieChart:true,
-        AnalyticProcessor:true,
-        SerialChart:true,
-        ProcessorConfiguration:true,
-        CommonStages:true,
-        Dashboard:true
+        before: true,
+        after: true,
+        TimeRange: true,
+        BarChart: true,
+        PieChart: true,
+        AnalyticProcessor: true,
+        SerialChart: true,
+        ProcessorConfiguration: true,
+        CommonStages: true,
+        Dashboard: true
     },
     rules: {
-        'lines-between-class-members':0,
-        'import/order':0,
-        'max-classes-per-file':0,
+        'lines-between-class-members': 0,
+        'import/order': 0,
+        'max-classes-per-file': 0,
         'object-shorthand': 0,
         'global-require': 0,
         'no-underscore-dangle': 0,
@@ -57,7 +57,7 @@ module.exports = {
         "notice/notice": ["error",
             {
                 "templateFile": "./license.js",
-                "mustMatch":"Veracity Technology Consultants CONFIDENTIAL"
+                "onNonMatchingHeader": "replace"
             }
         ]
     },

@@ -24,6 +24,8 @@ Express server configured to serve a React SPA. It also has the API designed for
 1. In a terminal, start the mongodb server `mongod`
 1. Extract the project
 1. In a new terminal navigate inside the project folder and enter the command `yarn` to install node modules
+1. Verify there is an `.env` file at the root of the project. If not,
+    1. Create the missing `.env` file and add `connectionString=mongodb://localhost:27017/profileServer`
 1. Type `yarn start` to start the profile server
 1. Open another terminal and navigate to `<project_folder>/client`
 1. Type `yarn` to install the profile client modules
