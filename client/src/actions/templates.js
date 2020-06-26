@@ -15,27 +15,33 @@
 **************************************************************** */
 import API from '../api';
 import history from '../history'
-import { reloadCurrentProfile } from './profiles';
+import { selectProfileVersion, selectProfile } from './profiles';
 
 export const SELECT_TEMPLATE = 'SELECT_TEMPLATE';
 
 export const START_GET_TEMPLATE = 'START_GET_TEMPLATE';
 export const FINISH_GET_TEMPLATE = 'FINISH_GET_TEMPLATE';
+export const ERROR_GET_TEMPLATE = 'ERROR_GET_TEMPLATE';
 
 export const START_GET_TEMPLATES = 'START_GET_TEMPLATES';
 export const FINISH_GET_TEMPLATES = 'FINISH_GET_TEMPLATES'
+export const ERROR_GET_TEMPLATES = 'ERROR_GET_TEMPLATES';
 
 export const START_CREATE_TEMPLATE = 'START_CREATE_TEMPLATE';
 export const FINISH_CREATE_TEMPLATE = 'FINISH_CREATE_TEMPLATE';
+export const ERROR_CREATE_TEMPLATE = 'ERROR_CREATE_TEMPLATE';
 
 export const START_EDIT_TEMPLATE = 'START_EDIT_TEMPLATE';
 export const FINISH_EDIT_TEMPLATE = 'FINISH_EDIT_TEMPLATE';
+export const ERROR_EDIT_TEMPLATE = 'ERROR_EDIT_TEMPLATE';
 
 export const START_DELETE_TEMPLATE = 'START_DELETE_TEMPLATE';
 export const FINISH_DELETE_TEMPLATE = 'FINISH_DELETE_TEMPLATE';
+export const ERROR_DELETE_TEMPLATE = 'ERROR_DELETE_TEMPLATE';
 
 export const START_SEARCH_TEMPLATES = 'START_SEARCH_TEMPLATES';
 export const FINISH_SEARCH_TEMPLATES = 'FINISH_SEARCH_TEMPLATES';
+export const ERROR_SEARCH_TEMPLATES = 'ERROR_SEARCH_TEMPLATES';
 export const CLEAR_TEMPLATE_RESULTS = 'CLEAR_TEMPLATE_RESULTS';
 
 export const START_UPDATE_TEMPLATE = 'START_UPDATE_TEMPLATE';
@@ -44,7 +50,224 @@ export const FINISH_UPDATE_TEMPLATE = 'FINISH_UPDATE_TEMPLATE'
 export const SELECT_TEMPLATE_RESULT = 'SELECT_TEMPLATE_RESULT';
 export const DESELECT_TEMPLATE_RESULT = 'DESELECT_TEMPLATE_RESULT';
 
+export const START_SELECT_EXTERNAL_TEMPLATES = 'START_SELECT_EXTERNAL_TEMPLATES';
+export const FINISH_SELECT_EXTERNAL_TEMPLATES = 'FINISH_SELECT_EXTERNAL_TEMPLATES';
 
+export const START_SELECT_DETERMINING_PROPERTIES = 'START_SELECT_DETERMINING_PROPERTIES';
+export const FINISH_SELECT_DETERMINING_PROPERTIES = 'FINISH_SELECT_DETERMINING_PROPERTIES';
+
+export const SELECT_INFOPANEL_TEMPLATE = 'SELECT_INFOPANEL_TEMPLATE';
+
+
+export function loadProfileTemplates(profileVersionId) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+        
+        dispatch({
+            type: START_GET_TEMPLATES,
+        });
+        
+        let templates = [];
+        try {
+            templates = await API.getTemplates(organizationId, profileId, profileVersionId);
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_TEMPLATES,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_TEMPLATES,
+                templates: templates,
+            });
+        }
+    }
+}
+
+export function createTemplate(template) {
+    return async function (dispatch, getState) {
+        let state = getState();
+
+        dispatch({
+            type: START_CREATE_TEMPLATE,
+        });
+
+        let profileVersionId = state.application.selectedProfileVersionId;
+        try {
+            if (state.application.selectedProfileVersion.state === 'published') {
+                const newProfileVersion = await API.createProfileVersion(
+                    state.application.selectedOrganizationId, state.application.selectedProfileId,
+                    Object.assign({}, state.application.selectedProfileVersion))
+                profileVersionId = newProfileVersion.uuid;
+            }
+
+            const newTemplate = await API.createTemplate(
+                state.application.selectedOrganizationId, state.application.selectedProfileId,
+                profileVersionId, template
+            );
+            
+            dispatch(selectTemplate(newTemplate.uuid));
+            dispatch(selectProfile(state.application.selectedOrganizationId, state.application.selectedProfileId));
+            dispatch(selectProfileVersion(
+                state.application.selectedOrganizationId, state.application.selectedProfileId, profileVersionId));
+            dispatch(loadProfileTemplates(profileVersionId));
+
+            history.push(`../../${profileVersionId}/templates/${newTemplate.uuid}`);
+        } catch (err) {
+            dispatch({
+                type: ERROR_CREATE_TEMPLATE,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_CREATE_TEMPLATE,
+            });
+        }
+    };
+}
+
+export function editTemplate(template) {
+    return async function (dispatch, getState) {
+        let state = getState();
+        dispatch({
+            type: START_EDIT_TEMPLATE,
+        });
+
+        try {
+            const newTemplate = await API.editTemplate(
+                state.application.selectedOrganizationId, state.application.selectedProfileId,
+                state.application.selectedProfileVersionId, template);
+            
+            dispatch(selectTemplate(newTemplate.uuid));
+        } catch (err) {
+            dispatch({
+                type: ERROR_EDIT_TEMPLATE,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_EDIT_TEMPLATE,
+            });
+        }
+    }
+}
+
+export function deleteTemplate(template) {
+    return async function (dispatch, getState) {
+        let state = getState();
+        dispatch({
+            type: START_DELETE_TEMPLATE,
+        });
+
+        try {
+            let profileVersionId = state.application.selectedProfileVersionId
+            if (state.application.selectedProfileVersion.state === 'published') {
+                const newProfileVersion = await API.createProfileVersion(
+                    state.application.selectedOrganizationId, state.application.selectedProfileId,
+                    Object.assign({}, state.application.selectedProfileVersion))
+                profileVersionId = newProfileVersion.uuid;
+            }
+
+            await API.deleteTemplate(
+                state.application.selectedOrganizationId, state.application.selectedProfileId,
+                profileVersionId, template.uuid
+            );
+            
+            dispatch(selectProfile(state.application.selectedOrganizationId, state.application.selectedProfileId));
+            dispatch(selectProfileVersion(
+                state.application.selectedOrganizationId, state.application.selectedProfileId, profileVersionId));
+            dispatch(loadProfileTemplates(profileVersionId));
+        } catch (err) {
+            dispatch({
+                type: ERROR_DELETE_TEMPLATE,
+                errorType: 'templates',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_DELETE_TEMPLATE,
+            });
+        }
+    }
+}
+
+export function selectTemplate(templateId) {
+    return async function (dispatch, getState) {
+        let state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+        const profileVersionId = state.application.selectedProfileVersion.uuid;
+        if (!organizationId || !profileId || !profileVersionId || !templateId)
+            return;
+
+        dispatch({
+            type: START_GET_TEMPLATE,
+        });
+
+        try {
+            const template = await API.getTemplate(organizationId, profileId, profileVersionId, templateId);
+
+            dispatch({
+                type: SELECT_TEMPLATE,
+                template: template,
+            });
+
+            dispatch(selectDeterminingProperties(template));
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_TEMPLATE,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_TEMPLATE,
+            });
+        }
+    };
+}
+
+export function selectInfopanelTemplate(templateId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_GET_TEMPLATE,
+        });
+
+        try {
+            const infopanelTemplate = await API.getTemplate(null, null, null, templateId);
+
+            dispatch({
+                type: SELECT_INFOPANEL_TEMPLATE,
+                infopanelTemplate: infopanelTemplate,
+            });
+
+            dispatch(selectDeterminingProperties(infopanelTemplate));
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_TEMPLATE,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_TEMPLATE,
+            });
+        }
+    };
+}
+
+export function clearTemplateResults() {
+    return function(dispatch) {
+        dispatch({
+            type: CLEAR_TEMPLATE_RESULTS,
+        });
+    }
+}
 
 export function selectTemplateResult(template) {
     return {
@@ -68,67 +291,28 @@ export function reloadCurrentTemplate() {
     };
 }
 
-export function selectTemplate(templateId) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        if (!state.application.selectedOrganizationId || !state.application.selectedProfileId || !templateId)
-            return;
+export function selectDeterminingProperties(template) {
+    return async function (dispatch) {
         dispatch({
-            type: START_GET_TEMPLATE,
-            templateId: templateId,
-        });
-        const template = await API.getTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, templateId);
-
-        dispatch({
-            type: FINISH_GET_TEMPLATE,
-            template: template,
+            type: START_SELECT_DETERMINING_PROPERTIES,
         });
 
-        dispatch({
-            type: SELECT_TEMPLATE,
-            template: template,
-        });
-    };
-}
+        const propertyTypes = [
+            'verb', 'objectActivityType','contextCategoryActivityType', 'contextGroupingActivityType',
+            'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType'
+        ]
 
-export function createTemplate(template) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        dispatch({
-            type: START_CREATE_TEMPLATE,
-
-        });
-
-        const newTemplate = await API.createTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, template);
+        let determiningProperties = propertyTypes
+            .filter(propertyType => ( template[propertyType] ? 
+                (Array.isArray(template[propertyType]) ? 
+                    (template[propertyType].length > 0 ? 
+                        true : false) : true) : false))
+            .map(propertyType => ({ propertyType: propertyType, properties: template[propertyType] }));
 
         dispatch({
-            type: FINISH_CREATE_TEMPLATE,
-            template: newTemplate,
+            type: FINISH_SELECT_DETERMINING_PROPERTIES,
+            determiningProperties: determiningProperties,
         });
-
-        dispatch(reloadCurrentProfile());
-
-        history.push("../templates")
-    };
-}
-
-export function editTemplate(template) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        dispatch({
-            type: START_EDIT_TEMPLATE,
-        });
-
-        const newTemplate = await API.editTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, template);
-
-        dispatch({
-            type: FINISH_EDIT_TEMPLATE,
-            template: newTemplate,
-        });
-
-
-        dispatch(reloadCurrentProfile());
-
     }
 }
 
@@ -139,76 +323,18 @@ export function searchTemplates(search) {
             type: START_SEARCH_TEMPLATES,
         });
 
-        const templates = await API.searchTemplates(search);
-
+        let templates = [];
+        try {
+            templates = await API.searchTemplates(search);
+        } catch (err) {
+            dispatch({
+                type: ERROR_SEARCH_TEMPLATES,
+                errorType: 'templates',
+                error: err.message,
+            })
+        }
         dispatch({
             type: FINISH_SEARCH_TEMPLATES,
-            templates: templates,
-        });
-
-    };
-
-}
-
-export function getTemplates(organizationId, profileId) {
-    return async function (dispatch) {
-        dispatch({
-            type: START_GET_TEMPLATES,
-            profileId: profileId,
-        });
-
-        const templates = await API.getTemplates(organizationId, profileId);
-
-        dispatch({
-            type: FINISH_GET_TEMPLATES,
-            templates: templates,
-        });
-
-    };
-
-}
-
-export function removeConceptFromTemplate(concept) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        dispatch({
-            type: START_UPDATE_TEMPLATE,
-        });
-
-
-        let currentTemplate = state.application.selectedTemplate;
-        currentTemplate = JSON.parse(JSON.stringify(currentTemplate));
-
-        if (!currentTemplate.concepts) currentTemplate.concepts = [];
-
-        currentTemplate.concepts = currentTemplate.concepts.filter(i => i !== concept.uuid)
-
-        await API.editTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, currentTemplate);
-        dispatch({
-            type: FINISH_UPDATE_TEMPLATE,
-
-        });
-
-        dispatch(reloadCurrentTemplate());
-        dispatch(reloadCurrentProfile());
-
-    }
-}
-
-export function reloadTemplates() {
-    return async function (dispatch, getState) {
-        let state = getState();
-        if (!state.application.selectedOrganizationId || !state.application.selectedProfileId)
-            return;
-        dispatch({
-            type: START_GET_TEMPLATES,
-            profileId: state.application.selectedProfileId,
-        });
-
-        const templates = await API.getTemplates(state.application.selectedOrganizationId, state.application.selectedProfileId);
-
-        dispatch({
-            type: FINISH_GET_TEMPLATES,
             templates: templates,
         });
 

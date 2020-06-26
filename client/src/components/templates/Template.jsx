@@ -13,144 +13,218 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useEffect } from 'react';
-import { useRouteMatch, Switch, Route } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useRouteMatch, Switch, Route, useHistory, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import TemplateDetail from "./TemplateDetail";
 import EditTemplateDetails from './EditTemplateDetails';
-import ConceptTable from '../concepts/ConceptTable';
-import { selectTemplate } from "../../actions/templates";
-import { createConceptInTemplate } from "../../actions/concepts";
-import TemplateConceptDetail from "./TemplateConceptDetail";
-import CreateConceptForm from "../concepts/CreateConceptForm";
-import AddConcepts from "../concepts/AddConcepts";
-import { addSelectedConceptsToTemplate } from "../../actions/concepts";
+import ConceptTable from './ConceptTable';
+import ConceptDetail from '../concepts/ConceptDetails';
+import StatementExample from './StatementExample';
+import { selectTemplate, editTemplate } from "../../actions/templates";
 import RuleTable from '../rules/RuleTable';
 import DeterminingPropertyTable from '../determining-properties/DeterminingPropertyTable';
-
+import CreateDeterminingProperty from '../determining-properties/CreateDeterminingProperty';
+import EditDeterminingProperty from '../determining-properties/EditDeterminingProperty';
+// import Flyout from '../controls/flyout';
+// import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
+import AddRulesForm from '../rules/AddRuleForm';
+import ModalBox from '../controls/modalBox';
+import CreateStatementExample from './CreateStatementExample';
+// import { selectProfile } from '../../actions/profiles';
+import Lock from "../../components/users/lock";
 export default function Template() {
-    let match = useRouteMatch();
 
-    let { url, path } = match;
-
-    let dispatch = useDispatch();
-    let template = useSelector((state) => state.application.selectedTemplate)
-    let allConcepts = useSelector((state) => state.concepts);
+    const { url, path } = useRouteMatch();
+    const { profileId, templateId } = useParams();
+    const history = useHistory();
+    const dispatch = useDispatch();
 
     useEffect(() => {
-        dispatch(selectTemplate(match.params.templateId))
+        dispatch(selectTemplate(templateId));
     },
-        [dispatch, match.params.templateId]
+        []
     );
 
-    if (!template) return "Template not populated";
+    const template = useSelector((state) => state.application.selectedTemplate);
+    
+    const {selectedOrganizationId, selectedProfileId,
+        selectedProfileVersionId} = useSelector((state) => state.application);
+    const [isEditingDetails, setIsEditingDetails] = useState(false);
+    const [isEditingExample, setIsEditingExample] = useState(false);
+    const [isCreatingExample, setIsCreatingExample] = useState(false);
+    const [showRulesModal, setShowRulesModal] = useState(false);
 
-    let concepts = [];
+    if (!template) return 'Template not populated';
 
-    for (let i of template.concepts) {
-        for (let j of allConcepts) {
-            if (j.uuid === i)
-                concepts.push(j);
-        }
+    function removeDeterminingProperty(propertyType) {
+        let property = {};
+        property[propertyType] = null;
+        dispatch(editTemplate(Object.assign({}, template, property)));
+        dispatch(selectTemplate(templateId));
+    }
+
+    function onDeterminingPropertyAdd(values) {
+        let propertyValue ={};
+        propertyValue[values.propertyType] = values.properties;
+        dispatch(editTemplate(Object.assign({}, template, propertyValue)));
+        history.push(url);
+    }
+
+    function onAddExampleClick() {
+        setIsEditingExample(false);
+        setIsCreatingExample(true);
+    }
+
+    function onEditExampleClick() {
+        setIsCreatingExample(false);
+        setIsEditingExample(true);
+    }
+
+    function onCancelExampleActionClick() {
+        setIsCreatingExample(false);
+        setIsEditingExample(false);
+    }
+
+    function onExampleSubmit(values) {
+        dispatch(editTemplate(Object.assign({}, template, values)));
+        setIsCreatingExample(false);
+        setIsEditingExample(false);
+    }
+
+    function onEditDetailsSubmit(values) {
+        dispatch(editTemplate(Object.assign({}, template, values)));
+        setIsEditingDetails(false);
     }
 
     return (
         <div>
-            <div><h2>{template.name}</h2></div>
             <Switch>
-                <Route exact path={path + "/concepts/add"}>
-                    <AddConcepts addToName="Template" onAdd={(concepts) => dispatch(addSelectedConceptsToTemplate(concepts))} createUrl={url + "/concepts/create"} ></AddConcepts>
-
+                <Route exact path={`${path}/determining-properties/create`}>
+                    <CreateDeterminingProperty onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
                 </Route>
-                <Route exact path={path + "/concepts/create"}>
-                    <CreateConceptForm onCreated={(concept) => dispatch(createConceptInTemplate(concept))}></CreateConceptForm>
+                <Route exact path={`${path}/determining-properties/:propertyType/edit`}>
+                    <EditDeterminingProperty
+                        onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
                 </Route>
-                <Route exact path={path + "/concepts/:conceptId"}>
-                    <TemplateConceptDetail > </TemplateConceptDetail>
+                <Route exact path={`${path}/(concepts|determining-properties)/:conceptId`}>
+                    <ConceptDetail />
                 </Route>
                 <Route path={path}>
-                    <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
-                        <div className="usa-alert__body">
-                            <p className="usa-alert__text">
-                                This statement template belongs to {template.parentProfileName}.
-                    </p>
-                        </div>
-                    </div>
+                    {
+                        (template.parentProfile && template.parentProfile.parentProfile.uuid !== profileId) &&
+                            <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
+                                <div className="usa-alert__body">
+                                    <p className="usa-alert__text">
+                                        This statement template belongs to {template.parentProfile.name}.
+                                    </p>
+                                </div>
+                            </div>
+                    }
+                    <div><h2>{template.name}</h2></div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
                         <h2 className="usa-accordion__heading">
                             <button className="usa-accordion__button"
-                                aria-expanded="true"
+                                aria-expanded="false"
                                 aria-controls="a1"
                             >
                                 Statement Template Details
                             </button>
                         </h2>
                         <div id="a1" className="usa-accordion__content">
-                            <Switch>
-                                <Route exact path={path}>
-                                    <TemplateDetail />
-                                </Route>
-                                <Route exact path={`${path}/edit`}>
+                            {
+                                isEditingDetails ?
+                                <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
                                     <EditTemplateDetails
                                         initialValues={template}
-                                    />
-                                </Route>
-                            </Switch>
+                                        onSubmit={onEditDetailsSubmit}
+                                        onCancel={() => setIsEditingDetails(false)}
+                                    /> </Lock>:
+                                    <TemplateDetail onEditClick={() => setIsEditingDetails(true)} />
+                            }
                         </div>
                     </div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
                         <h2 className="usa-accordion__heading">
                             <button className="usa-accordion__button"
-                                aria-expanded="true"
-                                aria-controls="a2"
-                            >
-                                Concepts ({template.concepts.length})
-                    </button>
-                        </h2>
-                        <div id="a2" className="usa-accordion__content usa-prose">
-                            <ConceptTable inTemplate={true} addConceptLinkPath={url + "/concepts/add"} concepts={concepts} url={`${url}/concepts`} />
-                        </div>
-                    </div>
-                    <div className="usa-accordion usa-accordion--bordered margin-top-2">
-                        <h2 className="usa-accordion__heading">
-                            <button className="usa-accordion__button"
-                                aria-expanded="true"
+                                aria-expanded="false"
                                 aria-controls="a3"
                             >
-                                Determining Properties (0)
+                                Determining Properties
                     </button>
                         </h2>
                         <div id="a3" className="usa-accordion__content usa-prose">
-                            <DeterminingPropertyTable />
+                            <DeterminingPropertyTable
+                                removeDeterminingProperty={(propType) => removeDeterminingProperty(propType)}
+                                url={`${url}/determining-properties`}
+                            />
                         </div>
                     </div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
                         <h2 className="usa-accordion__heading">
                             <button className="usa-accordion__button"
-                                aria-expanded="true"
+                                aria-expanded="false"
                                 aria-controls="a4"
                             >
                                 Rules (0)
                     </button>
                         </h2>
                         <div id="a4" className="usa-accordion__content usa-prose">
-                            <RuleTable rules={template.rules} />
+                            <RuleTable rules={template.rules} onAddRule={() => setShowRulesModal(true)} />
                         </div>
                     </div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
                         <h2 className="usa-accordion__heading">
                             <button className="usa-accordion__button"
-                                aria-expanded="true"
+                                aria-expanded="false"
+                                aria-controls="a2"
+                            >
+                                Concepts ({template.concepts.length})
+                    </button>
+                        </h2>
+                        <div id="a2" className="usa-accordion__content usa-prose">
+                            <ConceptTable concepts={template.concepts} url={`${url}/concepts`} />
+                        </div>
+                    </div>
+                    <div className="usa-accordion usa-accordion--bordered margin-top-2">
+                        <h2 className="usa-accordion__heading">
+                            <button className="usa-accordion__button"
+                                aria-expanded="false"
                                 aria-controls="a5"
                             >
                                 Statement Example
                     </button>
                         </h2>
                         <div id="a5" className="usa-accordion__content usa-prose">
-                            {template.statementExample}
+                            {
+                                (!isEditingExample && !isCreatingExample) ?
+                                    <StatementExample
+                                        statementExample={template.statementExample}
+                                        onAddClick={onAddExampleClick}
+                                        onEditClick={onEditExampleClick}
+                                    /> :
+                                        isCreatingExample ?
+                                            <CreateStatementExample
+                                                onSubmit={onExampleSubmit}
+                                                onCancelClick={onCancelExampleActionClick} 
+                                            /> :
+                                            <CreateStatementExample
+                                                initialValues={template.statementExample}
+                                                onSubmit={onExampleSubmit}
+                                                onCancelClick={onCancelExampleActionClick}
+                                            />
+                            }
+                            
                         </div>
                     </div>
+
+                    <ModalBox
+                        show={showRulesModal}
+                        onClose={() => setShowRulesModal(false)}
+                    >
+                        <AddRulesForm />
+                    </ModalBox>
                 </Route>
             </Switch>
         </div>

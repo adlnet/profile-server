@@ -46,13 +46,13 @@ export default function PatternTypes() {
                     <div className="usa-radio">
                         <input className="usa-radio__input"
                             type="radio"
-                            id="alternate"
-                            name="alternate"
-                            value="alternate"
-                            onChange={() => updateType("alternate")}
-                            checked={type === "alternate"}>
+                            id="alternates"
+                            name="alternates"
+                            value="alternates"
+                            onChange={() => updateType("alternates")}
+                            checked={type === "alternates"}>
                         </input>
-                        <label className="usa-radio__label" htmlFor="alternate">
+                        <label className="usa-radio__label" htmlFor="alternates">
                             <div className="title">Alternates</div>
                             <div className="description">
                                 A list of statement templates or secondary patterns. This will match if any

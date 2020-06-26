@@ -13,124 +13,100 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { Link } from 'react-router-dom';
-
+import React, { useState, useEffect } from 'react';
+import { Link, useParams, useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from "react-redux";
-import { Formik } from 'formik';
 
-import { searchConcepts, selectConceptResult, deselectConceptResult } from "../../actions/concepts";
-import ConceptResults from "./ConceptResults";
-export default function AddConcepts(props) {
+import { searchConcepts, selectConceptResult, deselectConceptResult, clearConceptResults, loadProfileConcepts } from "../../actions/concepts";
+import Flyout from '../controls/flyout';
+import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
+import SearchSelectComponent from '../controls/search-select/searchSelectComponent';
+import ConceptResultView from './ConceptResultView';
+import { editProfileVersion } from '../../actions/profiles';
+
+
+export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
+    const { versionId } = useParams();
+    const history = useHistory();
+    const dispatch = useDispatch();
+
+    useEffect(() => {
+        dispatch(loadProfileConcepts(versionId));
+    }, [dispatch, versionId]);
 
     const conceptResults = useSelector((state) => state.searchResults.concepts)
     const selectedResults = useSelector((state) => state.searchResults.selectedConcepts)
-    const dispatch = useDispatch();
+    const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
+    const profileConcepts = useSelector((state) =>state.concepts);
+    const [showConceptInfopanel, setShowConceptInfopanel] = useState(false);
+    const [infoPanelConcept, setInfoPanelConcept] = useState();
 
-    let isSelected = (item) => {
-        if (!selectedResults) return false;
-        return selectedResults.includes(item);
+    function onViewDetailsClick(property) {
+        setInfoPanelConcept(property);
+        setShowConceptInfopanel(true);
     }
 
-    return (
-        <div className="grid-container">
+    function handleAddToProfileClick() {
+        if (selectedResults) {
+            const newProfileVersion = Object.assign({}, profileVersion);
+            newProfileVersion.externalConcepts = [...newProfileVersion.externalConcepts, ...selectedResults];
+            dispatch(editProfileVersion(newProfileVersion));
+            dispatch(loadProfileConcepts(versionId));
+            history.push(rootUrl);
+        }
+    }
+
+    function conceptResultsFilter(result) {
+        return !profileConcepts.map(t => t.uuid).includes(result.uuid);
+    }
+
+    return (<>
             <div className="grid-row margin-top-3 margin-bottom-3">
                 <div className="grid-col">
-                    <Link to={props.path}><span className="text-uppercase font-sans-3xs">Concepts</span></Link> <i className="fa fa-angle-right fa-xs"></i>
                     <h2>Add Concept</h2>
                 </div>
                 <div className="grid-col">
-
-                    <Link to={props.createUrl}><button className="usa-button pin-right bottom-2"><i className="fa fa-plus"></i> Create New</button></Link>
+                    <Link
+                            to={`${rootUrl}/create`}><button
+                            className="usa-button pin-right bottom-2"
+                    >
+                        <i className="fa fa-plus"></i> Create New</button>
+                    </Link>
                 </div>
             </div>
-            <div className="border border-base-light margin-bottom-1 minh-tablet">
-                <div className="grid-row bg-base-lightest">
-                    <div className="grid-col-fill padding-3">
-                        <span>Search for existing concepts</span>
 
-                        <Formik
-                            initialValues={{ search: '', }}
+            <SearchSelectComponent
+                searchFunction={(searchValues) => dispatch(searchConcepts(searchValues))}
+                clearSearchFunction={() => dispatch(clearConceptResults())}
+                searchMessage="Search for existing concepts"
+                searchResults={conceptResults && conceptResults.filter(c => conceptResultsFilter(c))}
+                selectResultFunction={(concept) => dispatch(selectConceptResult(concept))}
+                removeSelectedResultFunction={(concept) => dispatch(deselectConceptResult(concept))}
+                clearSelectedResultsFunction={() => dispatch(clearConceptResults())}
+                selectedResults={selectedResults}
+                isOneSelectionOnly={isOneConceptOnly}
+                oneSelectionOnlyMessage={`Only one concept may be selected for this ${addToName}.`}
+                selectionMessage={`Selected Concept${isOneConceptOnly ? '' : 's'}`}
+                resultView={<ConceptResultView onViewDetailsClick={onViewDetailsClick}/>}
+            />
 
-                            onSubmit={(values) => {
-                                dispatch(searchConcepts(values.search));
-                            }}
-                        >
-                            {({
-                                values,
-                                handleChange,
-                                handleBlur,
-                                handleSubmit
-                            }) => (
-                                    <form className="usa-search" onSubmit={handleSubmit}>
-                                        <div role="search">
-                                            <label className="usa-sr-only" htmlFor="search-field">Search</label>
-                                            <input className="usa-input" id="search-field" type="search" name="search"
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                value={values.search} />
-                                            <button className="usa-button" type="submit">
-                                                <span className="usa-search__submit-text">Search</span>
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                )}
-                        </Formik>
-
-
-                    </div>
-                </div>
-                <div className="grid-row padding-3">
-                    <div className="grid-col margin-right-2">
-                        <div className="grid-row">
-                            <div className="grid-col margin-bottom-2">
-                                {
-                                    (conceptResults && conceptResults.length) ? <span className="">{conceptResults.length} results</span> : " "
-                                }
-                            </div>
-                        </div>
-                        <div className="grid-row maxh-tablet">
-                            {/* style="overflow-y: auto;max-height: inherit;" */}
-                            <div className="grid-col overflow-y-auto overflow-x-hidden" style={{ maxHeight: "inherit" }}>
-                                {
-                                    // todo: add "n results for 'keyword'"
-                                    (conceptResults && conceptResults.length)
-                                        ? conceptResults.map((concept) => <ConceptResults key={`result${concept.uuid}`} concept={concept} buttonText={(isSelected(concept)) ? "Selected" : "Select"} buttonAction={(concept) => dispatch(selectConceptResult(concept))} styles={(isSelected(concept) ? "usa-button--outline" : "")} />)
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid-col">
-                        <div className="grid-row">
-                            <div className="grid-col margin-bottom-2">
-                                {
-                                    (selectedResults && selectedResults.length) ? <span className="text-bold">Selected ({selectedResults.length})</span> : " "
-                                }
-                            </div>
-                        </div>
-                        <div className="grid-row maxh-tablet">
-                            <div className="grid-col overflow-y-auto overflow-x-hidden" style={{ maxHeight: "inherit" }}>
-                                {
-                                    // todo: add "n results for 'keyword'"
-                                    (selectedResults && selectedResults.length)
-                                        ? selectedResults.map((concept) => <ConceptResults key={`selected${concept.id}`} concept={concept} buttonText="Remove" buttonAction={(concept) => dispatch(deselectConceptResult(concept))} isSelected={() => false} styles="" />)
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div className="grid-row">
                 <div className="grid-col">
-                    <button className="usa-button usa-button--unstyled">Cancel</button>
+                    <button className="usa-button usa-button--unstyled text-bold">Cancel</button>
                 </div>
                 <div className="grid-col">
-                    <button onClick={() => props.onAdd()} className="usa-button pin-right">Add to {props.addToName}</button>
+                    <button onClick={handleAddToProfileClick} className="usa-button pin-right">Add to {addToName}</button>
                 </div>
             </div>
-        </div>
-    );
+
+            <Flyout
+                    show={showConceptInfopanel}
+                    onClose={() => setShowConceptInfopanel(false)}
+             >
+                { 
+                    (showConceptInfopanel && infoPanelConcept)  &&
+                        <ConceptInfoPanel infoPanelConcept={infoPanelConcept} />
+                }
+            </Flyout>
+    </>);
 }

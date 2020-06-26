@@ -13,138 +13,115 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState } from 'react';
+import { Route, Link, useRouteMatch, useHistory, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from "react-redux";
-import { Formik } from 'formik';
 
-import { searchPatterns, selectPatternResult, deselectPatternResult } from "../../actions/patterns";
-import { addSelectedPatternResults } from "../../actions/profiles";
-import PatternResults from "./PatternResults";
+import { searchPatterns, selectPatternResult, deselectPatternResult, clearPatternResults, loadProfilePatterns } from "../../actions/patterns";
+import {  editProfileVersion, createNewProfileDraft } from "../../actions/profiles";
+import Flyout from '../controls/flyout';
+import PatternInfoPanel from '../infopanels/PatternInfoPanel';
+import SearchSelectComponent from '../controls/search-select/searchSelectComponent';
+import PatternResultView from './PatternResultView';
+import Template from '../templates/Template';
+import PatternDetail from './PatternDetail';
 
-export default function AddPattern(props) {
-
+export default function AddPattern({ isOnePatternOnly, root_url }) {
+    
+    const { path } = useRouteMatch();
+    const { versionId } = useParams();
+    const history = useHistory();
     const patternResults = useSelector((state) => state.searchResults.patterns)
-
     const selectedResults = useSelector((state) => state.searchResults.selectedPatterns)
-    // let { id } = useParams();
+    const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
+    const profilePatterns = useSelector((state) => state.patterns);
+
+
+    const [showPatternInfopanel, setShowPatternInfopanel] = useState(false);
+    const [infoPanelPattern, setInfoPanelPattern] = useState();
     const dispatch = useDispatch();
 
-    let isSelected = (item) => {
-        if (!selectedResults) return false;
-        return selectedResults.includes(item);
+    function handleAddToProfileClick() {
+        if (selectedResults) {
+            const newProfileVersion = Object.assign({}, profileVersion);
+            newProfileVersion.patterns = [...newProfileVersion.patterns, ...selectedResults];
+
+            if (profileVersion.state === 'draft') {
+                dispatch(editProfileVersion(newProfileVersion));
+            } else if (profileVersion.state === 'published') {
+                dispatch(createNewProfileDraft(newProfileVersion));
+            }
+
+            dispatch(loadProfilePatterns(versionId));
+            history.push(root_url);
+        }
     }
 
-    return (
-        <div className="grid-container">
+    function handleCancel() {
+        history.goBack();
+    }
+
+    function onViewDetailsClick(property) {
+        setInfoPanelPattern(property);
+        setShowPatternInfopanel(true);
+    }
+
+    function patternResultsFilter(result) {
+        return !profilePatterns.map(p => p.uuid).includes(result.uuid);
+    }
+
+    return (<>
             <div className="grid-row margin-top-3 margin-bottom-3">
                 <div className="grid-col">
-                    <Link to={props.root_url}><span className="text-uppercase font-sans-3xs">patterns</span></Link> <i className="fa fa-angle-right fa-xs"></i>
                     <h2>Add Statement Pattern</h2>
                 </div>
                 <div className="grid-col">
-
                     <Link to={"create"}><button className="usa-button pin-right bottom-2"><i className="fa fa-plus"></i> Create New</button></Link>
                 </div>
             </div>
-            <div className="border border-base-light margin-bottom-1 minh-tablet">
-                <div className="grid-row bg-base-lightest">
-                    <div className="grid-col-fill padding-3">
-                        <span>Search for existing statement patterns</span>
 
-                        <Formik
-                            initialValues={{ search: '', }}
+            <SearchSelectComponent
+                searchFunction={(searchValues) => dispatch(searchPatterns(searchValues))}
+                clearSearchFunction={() => dispatch(clearPatternResults())}
+                searchMessage="Search for existing patterns to add to this profile"
+                searchResults={patternResults && patternResults.filter(p => patternResultsFilter(p))}
+                selectResultFunction={(pattern) => dispatch(selectPatternResult(pattern))}
+                removeSelectedResultFunction={(pattern) => dispatch(deselectPatternResult(pattern))}
+                clearSelectedResultsFunction={() => dispatch(clearPatternResults())}
+                selectedResults={selectedResults}
+                isOneSelectionOnly={isOnePatternOnly}
+                oneSelectionOnlyMessage={"Only one pattern may be selected for profile."}
+                selectionMessage={'Selected Patterns'}
+                resultView={<PatternResultView onViewDetailsClick={onViewDetailsClick}/>}
+            />
 
-                            onSubmit={(values) => {
-                                dispatch(searchPatterns(values.search));
-                            }}
-                        >
-                            {({
-                                values,
-                                handleChange,
-                                handleBlur,
-                                handleSubmit
-                            }) => (
-                                    <form className="usa-search" onSubmit={handleSubmit}>
-                                        <div role="search">
-                                            <label className="usa-sr-only" htmlFor="search-field">Search</label>
-                                            <input className="usa-input" id="search-field" type="search" name="search"
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                value={values.search} />
-                                            <button className="usa-button" type="submit" disabled>
-                                                <span className="usa-search__submit-text">Search</span>
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                )}
-                        </Formik>
-
-
-                    </div>
-                </div>
-                <div className="grid-row padding-3">
-                    <div className="grid-col margin-right-2">
-                        <div className="grid-row">
-                            <div className="grid-col margin-bottom-2">
-                                {
-                                    (patternResults && patternResults.length) ? <span className="">{patternResults.length} results for {'enter keyword'}</span> : " "
-                                }
-                            </div>
-                        </div>
-                        <div className="grid-row maxh-tablet">
-                            {/* style="overflow-y: auto;max-height: inherit;" */}
-                            <div className="grid-col overflow-y-auto" style={{ maxHeight: "inherit" }}>
-                                {
-                                    // todo: add "n results for 'keyword'"
-                                    (patternResults && patternResults.length)
-                                        ? patternResults.map((pattern) => <PatternResults
-                                            key={`result${pattern.uuid}`}
-                                            template={pattern}
-                                            buttonText={(isSelected(pattern)) ? "Selected" : "Select"}
-                                            buttonAction={(pattern) => dispatch(selectPatternResult(pattern))}
-                                            styles={(isSelected(pattern) ? "usa-button--outline" : "")} />)
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid-col">
-                        <div className="grid-row">
-                            <div className="grid-col margin-bottom-2">
-                                {
-                                    (selectedResults && selectedResults.length) ? <span className="text-bold">Selected ({selectedResults.length})</span> : " "
-                                }
-                            </div>
-                        </div>
-                        <div className="grid-row maxh-tablet">
-                            <div className="grid-col overflow-y-auto" style={{ maxHeight: "inherit" }}>
-                                {
-                                    // todo: add "n results for 'keyword'"
-                                    (selectedResults && selectedResults.length)
-                                        ? selectedResults.map((pattern) => <PatternResults
-                                            key={`selected${pattern.id}`}
-                                            template={pattern}
-                                            buttonText="Remove"
-                                            buttonAction={(pattern) => dispatch(deselectPatternResult(pattern))}
-                                            isSelected={() => false}
-                                            styles="" />)
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div className="grid-row">
                 <div className="grid-col">
-                    <button className="usa-button usa-button--unstyled">Cancel</button>
+                    <button className="usa-button usa-button--unstyled padding-y-105" onClick={handleCancel}><b>Cancel</b></button>
                 </div>
                 <div className="grid-col">
-                    <button onClick={() => dispatch(addSelectedPatternResults())} className="usa-button pin-right" disabled>Add to Profile</button>
+                    <button 
+                            onClick={handleAddToProfileClick}
+                            className="usa-button margin-right-0 pin-right"
+                            disabled={!(selectedResults && selectedResults.length > 0)}
+                    >
+                        Add to Profile
+                    </button>
                 </div>
             </div>
-        </div>
-    );
+
+            <Flyout show={showPatternInfopanel} onClose={() => setShowPatternInfopanel(false)}>
+                {
+                    infoPanelPattern ?
+                        <PatternInfoPanel infoPanelPattern={infoPanelPattern} /> : ''
+                }
+            </Flyout>
+
+            <Route exact path={`${path}/templates/:templateId`}>
+                <Template />
+            </Route>
+            <Route exact path={`${path}/patterns/:patternId`}>
+                <PatternDetail />
+            </Route>
+    </>);
 }

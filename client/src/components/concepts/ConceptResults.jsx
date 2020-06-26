@@ -37,7 +37,7 @@ export default function ConceptResults(props) {
                 {/* move style and button decisions from here to addtemplate .. both selected style and button text */}
                 <button className={`usa-button ${props.styles}`} onClick={handleClick}>{props.buttonText}</button>
                 {/* <button className={`usa-button${props.isSelected(props.template) ? " usa-button--outline" : ""}`} onClick={handleClick}>{props.buttonText}</button> */}
-                <button className="usa-button usa-button--unstyled">View Details</button>
+                <button className="usa-button usa-button--unstyled" onClick={props.onViewDetailsClick}>View Details</button>
             </div>
         </div>
     );

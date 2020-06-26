@@ -84,7 +84,41 @@ form.usa-search>.usa-select
     border-radius: 6px;
     font-weight: 700;
     color: #005ea2
-}   
+}
+
+.details-label
+{
+    font-size: .87rem;
+    color: #71767A;
+    text-rendering: optimizeLegibility;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.details-metadata-box
+{
+    background-color:  #f0f0f0;
+    padding: 2rem;
+}
+
+ul.horizontal-list
+{
+    list-style: none;
+    display: flex;
+    padding-left: 0px;
+    margin-bottom: 0px;
+    margin-top: .5rem;
+}
+
+ul.horizontal-list li{
+    margin-right: 2rem;
+}
+
+.field-word-break
+{
+    word-wrap: break-word;
+}
+
 .profile-form-frame
 {
     border: 1px solid #d9d9d9;
@@ -103,6 +137,66 @@ form.usa-search>.usa-select
     color: gray;
     font-size: 15px;
     float: right;
+}
+
+.usa-nav__primary>.usa-nav__primary-item>.nav-link-adjustment
+{
+    padding-bottom: 17.5px;
+}
+
+.profile-dropdown {
+    z-index: 1000;
+    position: absolute;
+    background-color: white;
+    border: 1px solid #005ea2;
+}
+
+ul.profile-dropdown-menu {
+    list-style: none;
+    width: 120px;
+    margin: 0px;
+    padding: 0px;
+    text-align: left;
+}
+
+.profile-dropdown-menu li {
+    padding: 5px 3px;
+    font-weight: 700;
+}
+
+.profile-dropdown-menu li:hover {
+    color: white;
+    background-color: #005ea2;
+}
+
+.profile-publish-button
+{
+    padding: .5rem;
+    border-radius: 5px 0px 0px 5px;
+    border-right: 0px;
+}
+
+.profile-file-interaction-button
+{
+    padding: .5rem 1.5rem;
+    border-radius: 0px 5px 5px 0px;
+}
+
+.profile-publish-button,
+.profile-file-interaction-button
+{
+    cursor: pointer;
+    color: #005ea2;
+    background-color: white;
+    border-color: #005ea2;
+    border-style: solid;
+}
+
+.profile-publish-button:hover,
+.profile-file-interaction-button:hover
+{
+    color: #1a4480;
+    border-color: #1a4480;
 }
 
 .profile-form-frame > form > p:first-of-type
@@ -127,7 +221,8 @@ form.usa-search>.usa-select
     align-items: center;
     justify-content: center;
 }
-.profile-lightbox-inner > form {
+.profile-lightbox-inner > form, 
+.profile-lightbox-inner > div.usa-form {
     width: 525px;
 }
 .profile-lightbox-inner
@@ -147,6 +242,126 @@ form.usa-search>.usa-select
     right: 19px;
     font-size: 2em;
     cursor: pointer;
+}
+
+.profile-version-select {
+    outline: none;
+    text-transform: capitalize;
+    width:60%;
+    padding-bottom: 4px;
+    background-color: transparent;
+    border-top: none;
+    border-right: none;
+    border-left: none;
+    border-color: #73b3e7;
+    font-weight: 700;
+}
+
+.similar-terms-form{
+    width: 682px;
+}
+
+.similar-terms-form .similar-terms-results-panel {
+    height: 265px;
+}
+
+.similar-terms-results-panel .similar-terms-results {
+    height: 206px;
+}
+
+.similar-terms-results .usa-button {
+    margin: 0;
+}
+
+.rules-form {
+    width: 584px;
+    height: 592px;
+}
+
+.rules-buttons {
+    position: absolute;
+    bottom: 0;
+    margin-bottom: 1.5em;
+}
+
+.infopanel {
+    overflow-y: auto;
+    height: 526px;
+}
+
+.popout-menu {
+    position: absolute;
+    top: 30px;
+    left: 137px;
+    /* border: 1px #00bde3;
+    background-color: white;
+    list-style: none; */
+    z-index:100000;
+}
+
+#flyout {
+    position: fixed;
+    width: 420px;
+    height: 660px;
+    bottom: 0vh;
+    left: 100vw;
+    z-index: 1000000;
+    background: white;
+    box-shadow: 0 4px 8px 0 gray, 0 6px 20px 0 gray;
+    transition: transform .5s
+                cubic-bezier(0, .52, 0, 1);
+}
+
+#flyout.hide {
+    transform: translate3d(100vw, 0, 0);
+}
+
+#flyout.show {
+    transform: translate3d(-420px, 0, 0);
+}
+
+.flyout-close {
+    font-size: 2em;
+    cursor: pointer;
+}
+
+.flyout-previous {
+    font-size: 2em;
+    cursor: pointer;
+}
+
+.modalbox-bg {
+    position: fixed;
+    background: rgba(0,0,0,0.2);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 100000000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.modalbox {
+    position: fixed;
+    background:white;
+    min-width: 10px;
+    min-height: 10px;
+    border:1px solid black;
+    padding: 1em 1.1em;
+}
+
+.modalbox-close {
+    position: absolute;
+    top: 16px;
+    right: 16px;
+    font-size: 2em;
+    cursor: pointer;
+}
+
+.modalbox > .translation-form {
+    width: 525px;
 }
 
 label+button.usa-button.usa-button--outline {
@@ -279,4 +494,102 @@ h2.profile-edit button
 .hidden-step
 {
     display: none !important;
+}
+
+.usa-link.button-link {
+    cursor: pointer;
+    color: #005ea2
+}
+
+.usa-button.submit-button {
+    margin-top: 16px;
+    margin-right: 24px;
+}
+
+.disabled {
+    opacity: .3;
+    color: gray !important;
+    pointer-events: none;
+}
+
+.modalError.background {
+    position: fixed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0,0,0,.6);
+    top: 0;
+    z-index: 100;
+}
+.modalError.foreground {
+    width: 400px;
+    height: 400px;
+}
+
+.modalError .usa-accordion__button {
+    background-color: #dcdee0;
+    color: #1b1b1b;
+    text-decoration: none;
+    background-image: none;
+}
+
+.modalError .usa-accordion.usa-accordion--bordered.site-accordion-code {
+    height: 100%;
+}
+
+.modalError  .usa-accordion__content
+{
+    height:100%
+}
+
+path.rv-xy-plot__series.rv-xy-plot__series--line {
+    fill: none;
+    stroke-width: 3;
+}
+
+.usa-nav__primary-item .fa 
+{
+    margin-right:.5em;
+}
+
+.usa-search.full-width {
+    float: unset;
+    width: 100%;
+    display: flex;
+}
+
+.usa-header .full-width [role=search] {
+    float: unset;
+    width: 100%;
+    max-width: unset;
+    display: flex;
+    align-items: stretch;
+    justify-content: stretch;
+    justify-items: stretch;
+    height: 40px;
+
+}
+.usa-header .full-width.usa-search [type=submit]
+{
+    height: 40px;
+}
+.usa-header .full-width .usa-input
+{
+    height: 40px;
+    flex-grow: 1;
+    max-width: unset;
+}
+
+.grid-row.profile-result {
+    border-top: 1px solid;
+    padding-top: 1em;
+    margin-top: 1em;
+}
+
+.profile-search-counts {
+    padding: 1em;
+    margin-bottom: 1em;
+    font-size: 0.9em;
 }

@@ -14,44 +14,48 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useState } from 'react';
-import { Switch, Route, useRouteMatch, Link, Redirect } from 'react-router-dom';
+import { Switch, Route, useRouteMatch, Redirect } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 
 import PatternTypes from './PatternTypes';
 import CreateSequencePattern from './CreateSequencePattern';
 import CreateAlternatesPattern from './CreateAlternatesPattern';
 import CreateSinglePattern from './CreateSinglePattern';
+import { createPattern } from '../../actions/patterns';
 
-export default function CreatePattern(props) {
-    // const dispatch = useDispatch();
+export default function CreatePattern() {
+    const dispatch = useDispatch();
     let { path } = useRouteMatch();
 
     let [type, updateType] = useState();
-    // let [form, updateForm] = useState();
+
+    function handleCreatePattern(values) {
+        dispatch(createPattern(values));
+    }
 
 
     return (
         <div className="grid-container">
             <div className="grid-row margin-top-3">
                 <div className="grid-col">
-                    <Link to={props.root_url}><span className="text-uppercase font-sans-3xs">patterns</span></Link> <i className="fa fa-angle-right fa-xs"></i>
                     <h2>Create New Pattern{type ? (<><span>: </span><span className="text-primary-dark" style={{ textTransform: "capitalize" }}>{type}</span></>) : ""}</h2>
                 </div>
             </div>
             <Switch>
                 <Route path={`${path}/sequence`}>
-                    <CreateSequencePattern updateType={updateType} />
+                    <CreateSequencePattern updateType={updateType} type={type} onSubmit={handleCreatePattern}/>
                 </Route>
                 <Route exact path={`${path}/alternates`}>
-                    <CreateAlternatesPattern updateType={updateType} />
+                    <CreateAlternatesPattern updateType={updateType} type={type} onSubmit={handleCreatePattern}/>
                 </Route>
                 <Route exact path={`${path}/optional`}>
-                    <CreateSinglePattern updateType={() => updateType("optional")} type={type} />
+                    <CreateSinglePattern updateType={() => updateType("optional")} type={type} onSubmit={handleCreatePattern}/>
                 </Route>
                 <Route exact path={`${path}/oneOrMore`}>
-                    <CreateSinglePattern updateType={() => updateType("oneOrMore")} type={type} />
+                    <CreateSinglePattern updateType={() => updateType("oneOrMore")} type={type} onSubmit={handleCreatePattern}/>
                 </Route>
                 <Route exact path={`${path}/zeroOrMore`}>
-                    <CreateSinglePattern updateType={() => updateType("zeroOrMore")} type={type} />
+                    <CreateSinglePattern updateType={() => updateType("zeroOrMore")} type={type} onSubmit={handleCreatePattern}/>
                 </Route>
                 <Route exact path="">
                     <PatternTypes />

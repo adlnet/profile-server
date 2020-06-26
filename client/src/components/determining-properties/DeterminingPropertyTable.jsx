@@ -15,9 +15,13 @@
 **************************************************************** */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { useSelector } from 'react-redux';
+
 import DeterminingPropertyTableRow from './DeterminingPropertyTableRow';
 
-export default function DeterminingPropertyTable(props) {
+export default function DeterminingPropertyTable({ removeDeterminingProperty, url }) {
+    const determiningProperties = useSelector(state => state.application.selectedDeterminingProperties);
+
     return (<>
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
@@ -28,14 +32,24 @@ export default function DeterminingPropertyTable(props) {
                 </tr>
             </thead>
             <tbody style={{ lineHeight: 3 }}>
-                {(props.rules && props.rules.length > 0) ?
-                    props.rules.map((rule, i) => <DeterminingPropertyTableRow key={i} {...rule} />) :
-                    <tr key={1}><td className="font-sans-xs" colSpan="4">There are no statement rules associated with this profile. Add statement rules manually or import from a JSON file.</td></tr>
+                {(determiningProperties && determiningProperties.length > 0) ?
+                    determiningProperties.map((determiningProperty, i) => 
+                        <DeterminingPropertyTableRow 
+                            key={i} 
+                            determiningProperty={determiningProperty}
+                            removeDeterminingProperty={removeDeterminingProperty}
+                            url={url}/>
+                        ) :
+                    <tr key={1}>
+                        <td className="font-sans-xs" colSpan="3" style={{paddingLeft: '0px'}}>
+                            <p>There are no determining properties set for this statement template.</p>
+                            <p>At least one determining property is needed to validate statements to rules in this template. If properties are not added, statements will not be matched to this template.</p>
+                        </td></tr>
                 }
             </tbody>
         </table>
         <Link
-            to=''>
+            to={`${url}/create`}>
             <button className="usa-button">Add Determining Property</button>
         </Link>
     </>);

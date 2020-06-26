@@ -3,8 +3,9 @@ module.exports = {
         "plugin:react/recommended"],
     env: {
         node: true,
+        "jest/globals": true
     },
-    plugins: ['security', 'notice'],
+    plugins: ['security', 'notice', 'jest'],
     globals: {
         it: true,
         describe: true,

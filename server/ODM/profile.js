@@ -14,28 +14,63 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
-const profile = new mongoose.Schema({
-    name: String,
-    description: String,
-    moreInfo: String,
-    organization: String,
-    tags: [String],
-    uuid: String,
-    concepts: [String],
-    templates: [String],
-    patterns: [String],
-    state: Number,
-    updatedOn: Date,
-    createdOn: Date,
-    createdBy: String,
-    translations: [
-        {
-            language: String,
-            translationDesc: String,
-            translationName: String,
-        },
-    ],
+const uuid = require('uuid');
+const locks = require('./locks');
 
+const profile = new mongoose.Schema({
+    organization: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'organization',
+    },
+    uuid: {
+        type: String,
+        default: uuid.v4,
+    },
+    iri: { type: String, unique: true },
+    createdOn: {
+        type: Date,
+        default: new Date(),
+    },
+    ...locks(),
+    updatedOn: {
+        type: Date,
+        default: new Date(),
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
+    currentPublishedVersion: {
+        type: String,
+        ref: 'profileVersion',
+    },
+    currentDraftVersion: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'profileVersion',
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
+}, { toJSON: { virtuals: true } });
+
+profile.virtual('versions', {
+    ref: 'profileVersion',
+    localField: '_id',
+    foreignField: 'parentProfile',
+    justOne: false,
 });
+
+profile.statics.findByUuid = function (uuid, callback) {
+    return this.findOne({ uuid: uuid }, callback);
+};
+
+profile.statics.deleteByUuid = async function (uuid) {
+    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false, updatedOn: new Date() });
+};
 
 module.exports = profile;

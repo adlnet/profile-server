@@ -15,15 +15,21 @@
 **************************************************************** */
 import API from '../api';
 import history from '../history'
-import { reloadCurrentTemplate, FINISH_UPDATE_TEMPLATE, START_UPDATE_TEMPLATE } from './templates';
-import { reloadCurrentProfile, START_UPDATE_PROFILE, FINISH_UPDATE_PROFILE } from './profiles';
+import { selectProfileVersion } from './profiles';
 
 
 export const SELECT_CONCEPT = 'SELECT_CONCEPT';
+export const START_GET_CONCEPT = 'START_GET_CONCEPT';
+export const FINISH_GET_CONCEPT = 'FINISH_GET_CONCEPT';
+export const ERROR_GET_CONCEPT = 'ERROR_GET_CONCEPT';
 
 export const START_CREATE_CONCEPT = 'START_CREATE_CONCEPT';
 export const FINISH_CREATE_CONCEPT = 'FINISH_CREATE_CONCEPT';
+export const ERROR_CREATE_CONCEPT = 'ERROR_CREATE_CONCEPT';
 
+export const START_GET_CONCEPTS = 'START_GET_CONCEPTS';
+export const FINISH_GET_CONCEPTS = 'FINISH_GET_CONCEPTS';
+export const ERROR_GET_CONCEPTS = 'ERROR_GET_CONCEPTS';
 
 export const START_SEARCH_CONCEPTS = 'START_SEARCH_CONCEPTS';
 export const FINISH_SEARCH_CONCEPTS = 'FINISH_SEARCH_CONCEPTS';
@@ -34,41 +40,163 @@ export const CLEAR_CONCEPT_RESULTS = 'CLEAR_CONCEPT_RESULTS';
 
 export const START_EDIT_CONCEPT = 'START_EDIT_CONCEPT';
 export const FINISH_EDIT_CONCEPT = 'FINISH_EDIT_CONCEPT';
+export const ERROR_EDIT_CONCEPT = 'ERROR_EDIT_CONCEPT';
+
+export const START_LOAD_EXTERNAL_CONCEPTS = 'START_LOAD_EXTERNAL_CONCEPTS';
+export const FINISH_LOAD_EXTERNAL_CONCEPTS = 'FINISH_LOAD_EXTERNAL_CONCEPTS';
+
+export const SELECT_INFOPANEL_CONCEPT = 'SELECT_INFOPANEL_CONCEPT';
+
+export function loadProfileConcepts(profileVersionId) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+
+        dispatch({
+            type: START_GET_CONCEPTS,
+        });
+
+        let concepts = [];
+        try {
+            concepts = await API.getConcepts(organizationId, profileId, profileVersionId);
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_CONCEPTS,
+                errorType: 'concepts',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_CONCEPTS,
+                concepts: concepts,
+            });
+        }
+    }
+}
 
 export function createConcept(concept) {
     return async function (dispatch, getState) {
-        let state = getState();
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+
         dispatch({
             type: START_CREATE_CONCEPT,
         });
 
-        const newConcept = await API.createConcept(state.application.selectedOrganizationId, state.application.selectedProfileId, concept);
-
-        dispatch({
-            type: FINISH_CREATE_CONCEPT,
-            concept: newConcept,
-        });
-
-
-        dispatch(reloadCurrentProfile());
-
-        history.push("../templates")
+        let profileVersionId = state.application.selectedProfileVersionId;
+        try {
+            if (state.application.selectedProfileVersion.state === 'published') {
+                const newProfileVersion = await API.createProfileVersion(
+                    state.application.selectedOrganizationId, state.application.selectedProfileId,
+                    Object.assign({}, state.application.selectedProfileVersion))
+                profileVersionId = newProfileVersion.uuid;
+            }
+            const newConcept = await API.createConcept(organizationId, profileId, profileVersionId, concept);
+            
+            dispatch(selectConcept(organizationId, profileId, profileVersionId, newConcept.uuid));
+            dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
+            dispatch(loadProfileConcepts(profileVersionId));
+            
+            history.push(`./concepts/${newConcept.uuid}`)
+        } catch (err) {
+            dispatch({
+                type: ERROR_CREATE_CONCEPT,
+                errorType: 'concepts',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_CREATE_CONCEPT,
+            });
+        }
     };
 }
 
-export function searchConcepts(search) {
+export function editConcept(concept) {
+    return async function (dispatch, getState) {
+        let state = getState();
+        dispatch({
+            type: START_EDIT_CONCEPT,
+        });
+
+        try {
+            const newConcept = await API.editConcept(
+                state.application.selectedOrganizationId, state.application.selectedProfileId,
+                state.application.selectedProfileVersion.uuid, concept
+            );
+            
+            dispatch(selectConcept(
+                state.application.selectedOrganizationId, state.application.selectedProfileId,
+                state.application.selectedProfileVersion.uuid, newConcept.uuid)
+            );
+        } catch (err) {
+            dispatch({
+                type: ERROR_EDIT_CONCEPT,
+                errorType: 'concepts',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_EDIT_CONCEPT,
+            });
+        }
+    }
+}
+
+
+export function selectConcept(organizationId, profileId, versionId, conceptId) {
     return async function (dispatch) {
-
         dispatch({
-            type: START_SEARCH_CONCEPTS,
+            type: START_GET_CONCEPT,
         });
 
-        const concepts = await API.searchConcepts(search);
+        try {
+            const concept = await API.getConcept(organizationId, profileId, versionId, conceptId);
 
+            dispatch({
+                type: SELECT_CONCEPT,
+                concept: concept,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_CONCEPT,
+                errorType: 'concepts',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_GET_CONCEPT,
+            });
+        }
+    }
+}
+
+export function selectInfopanelConcept(conceptId) {
+    return async function (dispatch) {
         dispatch({
-            type: FINISH_SEARCH_CONCEPTS,
-            concepts: concepts,
+            type: START_GET_CONCEPT,
         });
+
+        try {
+            const infopanelConcept = await API.getConcept(null, null, null, conceptId);
+
+            dispatch({
+                type: SELECT_INFOPANEL_CONCEPT,
+                infopanelConcept: infopanelConcept,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_CONCEPT,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_CONCEPT,
+            });
+        }
     };
 }
 
@@ -86,109 +214,26 @@ export function deselectConceptResult(concept) {
     }
 }
 
-export function addSelectedConceptsToTemplate() {
-    return async function (dispatch, getState) {
-        let state = getState();
+export function clearConceptResults() {
+    return function(dispatch) {
         dispatch({
-            type: START_UPDATE_TEMPLATE,
+            type: CLEAR_CONCEPT_RESULTS,
         });
-
-
-
-        let currentTemplate = state.application.selectedTemplate;
-        currentTemplate = JSON.parse(JSON.stringify(currentTemplate));
-
-        if (!currentTemplate.concepts) currentTemplate.concepts = [];
-
-        for (let i of state.searchResults.selectedConcepts)
-            currentTemplate.concepts.push(i.uuid);
-
-        await API.editTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, currentTemplate);
-        dispatch({
-            type: FINISH_UPDATE_TEMPLATE,
-
-        });
-
-        dispatch(reloadCurrentTemplate());
-        dispatch(reloadCurrentProfile());
-
-        history.push("../templates")
     }
 }
 
-export function addSelectedConceptsToProfile() {
-    return async function (dispatch, getState) {
-        let state = getState();
-        let currentProfile = state.application.selectedProfile;
-        dispatch({
-            type: START_UPDATE_PROFILE,
-        });
-
-        currentProfile = JSON.parse(JSON.stringify(currentProfile));
-
-        if (!currentProfile.concepts) currentProfile.concepts = [];
-        for (let i of state.searchResults.selectedConcepts)
-            currentProfile.concepts.push(i.uuid);
-
-        await API.editProfile(state.application.selectedOrganizationId, currentProfile);
+export function searchConcepts(search) {
+    return async function (dispatch) {
 
         dispatch({
-            type: FINISH_UPDATE_PROFILE,
-
+            type: START_SEARCH_CONCEPTS,
         });
 
+        const concepts = await API.searchConcepts(search);
 
-        dispatch(reloadCurrentProfile());
-
-        history.push("../templates")
-    }
+        dispatch({
+            type: FINISH_SEARCH_CONCEPTS,
+            concepts: concepts,
+        });
+    };
 }
-
-export function createConceptInTemplate(concept) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        dispatch({
-            type: START_CREATE_CONCEPT,
-        });
-
-        const newConcept = await API.createConcept(state.application.selectedOrganizationId, state.application.selectedProfileId, concept);
-        let currentTemplate = state.application.selectedTemplate;
-        currentTemplate = JSON.parse(JSON.stringify(currentTemplate));
-
-        if (!currentTemplate.concepts) currentTemplate.concepts = [];
-        currentTemplate.concepts.push(newConcept.uuid);
-
-        await API.editTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, currentTemplate);
-        dispatch({
-            type: FINISH_CREATE_CONCEPT,
-            concept: newConcept,
-        });
-
-
-        dispatch(reloadCurrentProfile());
-
-        history.push("../templates")
-    }
-}
-
-export function editConcept(concept) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        dispatch({
-            type: START_EDIT_CONCEPT,
-        });
-
-        const newConcept = await API.editConcept(state.application.selectedOrganizationId, state.application.selectedProfileId, concept);
-
-        dispatch({
-            type: FINISH_EDIT_CONCEPT,
-            concept: newConcept,
-        });
-
-
-        dispatch(reloadCurrentProfile());
-
-    }
-}
-
-

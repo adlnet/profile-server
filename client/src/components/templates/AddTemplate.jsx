@@ -13,30 +13,51 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { Link, useHistory } from 'react-router-dom';
-import TemplateResults from "./TemplateResults";
-import { searchTemplates, selectTemplateResult, deselectTemplateResult } from "../../actions/templates";
-import { addSelectedTemplateResults } from "../../actions/profiles";
-import { useSelector, useDispatch } from "react-redux";
-import { Formik } from 'formik';
+import React, { useState, useEffect } from 'react';
+import { Link, useHistory, useParams } from 'react-router-dom';
 
-export default function AddTemplate(props) {
+import { searchTemplates, selectTemplateResult, deselectTemplateResult, clearTemplateResults, loadProfileTemplates } from "../../actions/templates";
+import { editProfileVersion, createNewProfileDraft } from "../../actions/profiles";
+import { useSelector, useDispatch } from "react-redux";
+import StatementTemplateInfoPanel from '../infopanels/StatementTemplateInfoPanel';
+import Flyout from '../controls/flyout';
+import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
+import SearchSelectComponent from '../controls/search-select/searchSelectComponent';
+import TemplateResultView from './TemplateResultView';
+
+export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
+    const { versionId } = useParams();
+    const dispatch = useDispatch();
+    const history = useHistory();
+
+    useEffect(() => {
+        dispatch(loadProfileTemplates(versionId));
+    }, []);
 
     const templateResults = useSelector((state) => state.searchResults.templates)
     const selectedResults = useSelector((state) => state.searchResults.selectedTemplates)
-    const dispatch = useDispatch();
+    const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
+    const profileTemplates = useSelector((state) => state.templates);
 
-    let history = useHistory();
-
-    let isSelected = (item) => {
-        if (!selectedResults) return false;
-        return selectedResults.includes(item);
-    }
+    const [showTemplateInfopanel, setShowTemplateInfopanel] = useState(false);
+    const [infoPanelTemplate, setInfoPanelTemplate] = useState();
+    const [showConceptInfopanel, setShowConceptInfopanel] = useState(false);
+    const [infoPanelConcept, setInfoPanelConcept] = useState();
+    const [hasFlyoutOnPrevious, setHasFlyoutOnPrevious] = useState(false);
 
     function handleAddToProfileClick() {
         if (selectedResults) {
-            dispatch(addSelectedTemplateResults());
+            const newProfileVersion = Object.assign({}, profileVersion);
+            newProfileVersion.templates = [...newProfileVersion.templates, ...selectedResults];
+
+            if (profileVersion.state === 'draft') {
+                dispatch(editProfileVersion(newProfileVersion));
+            } else if (profileVersion.state === 'published') {
+                dispatch(createNewProfileDraft(newProfileVersion));
+            }
+
+            dispatch(loadProfileTemplates(versionId));
+            history.push(rootUrl);
         }
     }
 
@@ -44,105 +65,86 @@ export default function AddTemplate(props) {
         history.goBack();
     }
 
+    function onViewDetailsClick(template) {
+        setInfoPanelTemplate(template);
+        setShowTemplateInfopanel(true);
+    }
+
+    function onFlyoutClose() {
+        setShowTemplateInfopanel(false);
+        setShowConceptInfopanel(false);
+    }
+
+    function onViewConceptClick(concept) {
+        setInfoPanelConcept(concept);
+        setHasFlyoutOnPrevious(true);
+        setShowConceptInfopanel(true);
+    }
+
+    function onFlyoutPrevious() {
+        setShowConceptInfopanel(false);
+        setHasFlyoutOnPrevious(false);
+    }
+
+    function templateResultsFilter(result) {
+        return !profileTemplates.map(t => t.uuid).includes(result.uuid);
+    }
+
     return (
-        <div className="grid-container">
+        <div>
             <div className="grid-row margin-top-3 margin-bottom-3">
                 <div className="grid-col">
-                    <Link to={props.path}><span className="text-uppercase font-sans-3xs">statement templates</span></Link> <i className="fa fa-angle-right fa-xs"></i>
                     <h2>Add Statement Template</h2>
                 </div>
                 <div className="grid-col">
-
                     <Link to={"create"}><button className="usa-button pin-right bottom-2"><i className="fa fa-plus"></i> Create New</button></Link>
                 </div>
             </div>
-            <div className="border border-base-light margin-bottom-1 minh-tablet">
-                <div className="grid-row bg-base-lightest">
-                    <div className="grid-col-fill padding-3">
-                        <span>Search for existing statement templates</span>
 
-                        <Formik
-                            initialValues={{ search: '', }}
+            <SearchSelectComponent
+                searchFunction={(searchValues) => dispatch(searchTemplates(searchValues))}
+                clearSearchFunction={() => dispatch(clearTemplateResults())}
+                searchMessage="Search for existing statement templates"
+                searchResults={templateResults && templateResults.filter(t =>templateResultsFilter(t))}
+                selectResultFunction={(template) => dispatch(selectTemplateResult(template))}
+                removeSelectedResultFunction={(template) => dispatch(deselectTemplateResult(template))}
+                clearSelectedResultsFunction={() => dispatch(clearTemplateResults())}
+                selectedResults={selectedResults}
+                isOneSelectionOnly={isOneTemplateOnly}
+                oneSelectionOnlyMessage={"Only one template may be selected for this profile."}
+                selectionMessage={`Selected Template${isOneTemplateOnly ? '' : 's'}`}
+                resultView={<TemplateResultView onViewDetailsClick={onViewDetailsClick}/>}
+            />
 
-                            onSubmit={(values) => {
-                                dispatch(searchTemplates(values.search));
-                            }}
-                        >
-                            {({
-                                values,
-                                handleChange,
-                                handleBlur,
-                                handleSubmit
-                            }) => (
-                                    <form className="usa-search" onSubmit={handleSubmit}>
-                                        <div role="search">
-                                            <label className="usa-sr-only" htmlFor="search-field">Search</label>
-                                            <input className="usa-input" id="search-field" type="search" name="search"
-                                                onChange={handleChange}
-                                                onBlur={handleBlur}
-                                                value={values.search} />
-                                            <button className="usa-button" type="submit">
-                                                <span className="usa-search__submit-text">Search</span>
-                                            </button>
-                                        </div>
-                                    </form>
-
-                                )}
-                        </Formik>
-
-
-                    </div>
-                </div>
-                <div className="grid-row padding-3">
-                    <div className="grid-col margin-right-2">
-                        <div className="grid-row">
-                            <div className="grid-col margin-bottom-2">
-                                {
-                                    (templateResults && templateResults.length) ? <span className="">{templateResults.length} result{templateResults.length === 1 ? '' : 's'}</span> : " "
-                                }
-                            </div>
-                        </div>
-                        <div className="grid-row maxh-tablet">
-                            {/* style="overflow-y: auto;max-height: inherit;" */}
-                            <div className="grid-col overflow-y-auto" style={{ maxHeight: "inherit" }}>
-                                {
-                                    // todo: add "n results for 'keyword'"
-                                    (templateResults && templateResults.length)
-                                        ? templateResults.map((template) => <TemplateResults key={`result${template.uuid}`} template={template} buttonText={(isSelected(template)) ? "Selected" : "Select"} buttonAction={(template) => dispatch(selectTemplateResult(template))} styles={(isSelected(template) ? "usa-button--outline" : "")} />)
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                    </div>
-                    <div className="grid-col">
-                        <div className="grid-row">
-                            <div className="grid-col margin-bottom-2">
-                                {
-                                    (selectedResults && selectedResults.length) ? <span className="text-bold">Selected ({selectedResults.length})</span> : " "
-                                }
-                            </div>
-                        </div>
-                        <div className="grid-row maxh-tablet">
-                            <div className="grid-col overflow-y-auto" style={{ maxHeight: "inherit" }}>
-                                {
-                                    // todo: add "n results for 'keyword'"
-                                    (selectedResults && selectedResults.length)
-                                        ? selectedResults.map((template) => <TemplateResults key={`selected${template.id}`} template={template} buttonText="Remove" buttonAction={(template) => dispatch(deselectTemplateResult(template))} isSelected={() => false} styles="" />)
-                                        : ""
-                                }
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
             <div className="grid-row">
                 <div className="grid-col">
-                    <button className="usa-button usa-button--unstyled" onClick={handleCancel}>Cancel</button>
+                    <button className="usa-button usa-button--unstyled padding-y-105" onClick={handleCancel}><b>Cancel</b></button>
                 </div>
                 <div className="grid-col">
-                    <button onClick={handleAddToProfileClick} className="usa-button pin-right">Add to Profile</button>
+                    <button
+                            onClick={handleAddToProfileClick}
+                            className="usa-button margin-right-0 pin-right"
+                            disabled={!(selectedResults && selectedResults.length > 0)}
+                    >
+                        Add to Profile
+                    </button>
                 </div>
             </div>
+            <Flyout
+                    show={showTemplateInfopanel}
+                    onClose={onFlyoutClose}
+                    hasOnPrevious={hasFlyoutOnPrevious}
+                    onPrevious={onFlyoutPrevious}
+            >
+                { 
+                    (showConceptInfopanel && infoPanelConcept)  &&
+                        <ConceptInfoPanel concept={infoPanelConcept} />
+                }
+                {
+                    (showTemplateInfopanel && infoPanelTemplate) &&
+                    <StatementTemplateInfoPanel infoPanelTemplate={infoPanelTemplate} onViewConceptClick={onViewConceptClick} />
+                }
+            </Flyout>
         </div>
     );
 }

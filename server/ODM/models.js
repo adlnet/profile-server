@@ -18,7 +18,9 @@ const organization = require('./organization');
 const pattern = require('./pattern');
 const template = require('./template');
 const profile = require('./profile');
+const profileVersion = require('./profileVersion');
 const user = require('./user');
+const apiKey = require('./apiKey');
 
 const mongoose = require('mongoose');
 
@@ -28,5 +30,7 @@ module.exports = {
     pattern: mongoose.model('pattern', pattern),
     template: mongoose.model('template', template),
     profile: mongoose.model('profile', profile),
+    profileVersion: mongoose.model('profileVersion', profileVersion),
     user: mongoose.model('user', user),
+    apiKey: mongoose.model('apiKey', apiKey),
 };

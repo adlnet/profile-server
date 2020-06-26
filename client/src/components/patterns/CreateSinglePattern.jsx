@@ -14,40 +14,63 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
+import history from '../../history';
 
-import { createPattern } from '../../actions/patterns';
+import { createPattern, editPattern } from '../../actions/patterns';
 
 import { Sequence, Step } from '../sequence';
 import DefinePattern from './DefinePattern';
-import AddComponent from './AddComponent';
+import AddComponents from './AddComponents';
 
 export default function CreateSinglePattern(props) {
     const dispatch = useDispatch();
-    props.updateType();
+    props.updateType && props.updateType();
+
+    const selectedResults = useSelector((state) => state.searchResults.selectedComponents)
+
+    // const [component] = props.components || '';
 
     return (
         <Formik
+            enableReinitialize={true}
             initialValues={{
-                name: '',
-                description: '', 'more-information': '',
-                tags: '',
-                primaryorsecondary: 'primary',
-                componentuuid: ''
+                uuid: props.pattern && props.pattern.uuid || undefined,
+                name: props.pattern && props.pattern.name || '',
+                description: props.pattern && props.pattern.description || '',
+                translations: props.pattern && props.translations || [],
+                tags: props.pattern && props.pattern.tags || [],
+                primaryorsecondary: props.pattern ? props.pattern.primary ? 'primary' : 'secondary' : 'primary',
+                component: props.components && props.components.component || '',
+                componenttype: props.pattern && props.pattern.type || '',
+                iri: props.pattern && props.pattern.iri || '',
+                hasIRI: props.pattern && props.pattern.hasIRI || false
             }}
             validationSchema={Yup.object({
                 name: Yup.string()
                     .required('Required'),
                 description: Yup.string()
-                    .required('Required')
+                    .required('Required'),
+                iri: Yup.string()
+                    .when('hasIRI', {
+                        is: true,
+                        then: Yup.string().required('Required'),
+                    }),
             })}
             onSubmit={(values, actions) => {
-                let pattern = { ...values, type: props.type };
-                pattern[props.type] = values.componentuuid;
-                pattern.primary = values.primaryorsecondary === "primary";
-                dispatch(createPattern(pattern));
+
+                let selectedValue = selectedResults[0] || {};
+
+                let pattern = {
+                    ...values,
+                    type: props.type || values.componenttype,
+                    [props.type || values.componenttype]: { component: selectedValue, componentType: selectedValue.componentType },
+                    primary: values.primaryorsecondary === "primary"
+                };
+                
+                props.onSubmit(pattern);
                 actions.setSubmitting(false);
             }}
         >
@@ -57,15 +80,14 @@ export default function CreateSinglePattern(props) {
                         <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
                             <fieldset className="usa-fieldset">
                                 <Step title="Define Pattern">
-                                    <DefinePattern />
+                                    <DefinePattern {...props} isEditing={!!props.values.uuid} />
                                 </Step>
-                                <Step title="Add Component">
-                                    <AddComponent {...props} />
+                                <Step title="Add Component" button={<button className="usa-button" type="submit">Add to Profile</button>}>
+                                    <AddComponents isOneComponentOnly={true} {...props} />
                                 </Step>
                             </fieldset>
                         </Form>
                     </div>
-                    {/* <button className="usa-button" type="submit">Create Pattern</button>  <button className="usa-button usa-button--unstyled" type="reset">Cancel</button> */}
                 </Sequence>
             </>)}
         </Formik>

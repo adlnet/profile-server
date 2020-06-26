@@ -1,0 +1,125 @@
+{
+    "@context": "https://w3id.org/xapi/profiles/context",
+    "id": "https://w3id.org/xapi/test/good1",
+    "type": "Profile",
+    "conformsTo": "https://w3id.org/xapi/profiles#1.0",
+    "prefLabel": {
+        "en": "Test Good 1"
+    },
+    "definition": {
+        "en": "A valid profile with basic info. Used for testing purposes."
+    },
+    "seeAlso": "",
+    "versions": [
+        {
+            "id": "https://w3id.org/xapi/test/good1/v/1",
+            "generatedAtTime": "2020-04-09T10:45:00Z"
+        }
+    ],
+    "author": {
+        "type": "Organization",
+        "name": "Veracity Technology Consultants"
+    },
+    "concepts": [
+        {
+            "id": "https://w3id.org/xapi/test/good1/verbs/verb1",
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "type": "Verb",
+            "definition": {
+                "en": "Full description of the verb."
+            },
+            "prefLabel": {
+                "en": "verb 1"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/test/good1/activity-types/activity1",
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "type": "ActivityType",
+            "definition": {
+                "en": "Full description or purpose of the activity type."
+            },
+            "prefLabel": {
+                "en": "Activity Type 1"
+            }
+        },
+        {
+            "id": "https://w3id.org/xapi/test/good1/extensions/actext1",
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "type": "ActivityExtension",
+            "prefLabel": {
+                "en": "actiivity extension 1"
+            },
+            "definition": {
+                "en": "Full description or purpose of the extension."
+            },
+            "inlineSchema": "{}"
+        },
+        {
+            "id": "https://w3id.org/xapi/test/good1/extensions/ctxext1",
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "type": "ContextExtension",
+            "prefLabel": {
+                "en": "Context Extension 1"
+            },
+            "definition": {
+                "en": "Full description or purpose of the extension."
+            },
+            "inlineSchema": "{}"
+        },
+        {
+            "id": "https://w3id.org/xapi/test/good1/extensions/resext1",
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "type": "ResultExtension",
+            "prefLabel": {
+                "en": "Result Extension 1"
+            },
+            "definition": {
+                "en": "Full description or purpose of the extension."
+            },
+            "inlineSchema": "{}"
+        }
+    ],
+    "templates": [
+        {
+            "id": "https://w3id.org/xapi/test/good1/templates/template1",
+            "type": "StatementTemplate",
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "prefLabel": {
+                "en": "stmt template 1"
+            },
+            "definition": {
+                "en": ""
+            },
+            "verb": "",
+            "rules": [
+                {
+                    "location": "$.id",
+                    "presence": "included"
+                },
+                {
+                    "location": "$.timestamp",
+                    "presence": "included",
+                    "scopeNote": {
+                        "en": "hello"
+                    }
+                }
+            ]
+        }
+    ],
+    "patterns": [
+        {
+            "id": "https://w3id.org/xapi/test/good1/patterns/pattern1",
+            "type": "Pattern",
+            "primary": true,
+            "prefLabel": {
+                "en": "Pattern 1"
+            },
+            "definition": {
+                "en": "Provide a description here."
+            },
+            "inScheme": "https://w3id.org/xapi/test/good1",
+            "zeroOrMore": "https://w3id.org/xapi/test/good1/templates/template1"
+        }
+    ]
+}

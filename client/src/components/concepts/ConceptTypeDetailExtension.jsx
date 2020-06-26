@@ -16,26 +16,32 @@
 import React from 'react';
 
 import { Detail, LinkDetails } from '../DetailComponents';
+import SimilarTermsDetails from '../details/SimilarTermsDetails';
+import RecommendedTermsDetails from '../details/RecommendedTermsDetails';
 
-// props.concept
-export default function ConceptTypeDetailExtention(props) {
+export default function ConceptTypeDetailExtention({ concept, similarTermsLinks, recommendedTermsLinks }) {
     let detailExtention = <></>;
 
-    switch (props.type) {
+    switch (concept && concept.conceptType) {
         case 'Activity':
             detailExtention = (
                 <>
+                    <Detail title="more information">
+                        <a href={concept.moreInformation}>{concept.moreInformation}</a>
+                    </Detail>
                     <Detail title="activity type">
-                        {props.activityType}
+                        {concept && concept.activityType}
                     </Detail>
                 </>
             );
             break;
         case 'Verb':
+        case 'ActivityType':
+        case 'AttachmentUsageType':
             detailExtention = (
                 <>
                     <Detail title="similar terms">
-                        <LinkDetails linkDetails={props.similarTerms} />
+                        <SimilarTermsDetails similarTerms={concept && concept.similarTerms} linkable={similarTermsLinks} />
                     </Detail>
                 </>
             );
@@ -44,35 +50,56 @@ export default function ConceptTypeDetailExtention(props) {
             detailExtention = (
                 <>
                     <Detail title="document resource type">
-                        {props.documentResourceType}
+                        {concept && concept.type}
                     </Detail>
                     <Detail title="mediaType">
-                        {props.mediaType}
+                        {concept && concept.mediaType}
                     </Detail>
                     <Detail title="context iri">
-                        {props.contextIri}
+                        {concept && concept.contextIri}
                     </Detail>
-                    <Detail title="schema iri">
-                        {props.schemaIri}
-                    </Detail>
+                    {
+                        (concept && concept.inlineSchema) &&
+                        <Detail title="schema iri">
+                            {concept && concept.inlineSchema}
+                        </Detail>
+                    }
+                    {
+                        (concept && concept.schemaString) &&
+                        <Detail title="schema">
+                            <pre className="margin-0" style={{font: 'inherit'}}>{concept && concept.schemaString}</pre>
+                        </Detail>
+                    }
                 </>
             );
             break;
         case 'Extension':
             detailExtention = (
                 <>
-                    <Detail title="extension type">
-                        {props.extensionType}
+                    <Detail title="extention type">
+                        {concept && concept.type}
                     </Detail>
-                    <Detail title="similar terms">
-                        <LinkDetails linkDetails={props.recommendedTerms} />
+                    <Detail title="recommended terms">
+                        <RecommendedTermsDetails
+                            recommendedTerms={concept && concept.recommendedTerms}
+                            linkable={recommendedTermsLinks}
+                        />
                     </Detail>
                     <Detail title="context iri">
-                        {props.contextIri}
+                        {concept && concept.contextIri}
                     </Detail>
-                    <Detail title="schema iri">
-                        {props.schemaIri}
-                    </Detail>
+                    {
+                        (concept && concept.inlineSchema) &&
+                        <Detail title="schema iri">
+                            {concept && concept.inlineSchema}
+                        </Detail>
+                    }
+                    {
+                        (concept && concept.schemaString) &&
+                        <Detail title="schema">
+                            <pre className="margin-0" style={{font: 'inherit'}}>{concept && concept.schemaString}</pre>
+                        </Detail>
+                    }
                 </>
             );
             break;

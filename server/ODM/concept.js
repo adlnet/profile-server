@@ -14,21 +14,51 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uuid = require('uuid');
+const locks = require('./locks');
+const langmaps = require('../utils/langmaps');
+
 const concept = new mongoose.Schema({
-    uuid: String,
+    uuid: {
+        type: String,
+        default: uuid.v4,
+    },
     id: String,
-    iri: String,
-    hasIri: Boolean,
-    updatedOn: Date,
-    createdOn: Date,
-    createdBy: String,
+    conceptType: {
+        type: String,
+        enum: [
+            'Verb', 'ActivityType', 'AttachmentUsageType', 'Document', 'Extension', 'Activity',
+        ],
+    },
+    iri: { type: String, unique: true },
+    createdOn: {
+        type: Date,
+        default: new Date(),
+    },
+    updatedOn: {
+        type: Date,
+        default: new Date(),
+    },
+    ...locks(),
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
     parentProfile: {
-        uuid: String,
-        name: String,
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'profileVersion',
     },
     type: {
         type: String,
-        enum: ['verb', 'activityType', 'attachmentUsage', 'document', 'extension', 'activity'],
+        enum: [
+            'Verb', 'ActivityType', 'AttachmentUsageType', 'ContextExtension', 'ResultExtension',
+            'ActivityExtension', 'StateResource', 'AgentProfileResource', 'ActivityProfileResource',
+            'Activity',
+        ],
     },
     translations: [
         {
@@ -43,14 +73,45 @@ const concept = new mongoose.Schema({
     description: {
         type: String,
     },
-    moreInfo: {
+    moreInformation: {
         type: String,
     },
     activityType: {
         type: String,
     },
-    documentResourceType: {
+    extensions: {
         type: String,
+        get: (ext) => {
+            if (ext) { return JSON.parse(ext); }
+            return ext;
+        },
+        set: (ext) => JSON.stringify(ext),
+    },
+    interactionType: {
+        type: String,
+        enum: [
+            'true-false', 'choice', 'fill-in', 'long-fill-in',
+            'matching', 'performance', 'sequencing', 'likert',
+            'numeric', 'other',
+        ],
+    },
+    correctResponsesPattern: {
+        type: [String],
+    },
+    choices: {
+        type: [Object],
+    },
+    scale: {
+        type: [Object],
+    },
+    source: {
+        type: [Object],
+    },
+    target: {
+        type: [Object],
+    },
+    steps: {
+        type: [Object],
     },
     mediaType: {
         type: String,
@@ -58,14 +119,126 @@ const concept = new mongoose.Schema({
     contextIri: {
         type: String,
     },
-    extensionType: String,
-    _schema: {
-        type: {
-            type: String,
-        },
-        iri: String,
-        string: String,
+    schemaString: {
+        type: String,
     },
-});
+    inlineSchema: {
+        type: String,
+    },
+    similarTerms: [
+        {
+            concept: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'concept',
+            },
+            relationType: {
+                type: String,
+                enum: [
+                    'related', 'relatedMatch', 'broader', 'broadMatch', 'narrower', 'narrowMatch', 'exactMatch',
+                ],
+            },
+        },
+    ],
+    recommendedTerms: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'concept',
+        },
+    ],
+    isDeprecated: {
+        type: Boolean,
+        default: false,
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
+}, { toJSON: { virtuals: true } });
+
+// concept.virtual('templateCount').get(() => 0);
+
+concept.statics.findByUuid = function (uuid, callback) {
+    return this.findOne({ uuid: uuid }, callback);
+};
+
+concept.statics.deleteByUuid = async function (uuid) {
+    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false });
+};
+
+concept.methods.getInteractionComponents = async function () {
+    let components;
+
+    if (this.interactionType) {
+        components = { interactionType: this.interactionType };
+        components.correctResponsesPattern = this.correctResponsesPattern;
+        if (components.interactionType === 'choice'
+            || components.interactionType === 'sequencing') {
+            components.choices = this.choices;
+        } else if (components.interactionType === 'likert') {
+            components.scale = this.scale;
+        } else if (components.interactionType === 'matching') {
+            components.source = this.source;
+            components.target = this.target;
+        } else if (components.interactionType === 'performance') {
+            components.steps = this.steps;
+        }
+    }
+
+    return components;
+};
+
+concept.methods.export = async function (currentScheme) {
+    const c = {
+        id: this.iri,
+        type: this.type,
+        inScheme: currentScheme,
+        prefLabel: langmaps.prefLabel(this.name, this.translations),
+        definition: langmaps.definition(this.description, this.translations),
+        deprecated: this.isDeprecated ? true : undefined,
+    };
+
+    if (this.conceptType === 'Verb'
+        || this.conceptType === 'ActivityType'
+        || this.conceptType === 'AttachmentUsageType') {
+        await this.populate('similarTerms.concept').execPopulate();
+        for (const idx in this.similarTerms) {
+            if (!c[this.similarTerms[idx].relationType]) c[this.similarTerms[idx].relationType] = [];
+            c[this.similarTerms[idx].relationType].push(this.similarTerms[idx].concept.iri);
+        }
+    } else if (this.conceptType === 'Extension') {
+        await this.populate('recommendedTerms').execPopulate();
+        c.schema = this.schemaString;
+        if (!c.schema) c.inlineSchema = this.inlineSchema;
+        c.context = this.contextIri;
+        for (const term of this.recommendedTerms) {
+            if (this.type === 'ActivityExtension') {
+                if (!c.recommendedActivityTypes) c.recommendedActivityTypes = [];
+                c.recommendedActivityTypes.push(term.iri);
+            } else {
+                if (!c.recommendedVerbs) c.recommendedVerbs = [];
+                c.recommendedVerbs.push(term.iri);
+            }
+        }
+    } else if (this.conceptType === 'Document') {
+        c.contentType = this.mediaType;
+        c.context = this.contextIri;
+        c.schema = this.schemaString;
+        if (!c.schema) c.inlineSchema = this.inlineSchema;
+    } else {
+        c.activityDefinition = {
+            '@context': 'https://w3id.org/xapi/profiles/activity-context',
+            name: c.prefLabel,
+            description: c.definition,
+            type: this.activityType,
+            moreInfo: this.moreInformation,
+            extensions: this.extensions,
+        };
+        delete c.prefLabel;
+        delete c.definition;
+        const interactionComponents = await this.getInteractionComponents();
+        c.activityDefinition = Object.assign(c.activityDefinition, interactionComponents);
+    }
+    return JSON.parse(JSON.stringify(c));
+};
 
 module.exports = concept;

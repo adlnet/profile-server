@@ -15,7 +15,8 @@
 **************************************************************** */
 import API from '../api';
 import history from '../history'
-import { CLEAR_TEMPLATE_RESULTS } from "./templates";
+import { CLEAR_TEMPLATE_RESULTS, loadCurrentProfileTemplates } from "./templates";
+import { selectOrganization } from './organizations';
 
 export const START_GET_PROFILE = 'START_GET_PROFILE';
 export const START_GET_PROFILES = 'START_GET_PROFILES';
@@ -39,128 +40,197 @@ export const ERROR_DELETE_PROFILE = 'ERROR_DELETE_PROFILE';
 
 export const SELECT_PROFILE = 'SELECT_PROFILE';
 
+export const START_CREATE_PROFILE_VERSION = 'START_CREATE_PROFILE_VERSION';
+export const FINISH_CREATE_PROFILE_VERSION = 'FINISH_CREATE_PROFILE_VERSION';
+export const ERROR_CREATE_PROFILE_VERSION = 'ERROR_CREATE_PROFILE_VERSION';
+
+export const START_GET_PROFILE_VERSION = 'START_GET_PROFILE_VERSION';
+export const FINISH_GET_PROFILE_VERSION = 'FINISH_GET_PROFILE_VERSION';
+export const ERROR_GET_PROFILE_VERSION = 'ERROR_GET_PROFILE_VERSION';
+
+export const SELECT_PROFILE_VERSION = 'SELECT_PROFILE_VERSION';
+
+export const START_UPDATE_PROFILE_VERSION = 'START_UPDATE_PROFILE_VERSION';
+export const FINISH_UPDATE_PROFILE_VERSION = 'FINISH_UPDATE_PROFILE_VERSION';
+export const ERROR_UPDATE_PROFILE_VERSION = 'ERROR_UPDATE_PROFILE_VERSION';
+
+export const START_PUBLISH_PROFILE = 'START_PUBLISH_PROFILE';
+export const FINISH_PUBLISH_PROFILE = 'FINISH_PUBLISH_PROFILE';
+export const ERROR_PUBLISH_PROFILE = 'ERROR_PUBLISH_PROFILE';
+
+export const START_RELOAD_PROFILE = 'START_RELOAD_PROFILE';
+export const FINISH_RELOAD_PROFILE = 'FINISH_RELOAD_PROFILE';
+
+export function publishProfileVersion(profileVersion) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profile = state.application.selectedProfile;
+
+        dispatch({
+            type: START_PUBLISH_PROFILE,
+        });
+
+        const newProfileVersion = Object.assign({}, profileVersion, { state: 'published' });
+        const newProfile = Object.assign({}, profile, {
+            currentDraftVersion: null,
+            currentPublishedVersion: newProfileVersion,
+        });
+
+        try {
+            await API.editProfileVersion(organizationId, profile.uuid, newProfileVersion);
+            await API.editProfile(organizationId, newProfile);
+
+            dispatch(reloadCurrentProfile());
+        } catch (err) {
+            dispatch({
+                type: ERROR_PUBLISH_PROFILE,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_PUBLISH_PROFILE,
+            });
+        }
+    }
+}
+
+export function createNewProfileDraft(profileVersion) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+
+        dispatch({
+            type: START_CREATE_PROFILE_VERSION,
+        });
+
+        try {
+            const newProfileVersion = await API.createProfileVersion(organizationId, profileId, profileVersion);
+
+            dispatch(selectProfileVersion(organizationId, profileId, newProfileVersion.uuid));
+            dispatch(selectProfile(organizationId, profileId));
+        } catch (err) {
+            dispatch({
+                type: ERROR_CREATE_PROFILE_VERSION,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_CREATE_PROFILE_VERSION,
+            });
+        }
+    }
+}
+
+export function editProfileVersion(profileVersion) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+
+        dispatch({
+            type: START_UPDATE_PROFILE_VERSION,
+        });
+
+        try {
+            await API.editProfileVersion(organizationId, profileId, profileVersion);
+
+            dispatch(reloadCurrentProfile());
+        } catch (err) {
+            dispatch({
+                type: ERROR_UPDATE_PROFILE_VERSION,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_UPDATE_PROFILE_VERSION,
+            });
+        }
+    }
+}
+
+export function selectProfileVersion(organizationId, profileId, versionId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_GET_PROFILE_VERSION,
+        });
+
+        try {
+            const profileVersion = await API.getProfileVersion(organizationId, profileId, versionId);
+
+            dispatch({
+                type: SELECT_PROFILE_VERSION,
+                profileVersion: profileVersion,
+            });
+        } catch(err) {
+            dispatch({
+                type: ERROR_GET_PROFILE_VERSION,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_PROFILE_VERSION,
+            });
+        }
+    }
+}
+
 export function createProfile(organizationId, profile) {
     return async function (dispatch) {
         dispatch({
             type: START_CREATE_PROFILE,
-            profile,
         });
 
-        const newProfile = await API.createProfile(organizationId, profile);
+        try {
+            const newProfile = await API.createProfile(organizationId, profile);
 
-        dispatch({
-            type: FINISH_CREATE_PROFILE,
-            newProfile,
-        });
+            dispatch(selectOrganization(organizationId));
+            dispatch(selectProfile(organizationId, newProfile.uuid));
 
-        dispatch(getProfiles(organizationId));
-
-        history.push(`/organization/${organizationId}/profile/${newProfile.uuid}`)
+            // history.push(
+            //     `/organization/${organizationId}/profile/${newProfile.uuid}/version/${newProfile.currentDraftVersion.uuid}`
+            // );
+        } catch (err) {
+            dispatch({
+                type: ERROR_CREATE_PROFILE,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_CREATE_PROFILE,
+            });
+        }
     };
 }
 
-export function editProfile(organizationId, profile) {
-    return async function (dispatch) {
-        dispatch({
-            type: START_UPDATE_PROFILE,
-            profile,
-        });
-
-        const newProfile = await API.editProfile(organizationId, profile);
-
-        dispatch({
-            type: FINISH_UPDATE_PROFILE,
-            newProfile,
-        });
-
-        dispatch(reloadCurrentProfile());
-    };
-}
 export function deleteProfile(orgId, profile) {
     return async function (dispatch) {
+
         dispatch({
             type: START_DELETE_PROFILE,
-            profileId: profile.uuid,
         });
 
-        await API.deleteProfile(orgId, profile);
+        try {
+            await API.deleteProfile(orgId, profile);
 
-        dispatch({
-            type: FINISH_DELETE_PROFILE,
-            profileId: profile.uuid,
-        });
-
-        dispatch(getProfiles(orgId));
-    };
-}
-
-export function removeTemplate(template) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        let orgId = state.application.selectedOrganizationId;
-        let profileId = state.application.selectedProfileId;
-        let profile = state.application.selectedProfile;
-
-        dispatch({
-            type: START_UPDATE_PROFILE,
-            profileId: profileId,
-        });
-
-        await API.deleteTemplate(orgId, profileId, template);
-
-        dispatch({
-            type: FINISH_UPDATE_PROFILE,
-            profile: profile,
-        });
-
-        dispatch(reloadCurrentProfile());
-    };
-}
-
-export function removeConcept(concept) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        let orgId = state.application.selectedOrganizationId;
-        let profileId = state.application.selectedProfileId;
-        let profile = state.application.selectedProfile;
-
-        dispatch({
-            type: START_UPDATE_PROFILE,
-            profileId: profileId,
-        });
-
-        await API.deleteConcept(orgId, profileId, concept);
-
-        dispatch({
-            type: FINISH_UPDATE_PROFILE,
-            profile: profile,
-        });
-
-        dispatch(reloadCurrentProfile())
-    };
-}
-
-export function reloadCurrentProfile() {
-    return async function (dispatch, getState) {
-        let state = getState();
-        let orgId = state.application.selectedOrganizationId;
-        let profileId = state.application.selectedProfileId;
-        dispatch({
-            type: START_GET_PROFILE,
-            profileId: profileId,
-        });
-
-        const profile = await API.getProfile(orgId, profileId);
-
-        dispatch({
-            type: FINISH_GET_PROFILE,
-            profile: profile,
-        });
-        await dispatch(populateProfile());
-        dispatch({
-            type: SELECT_PROFILE,
-            profile: profile,
-        });
+            dispatch(selectOrganization(orgId));
+        } catch (err) {
+            dispatch({
+                type: ERROR_DELETE_PROFILE,
+                errorType: 'profiles',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_DELETE_PROFILE,
+            });
+        }
     };
 }
 
@@ -171,111 +241,43 @@ export function selectProfile(orgId, profileId) {
             profileId: profileId,
         });
 
-        const profile = await API.getProfile(orgId, profileId);
-
-        dispatch({
-            type: FINISH_GET_PROFILE,
-            profile: profile,
-        });
-
-        dispatch({
-            type: SELECT_PROFILE,
-            profile: profile,
-        });
+        try {
+            const profile = await API.getProfile(orgId, profileId);
+                
+            dispatch({
+                type: SELECT_PROFILE,
+                profile: profile,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_PROFILE_VERSION,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_PROFILE,
+            });
+        }
     };
 }
 
-export function addSelectedTemplateResults() {
+export function reloadCurrentProfile() {
     return async function (dispatch, getState) {
-        let state = getState();
-        let templates = state.searchResults.selectedTemplates;
-        dispatch({
-            type: START_UPDATE_PROFILE,
-            profileId: state.application.selectedProfileId,
-        });
-
-        for (let i of templates)
-            await API.createTemplate(state.application.selectedOrganizationId, state.application.selectedProfileId, i);
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        const profileId = state.application.selectedProfileId;
+        const profileVersionId = state.application.selectedProfileVersion.uuid;
 
         dispatch({
-            type: FINISH_UPDATE_PROFILE,
-            profileId: state.application.selectedProfileId,
-        });
-        dispatch({
-            type: CLEAR_TEMPLATE_RESULTS,
-            profileId: state.application.selectedProfileId,
-        });
-        await dispatch(reloadCurrentProfile());
-        // history.push("..")
-
-    };
-}
-
-//The o and p allow for the initial bootstrap to work
-export function populateProfile(o, p) {
-    return async function (dispatch, getState) {
-        let state = getState();
-        let orgId = o || state.application.selectedOrganizationId;
-        let profileId = p || state.application.selectedProfileId;
-        if (!orgId || !profileId) return;
-        dispatch({
-            type: START_POPULATE_PROFILE,
-            profileId: profileId,
+            type: START_RELOAD_PROFILE,
         });
 
-        const concepts = await API.getConcepts(orgId, profileId);
-        const templates = await API.getTemplates(orgId, profileId);
-        const patterns = await API.getPatterns(orgId, profileId);
+        dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
+        dispatch(selectProfile(organizationId, profileId));
 
         dispatch({
-            type: FINISH_POPULATE_PROFILE,
-            profileId: profileId,
-            concepts,
-            templates,
-            patterns
+            type: FINISH_RELOAD_PROFILE,
         });
-    };
-}
-
-export function getProfiles(organizationId) {
-    return async function (dispatch) {
-        dispatch({
-            type: START_GET_PROFILES,
-            organizationId,
-        });
-
-        const profiles = await API.getProfiles(organizationId);
-
-        dispatch({
-            type: FINISH_GET_PROFILES,
-            profiles,
-            organizationId,
-        });
-    };
-}
-
-export function addSelectedPatternResults() {
-    return async function (/* dispatch, getState */) {
-        // let state = getState();
-        // let templates = state.searchResults.selectedTemplates;
-        // dispatch({
-        //     type: START_UPDATE_PROFILE,
-        //     profileId: state.application.selectedProfileId,
-        // });
-
-        // for(let i of templates)
-        //     await API.createTemplate(state.application.selectedOrganizationId,state.application.selectedProfileId,i);
-
-        // dispatch({
-        //     type: FINISH_UPDATE_PROFILE,
-        //     profileId: state.application.selectedProfileId,
-        // });
-        // dispatch({
-        //     type: CLEAR_TEMPLATE_RESULTS,
-        //     profileId: state.application.selectedProfileId,
-        // });
-        // await dispatch(reloadCurrentProfile());
-        // history.push("..")
-
     };
 }

@@ -14,16 +14,51 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
+import { Link } from 'react-router-dom';
 
-export default function DeterminingPropertyTableRow(props) {
+export default function DeterminingPropertyTableRow({ determiningProperty, removeDeterminingProperty, onPropertyClick, url }) {
+
     return (
         <tr>
             <th scope="row">
-                {props.property}
+                {determiningProperty.propertyType}
             </th>
-            <td><span className="font-sans-3xs">{props.concept}</span></td>
-            <td><button className="usa-button  usa-button--unstyled"><span className="text-bold">Edit</span></button></td>
-            <td><button className="usa-button  usa-button--unstyled"><span className="text-bold">Remove</span></button> </td>
+            <td>
+                {
+                    Array.isArray(determiningProperty.properties) ?
+                        determiningProperty.properties.map((property, key) => (
+                            <Link 
+                                    className="usa-link button-link display-block margin-y-1"
+                                    key={key}
+                                    to={`${url}/${property.uuid}`}
+                            >
+                                {property && property.name}
+                            </Link>
+                        )) :
+                        <Link
+                                className="usa-link button-link"
+                                to={`${url}/${determiningProperty.properties.uuid}`}
+                        >
+                            {determiningProperty.properties && determiningProperty.properties.name}
+                        </Link>
+                }
+            </td>
+            <td>
+                <Link
+                        className="usa-button  usa-button--unstyled"
+                        to={`${url}/${determiningProperty.propertyType}/edit`}
+                >
+                    <span className="text-bold" >Edit</span>
+                </Link>
+            </td>
+            <td>
+                <button
+                    className="usa-button  usa-button--unstyled"
+                    onClick={() => removeDeterminingProperty(determiningProperty.propertyType)}
+                >
+                    <span className="text-bold">Remove</span>
+                </button>
+            </td>
         </tr>
     );
 }

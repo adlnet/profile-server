@@ -20,7 +20,7 @@ A React Single Page App created using `yarn create react-app client`. Follow the
 ## Server
 Express server configured to serve a React SPA. It also has the API designed for the Profile server. It uses MongoDB as its database.
 
-## Setup
+## Dev Setup
 1. In a terminal, start the mongodb server `mongod`
 1. Extract the project
 1. In a new terminal navigate inside the project folder and enter the command `yarn` to install node modules
@@ -30,6 +30,9 @@ Express server configured to serve a React SPA. It also has the API designed for
 1. Open another terminal and navigate to `<project_folder>/client`
 1. Type `yarn` to install the profile client modules
 1. Then type `yarn start` to start the client app.
+
+## Test
+Server-side unit tests are located at `/test`. They can be run by using the comment `yarn test` at the command line. Results will be printed in the terminal.
 
 ## Run
 A browser tab should open and show the index page of the app after executing the `yarn start` command in the client folder. _If it didn't automatically open, you can navigate to http://localhost:3000_
@@ -65,11 +68,48 @@ The following is a list of tasks performed / features added for a given delivera
     - Created Pattern create & edit forms  
     - Created Pattern search and add template view  
 - Created Concept pages  
-    - Created Pattern details view  
-    - Created Pattern create & edit forms   
-    - Created Pattern search and add template view  
+    - Created Concept details view  
+    - Created Concept create & edit forms   
+    - Created Concept search and add template view  
 - Added client side state management  
     - Created client state model  
     - Created client state management actions  
 - Added client API proxy for accessing server API  
 - Started connecting views to client state  
+
+## June 30 Deliverable  
+**Project Environment**  
+- Installed Jest, a unit test framework  
+
+**Server**  
+- Created key authentication for the public API  
+- Added support for persisting profiles  
+    - Added profile versioning management  
+    - Added default IRI and URL generation  
+- Added support for persisting statement templates  
+    - Added way to create and store template rules  
+    - Added way to create and store determining properties of the template  
+- Added support for persisting concepts  
+    - Added ways to create various concept types  
+    - Added properties that define those types  
+- Added support for persisting patterns  
+    - Added ways to create various pattern types  
+    - Added various properties to contain reference patterns and templates  
+- Created the process for importing a valid jsonld profile  
+- Created the process for retrieving a valid jsonld profile  
+- Created profile validation  
+- Created user authentication  
+- Created user management features  
+- Created permission levels  
+
+**Client**  
+- Created User login page  
+- Created UI components to support joining a Working Group (Organization)  
+- Updated Profile pages to align with UI design  
+- Updated Statement Template pages to align with UI design  
+- Updated Pattern pages to align with UI design  
+- Updated Concept pages to align with UI design  
+- Added metrics and sparkline  
+- Created global error handling for the UI  
+- Added info panels for additional information  
+- Refactored client state management  

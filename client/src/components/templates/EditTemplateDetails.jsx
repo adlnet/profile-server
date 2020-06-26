@@ -14,23 +14,15 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { useHistory } from 'react-router-dom';
-import { Formik, Field, Form, ErrorMessage } from 'formik';
+import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
-import { useDispatch } from 'react-redux';
 
-import { editTemplate } from '../../actions/templates';
-import { Translations } from '../../components/fields/Translations';
+import Translations from '../../components/fields/Translations';
 import Tags from '../../components/fields/Tags';
+import ErrorValidation from '../controls/errorValidation';
+import Iri from '../fields/Iri';
 
-export default function EditTemplateDetails(props) {
-    const dispatch = useDispatch();
-    const history = useHistory();
-
-    function handleCancel() {
-        history.goBack();
-    }
-
+export default function EditTemplateDetails({ initialValues, onSubmit, onCancel }) {
     return (<>
         <div className="display-inline padding-right-5">
             <b>Edit Statement Template Details</b>
@@ -38,44 +30,48 @@ export default function EditTemplateDetails(props) {
         <span className="text-secondary">*</span><span className="usa-hint text-lowercase text-thin font-sans-3xs"> indicates required field</span>
 
         <Formik
-            initialValues={props.initialValues ? props.initialValues : {} || {}}
+            initialValues={initialValues ? initialValues : {} || {}}
             validationSchema={Yup.object({
                 name: Yup.string()
                     .required('Required'),
                 description: Yup.string()
                     .required('Required')
             })}
-            onSubmit={(values, { setSubmitting }) => {
-                setSubmitting(true);
-                dispatch(editTemplate(Object.assign({}, props.initialValues, values)));
-                setSubmitting(false);
-                history.goBack();
+            onSubmit={(values) => {
+                onSubmit(values);
             }}
-        >
-            <Form className="usa-form"> {/*style={{maxWidth: 'inherit'}}>*/}
-                <fieldset className="usa-fieldset">
-                    <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="name"><span className="text-secondary">*</span> statement template name</label>
-                    <Field name="name" type="text" className="usa-input" id="input-name" aria-required="true" />
-                    <ErrorMessage name="name" />
+        >  
+            {(formikProps) => (
+                <form className="usa-form"> {/*style={{maxWidth: 'inherit'}}>*/}
+                    <fieldset className="usa-fieldset">
+                        <Iri message="This statement template already has an IRI used in xAPI statments" {...formikProps} />
 
-                    <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="description"><span className="text-secondary">*</span> Description</label>
-                    <Field name="description" component="textarea" rows="3" className="usa-textarea" id="input-description" aria-required="true" />
-                    <ErrorMessage name="description" />
+                        <ErrorValidation name="name" type="input">
+                            <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="name"><span className="text-secondary">*</span><span className="details-label"> statement template name</span></label>
+                            <Field name="name" type="text" className="usa-input" id="input-name" aria-required="true" />
+                        </ErrorValidation>
 
-                    <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="translations">Translations</label>
-                    <Field name="translations" component={Translations} id="translations"></Field>
+                        <ErrorValidation name="description" type="input">
+                            <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="description"><span className="text-secondary">*</span><span className="details-label"> Description</span></label>
+                            <Field name="description" component="textarea" rows="3" className="usa-textarea" id="input-description" aria-required="true" />
+                        </ErrorValidation>
 
-                    <label className="usa-label text-thin font-sans-3xs" htmlFor="tags">
-                        <span className="text-uppercase">tags</span><br />
-                        <span className="usa-hint text-thin font-sans-3xs">Put a comma between each one. Example: <b>tag 1, tag 2, tag 3</b></span>
-                    </label>
-                    <Field name="tags" component={Tags} id="tags" />
+                        <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="translations"><span className="details-label">Translations</span></label>
+                        <Field name="translations" component={Translations} id="translations"></Field>
+
+                        <label className="usa-label text-thin font-sans-3xs" htmlFor="tags">
+                            <span className="text-uppercase"><span className="details-label">tags</span></span><br />
+                            <span className="usa-hint text-thin font-sans-3xs">Put a comma between each one. Example: <b>tag 1, tag 2, tag 3</b></span>
+                        </label>
+                        <Field name="tags" component={Tags} id="tags" />
 
 
-                    <button className="usa-button" type="submit">Save Changes</button>
-                    <button className="usa-button usa-button--unstyled" type="reset" onClick={handleCancel}>Cancel</button>
-                </fieldset>
-            </Form>
+                        <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>Save Changes</button>
+                        <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
+                        {/* <button className="usa-button usa-button--unstyled" type="reset" onClick={handleCancel}>Deprecate Statement Template</button> */}
+                    </fieldset>
+                </form>
+            )} 
         </Formik>
     </>);
 }

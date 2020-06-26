@@ -19,115 +19,105 @@ import { Router, Route, Switch } from 'react-router-dom';
 
 import Organizations from './pages/Organizations';
 import Organization from './pages/Organization';
-import CreateOrganization from './pages/CreateOrganization';
+import CreateOrganization from './components/organizations/CreateOrganization';
+import ErrorPage from './components/errors/ErrorPage';
+
+
+import Search from "./components/search/Search";
+import Users from './pages/Users';
 
 import history from "./history";
 
 import OfficialBanner from './components/OfficialBanner';
-import TitleBanner from './components/TitleBanner';
-
-/*
-    Below provides an example of using the Sequence React Component provided by this project.
-*/
-// import { Sequence, Step } from './components/sequence';
-// import { Formik, Field, Form, ErrorMessage } from 'formik';
-// import { Translations } from "./components/fields/Translations";
-// import Tags from "./components/fields/Tags";
-
-// function MyStep(props) {
-//     return <div>
-//         <div>
-//             this is a custom step. I am step {parseInt(props.step) + 1}
-//         </div>
-//         {props.previousStep && <button onClick={props.previousStep} className="usa-button usa-button--primary"> Prev </button>}
-//         {props.nextStep && <button onClick={props.nextStep} className="usa-button usa-button--primary"> Next </button>}
-//     </div>
-// }
-
-// function SeqFormTest(props) {
-
-//     return (
-//         <Formik
-//         initialValues={props.initialValue || {}}
-//         validationSchema={null}
-//         onSubmit={(values) => {
-//             console.log(values);
-//             }}
-//             >
-//             <Sequence>
-//             <Step title="Pre">
-//                     <div>Im not even in the form yo.</div>
-//             </Step>
-//             <Form className="usa-form"> {/*style={{maxWidth: 'inherit'}}>*/}
-//                 <fieldset className="usa-fieldset">
-//                         <Step title="This">
-//                             <label className="usa-label" htmlFor="name"><span className="text-secondary">*</span> Name</label>
-//                             <Field name="name" type="text" className="usa-input" id="input-name" aria-required="true" />
-//                             <ErrorMessage name="name" />
-
-//                             <label className="usa-label" htmlFor="description"><span className="text-secondary">*</span> Description</label>
-//                             <Field name="description" component="textarea" rows="3" className="usa-textarea" id="input-description" aria-required="true" />
-//                             <ErrorMessage name="description" />
-//                         </Step>
-
-//                         <Step title="is the">
-//                             <label className="usa-label" htmlFor="translations">Translations</label>
-//                             <Field name="translations" component={Translations} id="translations" />
-//                             <label className="usa-label" htmlFor="more-information">More Information</label>
-//                             <Field name="more-information" type="text" className="usa-input" id="input-more-information" />
-//                             <ErrorMessage name="more-information" />
-//                         </Step>
-//                         <Step title="title">
-//                             <label className="usa-label" htmlFor="tags">
-//                                 Tags <br />
-//                                 <span className="usa-hint font-ui-3xs">Put a comma between each one. Example: <strong>tag 1, tag 2, tag 3</strong></span>
-//                             </label>
-//                             <Field name="tags" component={Tags} className="usa-input" id="input-tags" />
-//                             <ErrorMessage name="tags" />
-
-//                             <button className="usa-button" type="submit">
-//                                 {
-//                                      "Create Profile"
-//                                 }</button>  <button onClick={() => this.cancel()} className="usa-button usa-button--unstyled" type="reset">Cancel</button>
-//                         </Step>
-//                 </fieldset>
-//             </Form>
-//             </Sequence>
-//         </Formik>
-//     );
-// }
-
+import TitleBanner from './components/home/TitleBanner';
+import PrivateRoute from './components/users/PrivateRoute';
+import GlobalErrorBoundary from "./components/errors/GlobalErrorBoundary"
+import ErrorBoundary from './components/errors/ErrorBoundary';
 export default class App extends Component {
 
     render() {
-
-
-
         return (<>
             <OfficialBanner />
             <Router history={history}>
                 <TitleBanner />
-                <Switch>
-
-                    {/* <Route exact path="/testSeq">
-                        <div className="grid-container">
-                            <SeqFormTest></SeqFormTest>
+                    <GlobalErrorBoundary>
+                        <Switch>
+                            <Route exact path="/">
+                                <Organizations />
+                            </Route>
+                            <PrivateRoute exact path="/organization/create">
+                                <CreateOrganization />
+                            </PrivateRoute>
+                            <PrivateRoute path="/organization/:organizationId">
+                                <Organization />
+                            </PrivateRoute>
+                            <Route path="/user">
+                                <Users></Users>
+                            </Route>
+                            <Route path="/search">
+                                <Search></Search>
+                            </Route>
+                            <Route>
+                                <ErrorPage />
+                            </Route>
+                        </Switch>
+                    </GlobalErrorBoundary>
+                    <ErrorBoundary />
+                <footer className="usa-footer usa-footer--slim">
+                    <div className="grid-container usa-footer__return-to-top">
+                        <a href="#">Return to top</a>
+                    </div>
+                    <div className="usa-footer__primary-section">
+                        <div className="usa-footer__primary-container grid-row">
+                        <div className="mobile-lg:grid-col-8">
+                            <nav className="usa-footer__nav" aria-label="Footer navigation">
+                            <ul className="grid-row grid-gap">
+                                <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                                <a className="usa-footer__primary-link" href="javascript:void(0);">Primary link</a>
+                                </li>
+                                <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                                <a className="usa-footer__primary-link" href="javascript:void(0);">Primary link</a>
+                                </li>
+                                <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                                <a className="usa-footer__primary-link" href="javascript:void(0);">Primary link</a>
+                                </li>
+                                <li className="mobile-lg:grid-col-6 desktop:grid-col-auto usa-footer__primary-content">
+                                <a className="usa-footer__primary-link" href="javascript:void(0);">Primary link</a>
+                                </li>
+                            </ul>
+                            </nav>
                         </div>
-                    </Route> */}
-
-                    <Route exact path="/">
-                        <Organizations />
-                    </Route>
-
-                    <Route exact path="/organization/create">
-                        <CreateOrganization />
-                    </Route>
-
-                    <Route path="/organization/:organizationId">
-                        <Organization />
-                    </Route>
-
-                </Switch>
+                        <div className="mobile-lg:grid-col-4">
+                            <address className="usa-footer__address">
+                            <div className="grid-row grid-gap">
+                                <div className="grid-col-auto mobile-lg:grid-col-12 desktop:grid-col-auto">
+                                <div className="usa-footer__contact-info">
+                                    <a href="tel:1-800-555-5555">(800) CALL-GOVT</a>
+                                </div>
+                                </div>
+                                <div className="grid-col-auto mobile-lg:grid-col-12 desktop:grid-col-auto">
+                                <div className="usa-footer__contact-info">
+                                    <a href="mailto:info@agency.gov">info@agency.gov</a>
+                                </div>
+                                </div>
+                            </div>
+                            </address>
+                        </div>
+                        </div>
+                    </div>
+                    <div className="usa-footer__secondary-section">
+                        <div className="grid-container">
+                        <div className="usa-footer__logo grid-row grid-gap-2">
+                            <div className="grid-col-auto">
+                                <img className="usa-footer__logo-img" src="/assets/img/logo-img.png" alt="" />
+                            </div>
+                            <div className="grid-col-auto">
+                            <h3 className="usa-footer__logo-heading">Name of Agency</h3>
+                            </div>
+                        </div>
+                        </div>
+                    </div>
+                </footer>
             </Router>
         </>);
     }

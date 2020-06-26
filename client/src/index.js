@@ -16,16 +16,8 @@
 import React from 'react';
 import ReactDOM from 'react-dom';
 import App from './App';
-
 import { Provider } from 'react-redux'
-import reducer from './reducers';
-import { createStore, applyMiddleware } from 'redux'
-import thunkMiddleware from 'redux-thunk'
-
-const store = createStore(reducer,
-  applyMiddleware(
-    thunkMiddleware, // lets us dispatch() functions
-  ));
+import store from "./store";
 
 
 ReactDOM.render(<Provider store={store}>

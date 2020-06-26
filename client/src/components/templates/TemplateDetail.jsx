@@ -13,55 +13,50 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useEffect } from 'react';
-import { Link, useRouteMatch } from 'react-router-dom';
-import { useDispatch, useSelector } from 'react-redux';
+import React from 'react';
+import { useSelector } from 'react-redux';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
-import { selectTemplate } from "../../actions/templates";
 
-export default function TemplateDetail() {
-    const { url, params } = useRouteMatch();
-    let dispatch = useDispatch();
+export default function TemplateDetail({ onEditClick }) {
     let template = useSelector((state) => state.application.selectedTemplate)
-
-    useEffect(() => {
-        dispatch(selectTemplate(params.templateId))
-    },
-        [dispatch, params.templateId]
-    );
 
     return (
         <div className="grid-row">
-            <div className="desktop:grid-col-7">
-                <Detail title="statement name">
+            <div className="desktop:grid-col-8">
+                <Detail title="id">
+                    {template.iri}
+                </Detail>
+                <Detail title="statement template name">
                     {template.name}
                 </Detail>
                 <Detail title="description">
                     {template.description}
                 </Detail>
                 <Detail title="translations">
-                    <Translations translations={template.translations} />
+                    <Translations translations={template.translations} linkable={true} />
                 </Detail>
                 <Detail title="tags">
                     <Tags tags={template.tags} />
                 </Detail>
             </div>
-            <div className="desktop:grid-col-4 grid-offset-1">
-                <Link
-                    className="usa-button margin-bottom-2"
-                    to={`${url}/edit`}>
-                    Edit Statement Template Details
-                </Link>
-                <div className="padding-2 bg-base-lightest">
+            <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
+                <button
+                    className="usa-button padding-x-105 margin-bottom-2 margin-right-0"
+                    onClick={onEditClick}
+                >
+                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                     Edit Statement Template Details
+                </button>
+                <div className="details-metadata-box width-full">
                     <Detail title="updated" >
-                        {template.updated}
+                        {(template.updatedOn) ? (new Date(template.updatedOn)).toLocaleDateString() : "Unknown"}
                     </Detail>
                     <Detail title="parent profile" >
-                        {template.parentProfileName}
+                        {template.parentProfile && template.parentProfile.name}
                     </Detail>
                     <Detail title="author" >
-                        {template.author}
+                        {(template.parentProfile && template.parentProfile.organization.name) || 'Unknown'}
                     </Detail>
                 </div>
             </div>

@@ -1,0 +1,24 @@
+{
+    "@context": "https://w3id.org/xapi/profiles/context",
+    "id": "https://w3id.org/xapi/scorm",
+    "type": "Profile",
+    "prefLabel": {
+        "en": "SCORM Profile"
+    },
+    "definition": {
+      "en": "The SCORM profile includes Verbs, Activity Types and xAPI Document definitions used to represent SCORM learning experiences in xAPI."
+    },
+    "conformsTo": "https://w3id.org/xapi/profiles#1.0",
+    "seeAlso": "https://adl.gitbooks.io/scorm-profile-xapi/content/",
+    "versions": [
+        {
+            "id": "https://w3id.org/xapi/scorm/v1.0",
+            "generatedAtTime": "2017-08-21T14:25:59.295Z",
+            "wasRevisionOf": ["https://w3id.org/xapi/scorm"]
+        }
+    ],
+    "author": {
+        "type": "Organization",
+        "name": "Advanced Distributed Learning(ADL) Initiative"
+    }
+}

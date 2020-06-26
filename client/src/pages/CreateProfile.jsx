@@ -14,9 +14,9 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import CreateProfileForm from '../components/CreateProfileForm';
+// import CreateProfileForm from '../components/profiles/CreateProfileForm';
 
-function CreateProfile() {
+function CreateProfile({ children }) {
 
     return (
         <>
@@ -36,7 +36,7 @@ function CreateProfile() {
                             <span className="text-secondary">*</span>
                             <span className="usa-hint font-ui-3xs"> indicates required field</span>
                         </p>
-                        <CreateProfileForm />
+                        {children}
                     </div>
                 </div>
             </main>

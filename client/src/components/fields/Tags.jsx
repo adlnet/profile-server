@@ -32,7 +32,7 @@ export default function Tags(props) {
 
     function handleAddTagsButton() {
         let splitInputValue = tagInputValue.split(',').map(value => value.trim()).filter(Boolean);
-        let newTags = [...tags, ...splitInputValue];
+        let newTags = [...new Set([...tags, ...splitInputValue])];
         setTags(newTags);
         setTagInputValue('');
         if (props.form) {
@@ -41,29 +41,25 @@ export default function Tags(props) {
     }
 
     return (<>
-        <div className="grid-row grid-gap">
-            <div className="grid-col-10">
+        <div className="grid-row">
                 <Field
                     name="tags"
                     type="text"
-                    className="usa-input width-full"
+                    className="usa-input grid-col margin-right-1"
                     id="input-tags"
                     aria-required="true"
                     onChange={e => setTagInputValue(e.target.value)}
                     value={tagInputValue}
                 />
-            </div>
-            <div className="grid-col-2">
                 <button
-                    className="usa-button"
-                    style={{ marginTop: '.5em', justify: 'right' }}
+                    className="usa-button grid-col flex-auto"
+                    style={{ marginTop: '8px', justify: 'right' }}
                     type="button"
-                    disabled={!tagInputValue}
+                    disabled={!tagInputValue.trim()}
                     onClick={handleAddTagsButton}
                 >
                     Add
                 </button>
-            </div>
         </div>
         <div className="margin-top-1 margin-bottom-5">
             {
@@ -74,8 +70,8 @@ export default function Tags(props) {
                             className="usa-tag display-inline-flex bg-accent-cool-lighter text-base-darkest padding-y-05 margin-right-1"
                             style={{ marginTop: '.5em' }}
                         >
-                            {tag}
-                            <span className="fa fa-icon fa-close" onClick={() => handleRemoveTagButtonClick(index)} />
+                            <span className="margin-05">{tag}</span>
+                            <span className="margin-05"><span className="fa fa-icon fa-close" onClick={() => handleRemoveTagButtonClick(index)} /></span>
                         </span>
                     );
                 })

@@ -3,7 +3,12 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "start": "node app.js"
+    "start": "node server.js",
+    "test": "jest --forceExit"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true
   },
   "dependencies": {
     "@babel/core": "^7.7.7",
@@ -14,6 +19,8 @@
     "body-parser": "~1.15.1",
     "compression": "^1.7.4",
     "cookie-parser": "~1.4.3",
+    "cookie-session": "^1.4.0",
+    "crypto-js": "^4.0.0",
     "debug": "~2.2.0",
     "dotenv": "^8.2.0",
     "eslint": "^6.8.0",
@@ -27,17 +34,30 @@
     "eslint-plugin-security": "^1.4.0",
     "express": "~4.13.4",
     "hjs": "~0.0.6",
+    "jest": "24.9.0",
     "json-schema-to-mongoose": "^0.2.2",
+    "jsonschema": "^1.2.6",
+    "lodash": "^4.17.15",
+    "mongodb-memory-server": "^6.5.2",
     "mongoose": "^5.8.9",
     "morgan": "~1.7.0",
+    "passport": "^0.4.1",
+    "passport-local": "^1.0.0",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
     "react-router-dom": "^5.1.2",
     "serve-favicon": "~2.3.0",
+    "supertest": "^4.0.2",
     "uuid": "^3.4.0",
+    "validator": "^13.0.0",
     "webpack": "4.41.2"
   },
   "devDependencies": {
+    "eslint-plugin-jest": "^23.8.2",
+    "mongodb-memory-server": "^6.5.2",
+    "node-mocks-http": "^1.8.1",
+    "sinon": "^9.0.2",
+    "supertest": "^4.0.2",
     "webpack-cli": "^3.3.10"
   }
 }

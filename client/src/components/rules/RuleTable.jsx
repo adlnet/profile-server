@@ -17,7 +17,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import RuleTableRow from './RuleTableRow';
 
-export default function RuleTable(props) {
+export default function RuleTable({ rules, onAddRule }) {
     return (<>
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
@@ -29,15 +29,14 @@ export default function RuleTable(props) {
                 </tr>
             </thead>
             <tbody style={{ lineHeight: 3 }}>
-                {(props.rules && props.rules.length > 0) ?
-                    props.rules.map((rule, i) => <RuleTableRow key={i} {...rule} />) :
-                    <tr key={1}><td className="font-sans-xs" colSpan="4">There are no statement rules associated with this profile. Add statement rules manually or import from a JSON file.</td></tr>
+                {(rules && rules.length > 0) ?
+                    rules.map((rule, key) => <RuleTableRow key={key} {...rule} />) :
+                    <tr key={1}><td className="font-sans-xs" colSpan="4"  style={{paddingLeft: '0px'}}>
+                        <p>There are no rules set for this statement template. Add a rule.</p>
+                    </td></tr>
                 }
             </tbody>
         </table>
-        <Link
-            to=''>
-            <button className="usa-button usa-button--outline padding-x-4">Add Rule</button>
-        </Link>
+        <button className="usa-button usa-button--outline padding-x-4" onClick={onAddRule}>Add Rule</button>
     </>);
 }

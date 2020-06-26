@@ -104,6 +104,11 @@ export function Step(props) {
         buttons.push(<button key="1" onClick={props.previousStep} className="usa-button usa-button--primary"> Prev </button>)
     if (props.nextStep)
         buttons.push(<button key="2" onClick={props.nextStep} className="usa-button usa-button--primary"> Next </button>)
+    if (props.button) {
+        let bprop = { ...props.button.props, key: "3" }
+        let bclone = React.cloneElement(props.button, bprop);
+        buttons.push(bclone)
+    }
     newChildren.push(<div key="1children">{buttons}</div>)
     return <div className={props.hidden ? "hidden-step" : ""}>
 

@@ -14,42 +14,52 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { Field, ErrorMessage } from 'formik';
+import { Field } from 'formik';
 
-import { Translations } from '../../components/fields/Translations';
+import Translations from '../../components/fields/Translations';
 import TagsInput from '../../components/fields/Tags';
+import ErrorValidation from '../controls/errorValidation';
+import Iri from '../fields/Iri';
 
-export default function DefinePattern() {
+export default function DefinePattern(props) {
+
     return (<>
         <div className="grid-row">
-            <div className="grid-col-5"><h2>Define Pattern Details</h2></div>
+            <div className="grid-col-5"><h2 className="margin-bottom-05">Define Pattern Details</h2></div>
             <div className="grid-col">
                 <div className="margin-top-3">
                     <span className="text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
                 </div>
             </div>
         </div>
-        <div className="grid-row">
-            <div className="grid-col">Instructions</div>
-        </div>
-        <label className="usa-label" htmlFor="name"><span className="text-secondary">*</span> <span className="text-uppercase text-thin text-base font-sans-3xs">Pattern Name</span></label>
-        <Field name="name" type="text" className="usa-input" id="input-name" aria-required="true" />
-        <ErrorMessage name="name" />
+        <div className="margin-bottom-2"><span>Instructions</span></div>
 
-        <label className="usa-label" htmlFor="description"><span className="text-secondary">*</span> <span className="text-uppercase text-thin text-base font-sans-3xs">Description</span></label>
-        <Field name="description" component="textarea" rows="2" className="usa-textarea" id="input-description" aria-required="true" />
-        <ErrorMessage name="description" />
+        <Iri message="This pattern already has an IRI that is used in xAPI statements" {...props} />
 
-        <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="translations">Translations</label>
+        <ErrorValidation name="name" type="input">
+            <label className="usa-label" htmlFor="name"><span className="text-secondary">*</span>
+                <span className="details-label">Pattern Name</span>
+            </label>
+            <Field name="name" type="text" className="usa-input" id="input-name" aria-required="true" />
+        </ErrorValidation>
+        
+        <ErrorValidation name="description" type="input">
+            <label className="usa-label" htmlFor="description"><span className="text-secondary">*</span>
+                <span className="details-label">Description</span>
+            </label>
+            <Field name="description" component="textarea" rows="2" className="usa-textarea" id="input-description" aria-required="true" />
+        </ErrorValidation>
+
+        <label className="usa-label" htmlFor="translations"><span className="details-label">Translations</span></label>
         <Field name="translations" component={Translations} id="translations"></Field>
 
-        <label className="usa-label text-thin font-sans-3xs">
-            <span className="text-uppercase">tags</span><br />
+        <label className="usa-label">
+            <span className="details-label">tags</span><br />
             <span className="usa-hint text-thin font-sans-3xs">Put a comma between each one. Example: <b>tag 1, tag 2, tag 3</b></span>
             <Field name="tags" component={TagsInput} id="tags" />
         </label>
 
-        <label className="usa-label margin-bottom-2" ><span className="text-secondary">*</span> <span className="text-uppercase text-thin text-base font-sans-3xs">Primary or Secondary</span></label>
+        <label className="usa-label margin-bottom-2" ><span className="text-secondary">*</span> <span className="details-label">Primary or Secondary</span></label>
         <div className="usa-radio">
             <Field className="usa-radio__input"
                 type="radio"

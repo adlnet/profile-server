@@ -14,13 +14,76 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uuid = require('uuid');
+const locks = require('./locks');
 const organization = new mongoose.Schema({
-    name: String,
-    uuid: String,
-    profiles: [String],
-    members: [String],
+    name: {
+        type: String,
+        unique: true,
+    },
+    description: String,
+    collaborationLink: String,
+    uuid: {
+        type: String,
+        default: uuid.v4,
+    },
+    members: [
+        {
+            level: String,
+            user: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'user',
+            },
+        },
+    ],
+    ...locks(),
+    createdOn: {
+        type: Date,
+        default: new Date(),
+    },
+    updatedOn: {
+        type: Date,
+        default: new Date(),
+    },
+    createdBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
+    updatedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    },
+    isActive: {
+        type: Boolean,
+        default: true,
+    },
+}, { toJSON: { virtuals: true } });
 
-    createdOn: Date,
+organization.virtual('profiles', {
+    ref: 'profile',
+    localField: '_id',
+    foreignField: 'organization',
+    justOne: false,
+    match: { isActive: true },
 });
+
+organization.virtual('apiKeys', {
+    ref: 'apiKey',
+    localField: '_id',
+    foreignField: 'scopeObject',
+    justOne: false,
+    match: {
+        isActive: true,
+        scope: 'organization',
+    },
+});
+
+organization.statics.findByUuid = function (uuid, callback) {
+    return this.findOne({ uuid: uuid }, callback);
+};
+
+organization.statics.deleteByUuid = async function (uuid) {
+    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false, updatedOn: new Date() });
+};
 
 module.exports = organization;

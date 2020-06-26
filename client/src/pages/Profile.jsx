@@ -13,251 +13,176 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { Switch, Route, NavLink, matchPath, Link } from 'react-router-dom';
-
+import React, { useEffect } from 'react';
+import { Switch, Route, NavLink, useParams, useRouteMatch } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import Lock from "../components/users/lock";
 import Templates from '../components/templates/Templates';
-import { Detail, Tags, Translations } from '../components/DetailComponents';
 import Concepts from '../components/concepts/Concepts';
-import { Patterns } from '../components/patterns/Patterns'
-
-import { withRouter } from "react-router-dom";
-import { connect } from 'react-redux';
-import { selectOrganization } from "../actions/organizations";
-import { selectProfile, populateProfile } from "../actions/profiles";
+import Patterns from '../components/patterns/Patterns'
+import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, editProfileVersion } from "../actions/profiles";
 import history from "../history";
-import CreateProfileForm from '../components/CreateProfileForm';
-// import Translations from '../components/Translations';
+import CreateProfileForm from '../components/profiles/CreateProfileForm';
+import ProfileDetails from '../components/profiles/ProfileDetails';
+import ErrorPage from '../components/errors/ErrorPage';
+import ProfilePublishButton from '../components/profiles/profilePublishButton';
 
-let getNavClass = (linkpath, path) => {
-    return matchPath(linkpath, { path }) ? " is-active" : "";
-};
+export default function Profile ({ rootUrl }) {
+    const dispatch = useDispatch();
+    const { path } = useRouteMatch();
+    const { organizationId, profileId, versionId } = useParams();
 
-//.usa-header--extended .usa-nav {} has border-top (the line between profile title and the tabs/links below it)
-class Profile extends React.Component {
-    constructor(props) {
-        super(props);
-        this.state = { editing: false }
-        // this.setState({ editing: false });
+    const profile = useSelector((state) => state.application.selectedProfile);
+    const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
+
+    useEffect(() => {
+        dispatch(selectProfile(organizationId, profileId));
+        dispatch(selectProfileVersion(organizationId, profileId, versionId));
+    }, [])
+
+    if (!profile || !profileVersion) return '';
+
+    const url = `${rootUrl}/profile/${profile.uuid}/version/${profileVersion.uuid}`;
+
+    function publishProfile() {
+        if (profileVersion.state !== 'draft') return;
+        dispatch(publishProfileVersion(profileVersion));
     }
-    componentDidMount() {
 
-        this.props.selectProfile(this.props.match.params.organizationId, this.props.match.params.profileId);
-        this.props.populateProfile(this.props.match.params.organizationId, this.props.match.params.profileId);
-    }
-    componentDidUpdate() {
-        if (this.props.selectedProfileId !== this.props.match.params.profileId) {
-            this.props.selectProfile(this.props.match.params.organizationId, this.props.match.params.profileId);
-            this.props.populateProfile(this.props.match.params.organizationId, this.props.match.params.profileId);
+    function handleEditProfile(values) {
+        if (values.state === 'published') {
+            dispatch(createNewProfileDraft(values));
+        } else {
+            dispatch(editProfileVersion(values));
         }
+
+        history.push(url);
     }
-    startEdit() {
 
+    function handleCancelEditProfile() {
+        history.push(url);
     }
 
-    cancelEdited() {
-
-        history.push("../" + this.props.match.params.profileId)
+    function isMaxVersion(version) {
+        const max = Math.max(...profile.versions.map(v => v.version));
+        return version === max;
     }
-    edited() {
-
-        history.push("../" + this.props.match.params.profileId)
-    }
-    renderHeader() {
-        return
-    }
-    render() {
-        if (!this.props.ready) return "";
-        if (!this.props.profile) return "";
-
-
-        let path = this.props.match.path;
-        let url = this.props.match.url;
-        return (<>
-            <div className="outer-alert">
-
-                <div className="usa-alert usa-alert--slim usa-alert--info margin-top-2" >
-                    <div className="usa-alert__body">
-                        <p className="usa-alert__text">
-                            This profile is in a DRAFT state and won’t be available for public use until it is published.
-                                </p>
-                    </div>
-                </div>
-            </div>
-            <header className="usa-header usa-header--extended">
-                <div className="usa-navbar bg-base-lightest">
-                    <div className="usa-logo" id="extended-logo">
-                        <span className="text-uppercase text-thin font-sans-3xs">Manage Profile</span>
-                        <em className="usa-logo__text"><a href="/" title="Home" aria-label="Home">{this.props.profile.name}</a></em>
-                    </div>
-                    <button className="usa-menu-btn">Menu</button>
-                </div>
-                <nav aria-label="Primary navigation" className="usa-nav">
-                    <div className="usa-nav__inner">
-                        <button className="usa-nav__close"><img src="/assets/img/close.svg" alt="close" /></button>
-                        <ul className="usa-nav__primary usa-accordion">
-                            <li className={`usa-nav__primary-item${getNavClass(`/`, path)}`}>
-                                <NavLink exact
-                                    to={`${url}`}
-                                    className="usa-nav__link"
-                                    activeClassName="usa-current">
-                                    <span>Details</span>
-                                </NavLink>
-                            </li>
-                            <li className={`usa-nav__primary-item${getNavClass(`/templates`, path)}`}>
-                                <NavLink
-                                    to={`${url}/templates`}
-                                    className="usa-nav__link"
-                                    activeClassName="usa-current">
-                                    <span>Statement Templates ({this.props.profile.templates ? this.props.profile.templates.length : 0})</span>
-                                </NavLink>
-                            </li>
-                            <li className={`usa-nav__primary-item${getNavClass(`/patterns`, path)}`}>
-                                <NavLink
-                                    to={`${url}/patterns`}
-                                    className="usa-nav__link"
-                                    activeClassName="usa-current">
-                                    <span>Patterns ({this.props.profile.patterns ? this.props.profile.patterns.length : 0})</span>
-                                </NavLink>
-                            </li>
-                            <li className={`usa-nav__primary-item${getNavClass(`/concepts`, path)}`}>
-                                <NavLink
-                                    to={`${url}/concepts`}
-                                    className="usa-nav__link"
-                                    activeClassName="usa-current">
-                                    <span>Concepts ({this.props.concepts ? this.props.concepts.length : 0})</span>
-                                </NavLink>
-                            </li>
-                        </ul>
-                        <div className="usa-nav__secondary">
-                            <form className="usa-search usa-search--small ">
-                                <select className="usa-select" name="options" id="options">
-                                    <option value>Actions</option>
-                                    <option value="publish">Publish to Public</option>
-                                    <option value="export">Export to File</option>
-                                    <option value="import">Import from File</option>
-                                    <option value="history">View Version History</option>
-                                    <option value="deprecate">Deprecate</option>
-                                </select>
-                            </form>
+    
+    return (<>
+        {
+            profileVersion.state === 'draft' ?
+                <div className="outer-alert">
+                    <div className="usa-alert usa-alert--slim usa-alert--info margin-top-2" >
+                        <div className="usa-alert__body">
+                            <p className="usa-alert__text">
+                                This profile is in a DRAFT state and won’t be available for public use until it is published.
+                            </p>
                         </div>
                     </div>
-                </nav>
-            </header>
-            <main id="main-content" className="grid-container">
+                </div> :
+                !isMaxVersion(profileVersion.version) ?
+                    <div className="outer-alert">
+                        <div className="usa-alert usa-alert--slim usa-alert--warning margin-top-2" >
+                            <div className="usa-alert__body">
+                                <p className="usa-alert__text">
+                                    You are viewing an older version of this profile ({profileVersion.version}). Return to the latest version (version #).
+                                </p>
+                            </div>
+                        </div>
+                    </div> : ''
 
-                {!this.state.editing && <Switch>
-                    <Route exact path={path}>
-                        <Details onEdit={() => this.startEdit()} {...this.props.profile} />
-                    </Route>
-                    <Route path={`${path}/templates`}>
-                        <Templates />
-                    </Route>
-                    <Route path={`${path}/patterns`}>
-                        <Patterns patterns={this.props.profile.patterns} />
-                    </Route>
-                    <Route path={`${path}/concepts`}>
-                        <Concepts />
-                    </Route>
-                    <Route path={`${path}/edit`}>
-                        <h2>Edit Profile Details</h2>
-                        <CreateProfileForm onCancel={() => this.cancelEdited()} onSubmit={() => this.edited()} initialValue={this.props.profile}> </CreateProfileForm>
-                    </Route>
-                </Switch>}
-            </main>
-        </>
-
-        )
-    }
-}
-
-
-function Details(profile) {
-    return (
-        <>
-
-            <div className="grid-row profile-edit">
-                <h2 className="profile-edit">
-                    <Link to={`${profile.uuid}/edit`}>
-                        <button className="usa-button  usa-button--primary ">
-                            <span className="font-sans-2xs text-bold ">Edit Profile Details</span></button>
-                    </Link>
-                </h2>
-                <div className="desktop:grid-col-2">
-                    <h2>Profile Details</h2>
+        }
+        <header className="usa-header usa-header--extended">
+            <div className="usa-navbar bg-base-lightest">
+                <div className="usa-logo" id="extended-logo">
+                    <span className="text-uppercase text-thin font-sans-3xs">Manage Profile</span>
+                    <em className="usa-logo__text"><a href="/" title="Home" aria-label="Home">{profileVersion.name}</a></em>
                 </div>
-                <div className="desktop:grid-col-1">
-
-                </div>
+                <button className="usa-menu-btn">Menu</button>
             </div>
-            <div className="grid-row">
-                <div className="desktop:grid-col-9">
-                    {/* id, profile name description, translations... */}
-                    <Detail title="ID">
-                        {profile.uri}
-                    </Detail>
-                    <Detail title="profile name">
-                        {profile.name}
-                    </Detail>
-                    <Detail title="description">
-                        {profile.description}
-                    </Detail>
-                    <Detail title="translations">
-                        <Translations translations={profile.translations} />
-                        {/* {profile.translations.map(i =>{
-                            return <div>{i.language}</div>
-                        })} */}
-                    </Detail>
-                    <Detail title="more information">
-                        <a href={profile.moreInformation}>{profile.moreInformation}</a>
-                    </Detail>
-                    <Detail title="tags">
-                        <Tags tags={profile.tags} />
-                    </Detail>
-                </div>
-                <div className="desktop:grid-col-3 grid-offset-1s">
-                    <div className="padding-2 bg-base-lightest">
-                        <Detail title="status">
-                            {profile.status}
-                        </Detail>
-                        <Detail title="version">
-                            {profile.version}
-                        </Detail>
-                        <Detail title="updated">
-                            {profile.updated}
-                        </Detail>
-                        <Detail title="author">
-                            {profile.author}
-                        </Detail>
+            <nav aria-label="Primary navigation" className="usa-nav">
+                <div className="usa-nav__inner">
+                    <button className="usa-nav__close"><i className="fa fa-close"></i></button>
+                    <ul className="usa-nav__primary usa-accordion"  style={{marginBottom: '-.15rem'}}>
+                        <li className={`usa-nav__primary-item`}>
+                            <NavLink exact
+                                to={`${url}`}
+                                className="usa-nav__link"
+                                activeClassName="usa-current">
+                                <span className="text-bold">Details</span>
+                            </NavLink>
+                        </li>
+                        <li className={`usa-nav__primary-item`}>
+                            <NavLink
+                                to={`${url}/templates`}
+                                className="usa-nav__link"
+                                activeClassName="usa-current">
+                                <span className="text-bold">Statement Templates ({profileVersion.templates ? profileVersion.templates.length : 0})</span>
+                            </NavLink>
+                        </li>
+                        <li className={`usa-nav__primary-item`}>
+                            <NavLink
+                                to={`${url}/patterns`}
+                                className="usa-nav__link"
+                                activeClassName="usa-current">
+                                <span className="text-bold">Patterns ({profileVersion.patterns ? profileVersion.patterns.length : 0})</span>
+                            </NavLink>
+                        </li>
+                        <li className={`usa-nav__primary-item`}>
+                            <NavLink
+                                to={`${url}/concepts`}
+                                className="usa-nav__link"
+                                activeClassName="usa-current">
+                                <span className="text-bold">
+                                    Concepts ({
+                                        profileVersion.concepts && profileVersion.externalConcepts ?
+                                        profileVersion.concepts.length + profileVersion.externalConcepts.length: 0
+                                    })
+                                </span>
+                            </NavLink>
+                        </li>
+                    </ul>
+                    <div className="usa-nav__secondary">
+                        <div className="pull-right">
+                            <ProfilePublishButton onPublish={publishProfile} />
+                        </div>
                     </div>
+                    
+                   
+                    
                 </div>
-            </div>
-        </>
-    )
+            </nav>
+        </header>
+        <main id="main-content" className="grid-container padding-bottom-4">
+
+            <Switch>
+                <Route exact path={path}>
+                    <ProfileDetails />
+                </Route>
+                <Route path={`${path}/templates`}>
+                    <Templates />
+                </Route>
+                <Route path={`${path}/patterns`}>
+                    <Patterns />
+                </Route>
+                <Route path={`${path}/concepts`}>
+                    <Concepts />
+                </Route>
+                <Route path={`${path}/edit`}>
+                    <h2>Edit Profile Details</h2>
+                   
+                    <Lock resourceUrl={`/org/${organizationId}/profile/${profileId}/version/${versionId}`}>
+                        <CreateProfileForm
+                            handleSubmit={handleEditProfile}
+                            handleCancel={handleCancelEditProfile}
+                            initialValue={profileVersion}
+                        />
+                    </Lock>
+                </Route>
+                <Route>
+                    <ErrorPage />
+                </Route>
+            </Switch>
+        </main>
+    </>);
 }
-
-
-
-const mapStateToProps = (state) => ({
-    profile: state.application.selectedProfile,
-    concepts: state.concepts,
-    selectedProfileId: state.application.selectedProfileId,
-    ready: !!state.application.selectedOrganizationId && !!state.application.selectedProfileId
-});
-
-const mapDispatchToProps = (dispatch) => ({
-
-    //    selectTemplate: (templateId) => dispatch(selectTemplate(templateId)),
-    //    selectPattern: (patternId) => dispatch(selectPattern(patternId)),
-    //    selectConcept: (conceptId) => dispatch(selectConcept(conceptId)),
-    selectOrganization: (conceptId) => dispatch(selectOrganization(conceptId)),
-    selectProfile: (organizationId, profileId) => dispatch(selectProfile(organizationId, profileId)),
-    populateProfile: (organizationId, profileId) => dispatch(populateProfile(organizationId, profileId)),
-
-});
-
-export default connect(
-    mapStateToProps,
-    mapDispatchToProps,
-)(withRouter(Profile));
-
