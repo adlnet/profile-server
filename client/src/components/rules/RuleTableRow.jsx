@@ -21,7 +21,7 @@ export default function RuleTableRow(props) {
             <th scope="row">
                 {props.location}
             </th>
-            <td><span className="font-sans-3xs">{props.presense}</span></td>
+            <td><span className="font-sans-3xs">{props.presence}</span></td>
             <td><span className="font-sans-3xs">{props.value}</span></td>
             <td><button className="usa-button  usa-button--unstyled"><span className="text-bold">Edit</span></button></td>
             <td><button className="usa-button  usa-button--unstyled"><span className="text-bold">Remove</span></button> </td>

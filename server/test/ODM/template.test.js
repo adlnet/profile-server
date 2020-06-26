@@ -1003,6 +1003,18 @@ describe('test rules of template export', () => {
     test('template exports presence', async () => {
         expect(exported.rules[0].presence).toBe('included');
     });
+
+    test('template rule empty any array not showing', async () => {
+        expect(exported.rules[0].any).not.toBeDefined();
+    });
+
+    test('template rule empty all array not showing', async () => {
+        expect(exported.rules[0].all).not.toBeDefined();
+    });
+
+    test('template rule empty none array not showing', async () => {
+        expect(exported.rules[0].none).not.toBeDefined();
+    });
 });
 
 describe('test rules selector of template export', () => {

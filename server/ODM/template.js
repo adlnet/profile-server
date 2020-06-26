@@ -179,7 +179,20 @@ template.methods.export = async function (profileVersionIRI) {
         if (vals && vals.length) t[typeprop] = vals;
     }
 
-    if (this.rules && this.rules.length) t.rules = this.rules;
+    if (this.rules && this.rules.length) {
+        t.rules = this.rules.map(v => {
+            const ret = {
+                location: v.location,
+                selector: v.selector,
+                presence: v.presence,
+                scopeNote: v.scopeNote,
+            };
+            if (v.any && v.any.length) ret.any = v.any;
+            if (v.all && v.all.length) ret.all = v.all;
+            if (v.none && v.none.length) ret.none = v.none;
+            return ret;
+        });
+    }
     return JSON.parse(JSON.stringify(t));
 };
 

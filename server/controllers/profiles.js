@@ -188,6 +188,10 @@ exports.importProfile = async function (req, res, next) {
 exports.exportProfile = async function (req, res) {
     const profile = req.profile;
 
+    const concepts = await Promise.all(profile.concepts.map(c => c.export(profile.iri)));
+    const templates = await Promise.all(profile.templates.map(t => t.export(profile.iri)));
+    const patterns = await Promise.all(profile.patterns.map(p => p.export(profile.iri)));
+
     const exportedProfile = {
         id: profile.parentProfile.iri,
         '@context': 'https://w3id.org/xapi/profiles/context',
@@ -198,9 +202,9 @@ exports.exportProfile = async function (req, res) {
         seeAlso: profile.moreInformation,
         versions: createVersionObject(profile.parentProfile.versions),
         author: { type: 'Organization', name: profile.organization.name, url: profile.organization.collaborationLink },
-        concepts: await Promise.all(profile.concepts.map(c => c.export(profile.iri))),
-        templates: await Promise.all(profile.templates.map(t => t.export(profile.iri))),
-        patterns: await Promise.all(profile.patterns.map(p => p.export(profile.iri))),
+        concepts: (concepts && concepts.length) ? concepts : undefined,
+        templates: (templates && templates.length) ? templates : undefined,
+        patterns: (patterns && patterns.length) ? patterns : undefined,
     };
 
     res.json(exportedProfile);

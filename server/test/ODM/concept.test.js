@@ -635,6 +635,7 @@ describe('test activity concept export', () => {
         expect(exported.activityDefinition.correctResponsesPattern).toStrictEqual(JSON.parse(JSON.stringify(likert.correctResponsesPattern)));
         expect(exported.activityDefinition.scale).toBeDefined();
         expect(exported.activityDefinition.scale).toStrictEqual(JSON.parse(JSON.stringify(likert.scale)));
+        expect(exported.activityDefinition.choices).not.toBeDefined();
     });
 
     test('matching interaction activity concept export', async () => {

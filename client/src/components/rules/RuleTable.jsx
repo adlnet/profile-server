@@ -23,7 +23,7 @@ export default function RuleTable({ rules, onAddRule }) {
             <thead>
                 <tr>
                     <th width="30%" scope="col">Location</th>
-                    <th width="15%" scope="col">Presense</th>
+                    <th width="15%" scope="col">Presence</th>
                     <th width="50%" scope="col">Value</th>
                     <th width="5%" scope="col"></th>
                 </tr>
@@ -31,7 +31,7 @@ export default function RuleTable({ rules, onAddRule }) {
             <tbody style={{ lineHeight: 3 }}>
                 {(rules && rules.length > 0) ?
                     rules.map((rule, key) => <RuleTableRow key={key} {...rule} />) :
-                    <tr key={1}><td className="font-sans-xs" colSpan="4"  style={{paddingLeft: '0px'}}>
+                    <tr key={1}><td className="font-sans-xs" colSpan="4" style={{ paddingLeft: '0px' }}>
                         <p>There are no rules set for this statement template. Add a rule.</p>
                     </td></tr>
                 }
