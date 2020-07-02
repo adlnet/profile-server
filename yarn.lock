@@ -3921,6 +3921,11 @@ fsevents@^1.2.7:
     bindings "^1.5.0"
     nan "^2.12.1"
 
+fswalk@^1.2.0:
+  version "1.2.0"
+  resolved "https://registry.yarnpkg.com/fswalk/-/fswalk-1.2.0.tgz#867ffb1a71d1a15cb72356559cbed74637e6366b"
+  integrity sha1-hn/7GnHRoVy3I1ZVnL7XRjfmNms=
+
 function-bind@^1.1.1:
   version "1.1.1"
   resolved "https://registry.yarnpkg.com/function-bind/-/function-bind-1.1.1.tgz#a56899d3ea3c9bab874bb9773b7c5ede92f4895d"
