@@ -24,7 +24,7 @@ try {
     templateCache.verifyEmail = require('./emails/verifyEmail.html.txt');
     templateCache.forgotPassword = require('./emails/forgotPassword.html.txt');
     templateCache.accountConfirmation = require('./emails/accountConfirmation.html.txt');
-} catch (e) {}
+} catch (e) { }
 
 for (const i in templateCache) {
     Mustache.parse(templateCache[i]);
@@ -34,6 +34,10 @@ const nodemailer = require('nodemailer');
 
 const transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(config.email_user)}:${encodeURIComponent(config.email_pass)}@${config.email_server}`);
 
+/**
+ * Sends email
+ * @param {object} mailOptions options to configure sending an email
+ */
 function send(mailOptions) {
     return new Promise((res, rej) => {
         transporter.sendMail(mailOptions, (error, info) => {
@@ -48,7 +52,12 @@ function send(mailOptions) {
     });
 }
 // just logging to the console for now, need to get actual email hooked up
-exports.sendForgotPasswordEmail = function(user, done) {
+/**
+ * Sends a 'forgot email' with a temporary password
+ * @param {User} user User model
+ * @param {function} done callback, not used
+ */
+exports.sendForgotPasswordEmail = function (user, done) {
     console.log("The user's password reset key is ", user.passwordResetKey);
 
     const message = Mustache.render(templateCache.forgotPassword, {
@@ -69,8 +78,12 @@ exports.sendForgotPasswordEmail = function(user, done) {
     send(mailOptions);
 };
 
-// sends administrator an email to approve new user
-exports.sendAccountValidateEmail = function(user, done) {
+/**
+ * Sends administrator an email to approve new user
+ * @param {User} user User model
+ * @param {function} done callback, not used
+ */
+exports.sendAccountValidateEmail = function (user, done) {
     console.log("The user's verification key is ", user.verifyCode);
 
     const message = Mustache.render(templateCache.verifyEmail, {
@@ -92,8 +105,12 @@ exports.sendAccountValidateEmail = function(user, done) {
     send(mailOptions);
 };
 
-// sends new user an email that their account has been approved
-exports.sendAccountConfirmationEmail = function(user, done) {
+/**
+ * Sends new user an email that their account has been approved
+ * @param {User} user User model
+ * @param {function} done callback, not used
+ */
+exports.sendAccountConfirmationEmail = function (user, done) {
     const message = Mustache.render(templateCache.accountConfirmation, {
         username: user.username,
         login_url: `${config.protocol}://${config.host}:${config.displayPort}/ui/users/login/`,

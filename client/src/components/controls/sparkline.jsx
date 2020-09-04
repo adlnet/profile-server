@@ -13,55 +13,53 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, {useState,useEffect} from 'react';
+import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import { Chart } from 'react-charts'
-import {XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries} from 'react-vis';
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries } from 'react-vis';
 
 let axes = [
-    {
-      primary: true,
-      position: 'bottom',
-      type: 'time',
-      show: false
-    },
-    { position: 'left', type: 'linear', show: false }
-  ];
+  {
+    primary: true,
+    position: 'bottom',
+    type: 'time',
+    show: false
+  },
+  { position: 'left', type: 'linear', show: false }
+];
 let series = {
-    showPoints:false
+  showPoints: false
 }
-export default function Sparkline({url})
-{
-    let [data,setData] = useState([]);
-    useEffect( ()=>{
-        let func = async function()
-        {
-            
-            let _data = await api.getJSON(url);
-           
-            setData(_data)
-        };
-        func();
-    },[])
+export default function Sparkline({ url }) {
+  let [data, setData] = useState([]);
+  useEffect(() => {
+    let func = async function () {
 
-   
-    if(!data) return ""
-    return   <XYPlot
-                   
+      let _data = await api.getJSON("/app" + url);
+
+      setData(_data)
+    };
+    func();
+  }, [])
+
+
+  if (!data) return ""
+  return <XYPlot
+
     width={200}
     height={80}
     getX={d => d._id}
     getY={d => d.value}
     xType="time"
     padding={30}
-    style={{width:"100%",height:"100%"}}
-    >
+    style={{ width: "100%", height: "100%" }}
+  >
     <LineSeries
-        color="#0fbd66"
-        fill="none"
-        data={data}/>
-    
+      color="#0fbd66"
+      fill="none"
+      data={data} />
+
     <HorizontalGridLines />
     <VerticalGridLines />
-    </XYPlot>    
+  </XYPlot>
 }

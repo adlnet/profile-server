@@ -13,9 +13,17 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-
+/**
+ * Middleware used to find a resource and attach it to the request object.
+ *
+ * @param {Mongoose Model} Model The model of the resource
+ * @param {string} keyParam The value used to find the resource
+ * @param {string} modelKey The property on the model to search
+ * @param {boolean} required Does this middleware have to return a resource
+ * @param {string} resourceKey The property on the request object to hold this resource
+ */
 module.exports = function getResource(Model, keyParam, modelKey = 'uuid', required = true, resourceKey = 'resource') {
-    return async function(req, res, next) {
+    return async function (req, res, next) {
         const resource = await Model.findOne({ [modelKey]: req.params[keyParam] });
         req[resourceKey] = resource;
         if (!required || resource) { next(); } else {

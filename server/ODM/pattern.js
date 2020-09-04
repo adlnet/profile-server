@@ -17,7 +17,7 @@ const mongoose = require('mongoose');
 const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
-
+const mongoSanitize = require('mongo-sanitize');
 const pattern = new mongoose.Schema({
     uuid: {
         type: String,
@@ -27,7 +27,7 @@ const pattern = new mongoose.Schema({
     hasIRI: Boolean,
     primary: {
         type: Boolean,
-        default: false,
+        // default: false,
     },
     isDeprecated: {
         type: Boolean,
@@ -72,72 +72,38 @@ const pattern = new mongoose.Schema({
             translationName: String,
         },
     ],
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
     sequence: [
-        new mongoose.Schema({
-            component: {
-                type: mongoose.Schema.Types.ObjectId,
-                refPath: 'sequence.componentType',
-            },
-            componentType: {
-                type: String,
-                enum: ['template', 'pattern'],
-            },
-        }, { _id: false, id: false }),
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'patternComponent',
+        },
     ],
     alternates: [
-        new mongoose.Schema({
-            component: {
-                type: mongoose.Schema.Types.ObjectId,
-                refPath: 'alternates.componentType',
-            },
-            componentType: {
-                type: String,
-                enum: ['template', 'pattern'],
-            },
-        }, { _id: false, id: false }),
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'patternComponent',
+        },
     ],
-    oneOrMore: new mongoose.Schema({
-        component: {
-            type: mongoose.Schema.Types.ObjectId,
-            refPath: 'oneOrMore.componentType',
-        },
-        componentType: {
-            type: String,
-            enum: ['template', 'pattern'],
-        },
-    }, { _id: false, id: false }),
-    zeroOrMore: new mongoose.Schema({
-        component: {
-            type: mongoose.Schema.Types.ObjectId,
-            refPath: 'zeroOrMore.componentType',
-        },
-        componentType: {
-            type: String,
-            enum: ['template', 'pattern'],
-        },
-    }, { _id: false, id: false }),
-    optional: new mongoose.Schema({
-        component: {
-            type: mongoose.Schema.Types.ObjectId,
-            refPath: 'optional.componentType',
-        },
-        componentType: {
-            type: String,
-            enum: ['template', 'pattern'],
-        },
-    }, { _id: false, id: false }),
+    oneOrMore: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'patternComponent',
+    },
+    zeroOrMore: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'patternComponent',
+    },
+    optional: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'patternComponent',
+    },
 }, { toJSON: { virtuals: true } });
 
 pattern.statics.findByUuid = function (uuid, callback) {
-    return this.findOne({ uuid: uuid }, callback);
+    return this.findOne(mongoSanitize({ uuid: uuid }), callback);
 };
 
 pattern.statics.deleteByUuid = async function (uuid) {
-    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false });
+    await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
 };
 
 pattern.methods.export = async function (profileVersionIRI) {
@@ -152,11 +118,28 @@ pattern.methods.export = async function (profileVersionIRI) {
     };
 
     for (const typeprop of ['optional', 'oneOrMore', 'zeroOrMore']) {
-        if (this[typeprop]) p[typeprop] = (await this.populate(`${typeprop}.component`, 'iri').execPopulate())[typeprop].component.iri;
+        if (this[typeprop]) {
+            if (!this.populated(typeprop)) {
+                p[typeprop] = (await this.populate({
+                    path: `${typeprop}`,
+                    populate: { path: 'component', select: 'iri' },
+                }).execPopulate())[typeprop].component.iri;
+            } else {
+                p[typeprop] = this[typeprop].component.iri;
+            }
+        }
     }
 
     for (const typeprop of ['alternates', 'sequence']) {
-        const vals = (await this.populate(`${typeprop}.component`, 'iri').execPopulate())[typeprop].map(v => v && v.component.iri);
+        let vals;
+        if (!this.populated(typeprop)) {
+            vals = (await this.populate({
+                path: `${typeprop}`,
+                populate: { path: 'component', select: 'iri' },
+            }).execPopulate())[typeprop].map(v => v && v.component.iri);
+        } else {
+            vals = this[typeprop].map(v => v && v.component.iri);
+        }
         if (vals && vals.length) p[typeprop] = vals;
     }
 

@@ -19,18 +19,17 @@ import Login from "../components/users/Login";
 import Create from "../components/users/Create";
 
 import NotLoggedInRoute from "../components/users/NotLoggedInRoute";
-export default function Users(props)
-{
+export default function Users(props) {
     const match = useRouteMatch();
 
     return <main id="main-content" className="grid-container  padding-bottom-4">
-       <Switch>
-        <NotLoggedInRoute path={`${match.path}/login`}>
-            <Login></Login>
-        </NotLoggedInRoute>
-        <NotLoggedInRoute path={`${match.path}/create`}>
-            <Create></Create>
-        </NotLoggedInRoute>
-    </Switch>
+        <Switch>
+            <NotLoggedInRoute path={`${match.path}/login`} {...props}>
+                <Login></Login>
+            </NotLoggedInRoute>
+            <NotLoggedInRoute path={`${match.path}/create`} {...props}>
+                <Create></Create>
+            </NotLoggedInRoute>
+        </Switch>
     </main>
 }

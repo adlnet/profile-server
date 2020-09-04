@@ -19,14 +19,14 @@ const profileModel = require('../ODM/models').profile;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
 const { authorizationError, notFoundError } = require('../errorTypes/errors');
-
+const mongoSanitize = require('mongo-sanitize');
 exports.getApiKeys = async function (req, res, next) {
     let apiKeys;
     try {
         const org = await organizationModel.findByUuid(req.params.org);
         if (!org) throw new notFoundError('Organization does not exist.');
 
-        apiKeys = await apiKeyModel.find({ scopeObject: org, isActive: true });
+        apiKeys = await apiKeyModel.find({ scopeObject: org });
     } catch (err) {
         return next(err);
     }
@@ -111,11 +111,11 @@ exports.deleteApiKey = async function (req, res, next) {
 exports.middleware = {
     validateApiKey: function (resource) {
         return async function (req, res, next) {
-            const apiKey = req.get('api-key');
+            const apiKey = req.header('x-api-key');
 
             try {
                 const storedKey = await apiKeyModel.findByUuid(apiKey)
-                    .populate('scopeObject');
+                    .populate('scopeObject').populate('updatedBy');
 
                 if (resource === 'organization') {
                     if (!apiKey || !storedKey) {
@@ -146,6 +146,7 @@ exports.middleware = {
                         }
                     }
                 }
+                req.user = storedKey && storedKey.updatedBy;
             } catch (err) {
                 return next(err);
             }

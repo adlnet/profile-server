@@ -77,7 +77,7 @@ export default function SimilarTerms(props) {
     return (<>
         {(props.field && props.field.value.length > 0) && 
             <div className="grid-row">
-                <table style={{margin: '0'}} className="usa-table usa-table--borderless" width="100%">
+                <table style={{margin: '0', tableLayout: 'fixed'}} className="usa-table usa-table--borderless" width="100%">
                     <thead>
                         <tr>
                             <th width="45%" scope="col" style={{padding: '4px'}}></th>
@@ -120,8 +120,8 @@ function SimilarTermRow({ similarTerm, onRemove, onRelationTypeChange }) {
 
     return (<>
         <tr>
-            <th scope="row">
-                <span>{similarTerm.concept.name}</span>
+            <th scope="row" style={{wordWrap: 'break-word'}}>
+                <span>{similarTerm.concept.name || similarTerm.concept.iri}</span>
             </th>
             <td>
                 <select
@@ -137,7 +137,7 @@ function SimilarTermRow({ similarTerm, onRemove, onRelationTypeChange }) {
                     <option value="broader">Broader</option>
                     <option value="broadMatch">Broad Match</option>
                     <option value="narrower">Narrower</option>
-                    <option value="narrowMatch">Narrower Match</option>
+                    <option value="narrowMatch">Narrow Match</option>
                     <option value="exactMatch">Exact Match</option>
                 </select>
             </td>
@@ -160,13 +160,15 @@ function RemoveSimilarTermConfirmation(props) {
 
 function SimilarTermForm({ onAdd }) {
     const dispatch = useDispatch();
-    const searchResults = useSelector(state => state.searchResults.concepts);
+    const conceptSearchResults = useSelector(state => state.searchResults.concepts);
 
     useEffect(() => {
         return () => {
             dispatch(clearConceptResults());
         }
     }, []);
+
+    const searchResults = conceptSearchResults && conceptSearchResults.filter(r => r.parentProfile);
 
     return (<>
         <h2 style={{marginTop: '0'}}>Tag Similar Terms</h2>

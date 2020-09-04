@@ -22,15 +22,15 @@ export const FINISH_LOGIN = 'FINISH_LOGIN';
 export const ERROR_LOGIN = 'ERROR_LOGIN';
 
 export const START_LOGOUT = 'START_LOGOUT';
-export const FINISH_LOGOUT= 'FINISH_LOGOUT';
+export const FINISH_LOGOUT = 'FINISH_LOGOUT';
 export const ERROR_LOGOUT = 'ERROR_LOGOUT';
 
 export const START_CREATE = 'START_CREATE';
-export const FINISH_CREATE= 'FINISH_CREATE';
+export const FINISH_CREATE = 'FINISH_CREATE';
 export const ERROR_CREATE = 'ERROR_CREATE';
 
 export const START_CHECK = 'START_CHECK';
-export const FINISH_CHECK= 'FINISH_CHECK';
+export const FINISH_CHECK = 'FINISH_CHECK';
 export const ERROR_CHECK = 'ERROR_CHECK';
 
 
@@ -65,16 +65,15 @@ export function checkStatus() {
     };
 }
 
-export function login(loginRequest) {
+export function login(loginRequest, redirectto) {
     return async function (dispatch) {
         dispatch({
             type: START_LOGIN,
         });
 
         let loginResult = await API.login(loginRequest);
-        if(!loginResult.success)
-        {
-            return batch(() => { 
+        if (!loginResult.success) {
+            return batch(() => {
                 dispatch({
                     type: ERROR_LOGIN,
                     err: loginResult.err,
@@ -86,17 +85,19 @@ export function login(loginRequest) {
             });
         }
         let loggedIn = await checkStatus()(dispatch);
-        if(loggedIn)
-            history.push('/')
+
+        if (loggedIn) {
+            history.push(redirectto.originurl || '/')
+            dispatch({
+                type: FINISH_LOGIN,
+            });
+        }
         else
             return dispatch({
                 type: ERROR_LOGIN,
                 err: "Somehow, the cookie is not set",
             });
 
-        dispatch({
-            type: FINISH_LOGIN,
-        });
     };
 }
 
@@ -109,9 +110,8 @@ export function createAccount(createRequest) {
         });
 
         let createResult = await API.createUser(createRequest);
-        if(!createResult.success)
-        {
-            return batch(() => { 
+        if (!createResult.success) {
+            return batch(() => {
                 dispatch({
                     type: ERROR_CREATE,
                     err: createResult.err,
@@ -125,8 +125,8 @@ export function createAccount(createRequest) {
         dispatch({
             type: FINISH_CREATE,
         });
-        
+
         history.push('./login')
-      
+
     };
 }

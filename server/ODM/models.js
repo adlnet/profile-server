@@ -16,12 +16,13 @@
 const concept = require('./concept');
 const organization = require('./organization');
 const pattern = require('./pattern');
+const patternComponent = require('./patternComponent');
 const template = require('./template');
 const profile = require('./profile');
 const profileVersion = require('./profileVersion');
 const user = require('./user');
 const apiKey = require('./apiKey');
-
+const mongoSanitize = require('mongo-sanitize');
 const mongoose = require('mongoose');
 
 module.exports = {
@@ -33,4 +34,5 @@ module.exports = {
     profileVersion: mongoose.model('profileVersion', profileVersion),
     user: mongoose.model('user', user),
     apiKey: mongoose.model('apiKey', apiKey),
+    patternComponent: mongoose.model('patternComponent', patternComponent),
 };

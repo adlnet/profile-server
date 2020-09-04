@@ -25,9 +25,9 @@ beforeAll(() => {
 describe('JsonLdToModel#toName', () => {
     describe('if optional is true', () => {
         describe('when prefLabel does not exist', () => {
-            test('it should return an empty object.', () => {
+            test('it should return an empty string.', () => {
                 const name = jsonLdToModel.toName(undefined, true);
-                expect(name).toEqual({});
+                expect(name).toEqual('');
             });
         });
     });
@@ -88,9 +88,9 @@ describe('JsonLdToModel#toName', () => {
 describe('JsonLdToModel#toDescription', () => {
     describe('if optional is true', () => {
         describe('when definition does not exist', () => {
-            test('it should return an empty object.', () => {
+            test('it should return an empty string.', () => {
                 const name = jsonLdToModel.toDescription(undefined, true);
-                expect(name).toEqual({});
+                expect(name).toEqual('');
             });
         });
     });

@@ -14,10 +14,12 @@
 * limitations under the License.
 **************************************************************** */
 const patternModel = require('../ODM/models').pattern;
+const patternComponentModel = require('../ODM/models').patternComponent;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
+const mongoSanitize = require('mongo-sanitize');
 
 async function getVersionPatterns(versionUuid) {
     let patterns;
@@ -54,7 +56,6 @@ async function getAllPatterns() {
     try {
         patterns = await patternModel
             .find({}, 'uuid iri name primary type updatedOn')
-            .where({ isActive: true })
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name',
@@ -72,32 +73,46 @@ exports.getAllPatterns = getAllPatterns;
 
 async function searchPatterns(search) {
     const query = queryBuilder.buildSearchQuery(search);
-    const results = await patternModel.find(query)
-        .where({ isActive: true })
+    const results = await patternModel.find(mongoSanitize(query))
         .populate({
             path: 'parentProfile',
             select: 'uuid name iri',
             populate: { path: 'organization', select: 'uuid name' },
         })
         .populate({
-            path: 'sequence.component',
-            select: 'uuid iri name',
+            path: 'sequence',
+            populate: {
+                path: 'component',
+                select: 'uuid iri name',
+            },
         })
         .populate({
-            path: 'alternates.component',
-            select: 'uuid iri name',
+            path: 'alternates',
+            populate: {
+                path: 'component',
+                select: 'uuid iri name',
+            },
         })
         .populate({
-            path: 'oneOrMore.component',
-            select: 'uuid iri name',
+            path: 'oneOrMore',
+            populate: {
+                path: 'component',
+                select: 'uuid iri name',
+            },
         })
         .populate({
-            path: 'zeroOrMore.component',
-            select: 'uuid iri name',
+            path: 'zeroOrMore',
+            populate: {
+                path: 'component',
+                select: 'uuid iri name',
+            },
         })
         .populate({
-            path: 'optional.component',
-            select: 'uuid iri name',
+            path: 'optional',
+            populate: {
+                path: 'component',
+                select: 'uuid iri name',
+            },
         });
 
     return results;
@@ -143,10 +158,30 @@ exports.createPattern = async function (req, res) {
         }
 
         if (!req.body.iri) {
-            const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-            req.body.iri = createIRI.pattern(profileuuid, req.body.name);
+            const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+            req.body.iri = createIRI.pattern(profileiri, req.body.name);
         }
         req.body.parentProfile = profileVersion._id;
+
+        if (Array.isArray(req.body[req.body.type])) {
+            req.body[req.body.type] = await Promise.all(
+                req.body[req.body.type].map(async c => {
+                    const comp = new patternComponentModel({
+                        componentType: c.componentType,
+                        component: c.component,
+                    });
+                    comp.save();
+                    return comp;
+                }),
+            );
+        } else {
+            const comp = new patternComponentModel({
+                componentType: req.body[req.body.type].componentType,
+                component: req.body[req.body.type].component,
+            });
+            await comp.save();
+            req.body[req.body.type] = comp;
+        }
 
         pattern = new patternModel();
         Object.assign(pattern, req.body);
@@ -182,48 +217,63 @@ exports.getPattern = async function (req, res) {
                 ],
             })
             .populate({
-                path: 'sequence.component',
-                select: 'uuid iri name description type updatedOn updatedOn',
+                path: 'sequence',
                 populate: {
-                    path: 'parentProfile',
-                    select: 'uuid name',
-                    populate: { path: 'organization', select: 'uuid name' },
+                    path: 'component',
+                    select: 'uuid iri name description type updatedOn updatedOn',
+                    populate: {
+                        path: 'parentProfile',
+                        select: 'uuid name',
+                        populate: { path: 'organization', select: 'uuid name' },
+                    },
                 },
             })
             .populate({
-                path: 'alternates.component',
-                select: 'uuid iri name description type updatedOn',
+                path: 'alternates',
                 populate: {
-                    path: 'parentProfile',
-                    select: 'uuid name',
-                    populate: { path: 'organization', select: 'uuid name' },
+                    path: 'component',
+                    select: 'uuid iri name description type updatedOn updatedOn',
+                    populate: {
+                        path: 'parentProfile',
+                        select: 'uuid name',
+                        populate: { path: 'organization', select: 'uuid name' },
+                    },
                 },
             })
             .populate({
-                path: 'oneOrMore.component',
-                select: 'uuid iri name description type updatedOn',
+                path: 'oneOrMore',
                 populate: {
-                    path: 'parentProfile',
-                    select: 'uuid name',
-                    populate: { path: 'organization', select: 'uuid name' },
+                    path: 'component',
+                    select: 'uuid iri name description type updatedOn updatedOn',
+                    populate: {
+                        path: 'parentProfile',
+                        select: 'uuid name',
+                        populate: { path: 'organization', select: 'uuid name' },
+                    },
                 },
             })
             .populate({
-                path: 'zeroOrMore.component',
-                select: 'uuid iri name description type updatedOn',
+                path: 'zeroOrMore',
                 populate: {
-                    path: 'parentProfile',
-                    select: 'uuid name',
-                    populate: { path: 'organization', select: 'uuid name' },
+                    path: 'component',
+                    select: 'uuid iri name description type updatedOn updatedOn',
+                    populate: {
+                        path: 'parentProfile',
+                        select: 'uuid name',
+                        populate: { path: 'organization', select: 'uuid name' },
+                    },
                 },
             })
             .populate({
-                path: 'optional.component',
-                select: 'uuid iri name description type updatedOn',
+                path: 'optional',
                 populate: {
-                    path: 'parentProfile',
-                    select: 'uuid name',
-                    populate: { path: 'organization', select: 'uuid name' },
+                    path: 'component',
+                    select: 'uuid iri name description type updatedOn updatedOn',
+                    populate: {
+                        path: 'parentProfile',
+                        select: 'uuid name',
+                        populate: { path: 'organization', select: 'uuid name' },
+                    },
                 },
             });
 
@@ -250,13 +300,44 @@ exports.getPattern = async function (req, res) {
 exports.updatePattern = async function (req, res) {
     let pattern;
     try {
-        pattern = await patternModel.findByUuid(req.params.pattern);
+        pattern = await patternModel.findByUuid(req.params.pattern)
+            .populate(req.body.type);
 
         if (!pattern) {
             return res.status(404).send({
                 success: false,
                 message: 'A pattern was not found for this uuid.',
             });
+        }
+
+        if (Array.isArray(pattern[pattern.type])) {
+            await Promise.all(
+                pattern[pattern.type].map(async c => {
+                    c.remove();
+                }),
+            );
+
+            req.body[req.body.type] = await Promise.all(
+                req.body[req.body.type].map(async c => {
+                    const comp = new patternComponentModel({
+                        componentType: c.componentType,
+                        component: c.component,
+                    });
+                    comp.save();
+                    return comp;
+                }),
+            );
+        } else if (pattern[pattern.type]) {
+            await pattern[pattern.type].remove();
+
+            if (req.body[req.body.type]) {
+                const comp = new patternComponentModel({
+                    componentType: req.body[req.body.type].componentType,
+                    component: req.body[req.body.type].component,
+                });
+                await comp.save();
+                req.body[req.body.type] = comp;
+            }
         }
 
         Object.assign(pattern, req.body, { updatedOn: new Date() });
@@ -287,10 +368,19 @@ exports.deletePattern = async function (req, res) {
             });
         }
 
+        await pattern.populate(pattern.type).execPopulate();
+
         if (pattern.parentProfile.equals(profileVersion._id)) {
-            pattern.isActive = false;
-            pattern.updatedOn = new Date();
-            await pattern.save();
+            if (Array.isArray(pattern[pattern.type])) {
+                await Promise.all(
+                    pattern[pattern.type].map(async c => {
+                        c.remove();
+                    }),
+                );
+            } else if (pattern[pattern.type]) {
+                await pattern[pattern.type].remove();
+            }
+            await pattern.remove();
         }
 
         profileVersion.patterns = [...profileVersion.patterns].filter(t => !t.equals(pattern._id));

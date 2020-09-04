@@ -55,8 +55,8 @@ async function createDraft(org, profile, draftInfo) {
 
 async function addConcept(profileVersion, conceptBody) {
     if (!conceptBody.iri) {
-        const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-        conceptBody.iri = createIRI.concept(profileuuid, conceptBody.name, conceptBody.type);
+        const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+        conceptBody.iri = createIRI.concept(profileiri, conceptBody.name, conceptBody.type);
     }
 
     const concept = new models.concept(conceptBody);
@@ -72,8 +72,8 @@ async function addConcept(profileVersion, conceptBody) {
 
 async function createTemplate(profileVersion, templateBody) {
     if (!templateBody.iri) {
-        const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-        templateBody.iri = createIRI.template(profileuuid, templateBody.name);
+        const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+        templateBody.iri = createIRI.template(profileiri, templateBody.name);
     }
 
     templateBody.parentProfile = profileVersion._id;
@@ -89,11 +89,11 @@ async function createTemplate(profileVersion, templateBody) {
 
 async function createPattern(profileVersion, patternBody) {
     if (!patternBody.iri) {
-        const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-        patternBody.iri = createIRI.pattern(profileuuid, patternBody.name);
+        const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+        patternBody.iri = createIRI.pattern(profileiri, patternBody.name);
     }
 
-    patternBody.parentProfile = profileVersion._ic;
+    patternBody.parentProfile = profileVersion._id;
 
     const pattern = new models.pattern(patternBody);
     await pattern.save();
@@ -227,8 +227,8 @@ describe('test basics of pattern export', () => {
         expect(exported.type).toBe('Pattern');
     });
 
-    test('primary defaults to false', async () => {
-        expect(exported.primary).toBe(false);
+    test('primary defaults to undefined', async () => {
+        expect(exported.primary).toBeFalsy();
     });
 
     test('inScheme is the iri of the profile version', async () => {
@@ -317,14 +317,14 @@ describe('test alternates of pattern export', () => {
             name: patternName,
             description: patternDescription,
             alternates: [
-                {
+                new models.patternComponent({
                     component: template,
                     componentType: 'template',
-                },
-                {
+                }),
+                new models.patternComponent({
                     component: template2,
                     componentType: 'template',
-                },
+                }),
             ],
         });
 
@@ -378,10 +378,10 @@ describe('test optional of pattern export', () => {
             name: patternName,
             description: patternDescription,
             optional:
-            {
-                component: template,
-                componentType: 'template',
-            },
+                new models.patternComponent({
+                    component: template,
+                    componentType: 'template',
+                }),
         });
 
         exported = await pattern.export(version.iri);
@@ -430,10 +430,10 @@ describe('test oneOrMore of pattern export', () => {
             name: patternName,
             description: patternDescription,
             oneOrMore:
-            {
-                component: template,
-                componentType: 'template',
-            },
+                new models.patternComponent({
+                    component: template,
+                    componentType: 'template',
+                }),
         });
 
         exported = await pattern.export(version.iri);
@@ -498,10 +498,10 @@ describe('test sequence of pattern export', () => {
         pattern2 = await createPattern(version, {
             name: 'pattern2',
             description: 'p2 desc',
-            oneOrMore: {
+            oneOrMore: new models.patternComponent({
                 component: template2,
                 componentType: 'template',
-            },
+            }),
         });
 
         pattern = await createPattern(version, {
@@ -509,14 +509,14 @@ describe('test sequence of pattern export', () => {
             description: patternDescription,
             primary: true,
             sequence: [
-                {
+                new models.patternComponent({
                     component: template,
                     componentType: 'template',
-                },
-                {
+                }),
+                new models.patternComponent({
                     component: pattern2,
                     componentType: 'pattern',
-                },
+                }),
             ],
         });
 
@@ -574,10 +574,10 @@ describe('test zeroOrMore of pattern export', () => {
             name: patternName,
             description: patternDescription,
             zeroOrMore:
-            {
-                component: template,
-                componentType: 'template',
-            },
+                new models.patternComponent({
+                    component: template,
+                    componentType: 'template',
+                }),
         });
 
         exported = await pattern.export(version.iri);

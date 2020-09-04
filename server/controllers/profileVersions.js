@@ -17,38 +17,48 @@ const profileVersionModel = require('../ODM/models').profileVersion;
 const profileModel = require('../ODM/models').profile;
 const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
+const mongoSanitize = require('mongo-sanitize');
 
-async function addNewProfileVersion(organizationUuid, profileUuid, version) {
-    const profileVersion = new profileVersionModel();
-    try {
-        const organization = await organizationModel.findByUuid(organizationUuid);
-        const profile = await profileModel.findByUuid(profileUuid);
 
-        if (!(organization && profile)) {
-            throw new Error('Organization or profile not found for that profile version');
-        }
-
-        version.wasRevisionOf = [version._id];
-        version.organization = organization._id;
-        version.parentProfile = profile._id;
-        version.version += 1;
-        if (!version.iri) {
-            version.iri = createIRI.profile(profileVersion.uuid);
-        }
-        delete version._id;
-        delete version.state;
-        delete version.uuid;
-
-        Object.assign(profileVersion, version);
-
-        profile.currentDraftVersion = profileVersion._id;
-        profile.updatedOn = new Date();
-
-        await profile.save();
-        await profileVersion.save();
-    } catch (err) {
-        throw new Error(err);
+exports.getNewProfileVersion = function (organization, profile, version) {
+    if (profile.currentPublishedVersion) {
+        version.wasRevisionOf = [profile.currentPublishedVersion];
     }
+    version.organization = organization._id;
+    version.parentProfile = profile._id;
+    version.createdOn = new Date();
+    version.updatedOn = new Date();
+    version.version += 1;
+    if (!version.iri) {
+        version.iri = createIRI.profileVersion(profile.iri, version.version);
+    }
+    delete version._id;
+    delete version.state;
+    delete version.uuid;
+
+    return new profileVersionModel(version);
+};
+
+async function addNewProfileVersion(organizationUuid, profileUuid, version, user) {
+    let profileVersion;
+
+    const organization = await organizationModel.findByUuid(organizationUuid);
+    const profile = await profileModel.findByUuid(profileUuid);
+
+    if (!(organization && profile)) {
+        throw new Error('Organization or profile not found for that profile version');
+    }
+
+    // attach user to version update
+    version.updatedBy = user;
+    profileVersion = exports.getNewProfileVersion(organization, profile, version);
+
+    profile.currentDraftVersion = profileVersion._id;
+    profile.updatedOn = new Date();
+
+    await profile.save();
+    await profileVersion.save();
+
 
     return profileVersion;
 }
@@ -84,7 +94,7 @@ exports.getProfileVersion = async function (req, res) {
 exports.createProfileVersion = async function (req, res) {
     let profileVersion;
     try {
-        profileVersion = await addNewProfileVersion(req.params.org, req.params.profile, req.body);
+        profileVersion = await addNewProfileVersion(req.params.org, req.params.profile, req.body, req.user);
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -113,7 +123,7 @@ exports.updateProfileVersion = async function (req, res) {
 
         if (req.body.state === 'published') {
             await profileVersionModel
-                .updateMany({ parentProfile: req.body.parentProfile }, { state: ' ' });
+                .updateMany({ parentProfile: req.body.parentProfile }, { state: 'revised' });
         }
 
         Object.assign(profileVersion, req.body);

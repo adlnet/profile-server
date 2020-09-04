@@ -14,10 +14,9 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { Link } from 'react-router-dom';
 import RuleTableRow from './RuleTableRow';
 
-export default function RuleTable({ rules, onAddRule }) {
+export default function RuleTable({ rules, onAddRule, isMember }) {
     return (<>
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
@@ -30,13 +29,15 @@ export default function RuleTable({ rules, onAddRule }) {
             </thead>
             <tbody style={{ lineHeight: 3 }}>
                 {(rules && rules.length > 0) ?
-                    rules.map((rule, key) => <RuleTableRow key={key} {...rule} />) :
+                    rules.map((rule, key) => <RuleTableRow key={key} {...rule} isMember={isMember} />) :
                     <tr key={1}><td className="font-sans-xs" colSpan="4" style={{ paddingLeft: '0px' }}>
                         <p>There are no rules set for this statement template. Add a rule.</p>
                     </td></tr>
                 }
             </tbody>
         </table>
-        <button className="usa-button usa-button--outline padding-x-4" onClick={onAddRule}>Add Rule</button>
+        {isMember &&
+            <button className="usa-button usa-button--outline padding-x-4" onClick={onAddRule}>Add Rule</button>
+        }
     </>);
 }

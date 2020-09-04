@@ -14,43 +14,50 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
+import { CodeEditor } from '../controls/codeEditor';
 
-export default function StatementExample({ statementExample, onAddClick, onEditClick }) {
+export default function StatementExample({ statementExample, onAddClick, onEditClick, isMember }) {
     return (<>
-        { !statementExample ? <>
-                <div className="grid-row">
-                    <span className="font-sans-3xs text-base-light">            
-                        It is highly recommended that an example be added to this template for...
+        {!statementExample && isMember ? <>
+            <div className="grid-row">
+                <span className="font-sans-3xs text-base-light">
+                    It is highly recommended that an example be added to this template for...
                     </span>
-                </div>
-                <div className="grid-row">
-                    <button 
-                            className="usa-button margin-top-2"
-                            onClick={onAddClick}
-                    >
-                        Add Example
+            </div>
+            <div className="grid-row">
+                <button
+                    className="usa-button margin-top-2"
+                    onClick={onAddClick}
+                >
+                    Add Example
                     </button>
-                </div>
-            </> : <>
-                <div className="grid-row">
-                    <div className="grid-col display-flex flex-align-center">
-                        <span className="font-sans-3xs text-base-light">            
-                            It is highly recommended that an example be added to this template for...
+            </div>
+        </> : <>
+                {isMember ?
+                    <div className="grid-row">
+                        <div className="grid-col display-flex flex-align-center">
+                            <span className="font-sans-3xs text-base-light">
+                                It is highly recommended that an example be added to this template for...
                         </span>
-                    </div>
-                    <div className="grid-col display-flex flex-column flex-align-end">
-                        <button 
-                                className="usa-button margin-top-2" style={{margin: '0'}}
+                        </div>
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <button
+                                className="usa-button margin-top-2" style={{ margin: '0' }}
                                 onClick={onEditClick}
-                        >
-                            <i className="fa fa-pencil margin-right-1"></i>Edit Example
+                            >
+                                <i className="fa fa-pencil margin-right-1"></i>Edit Example
                         </button>
+                        </div>
                     </div>
-                </div>
+                    : ''}
                 <div className="grid-row margin-y-2">
-                    <div className="border-1px border-base-lighter minh-mobile maxh-mobile width-full padding-1 overflow-auto">
-                        <pre className="font-sans-xs margin-0">{statementExample}</pre>
-                    </div>
+                    <CodeEditor
+                        id='statement-editor'
+                        name='statement-editor'
+                        value={statementExample}
+                        showGutter={false}
+                        readOnly={true}
+                    />
                 </div>
             </>
         }

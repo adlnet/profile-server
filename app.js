@@ -16,43 +16,44 @@
 const express = require('express');
 const path = require('path');
 const favicon = require('serve-favicon');
-const logger = require('morgan');
+
 const cookieParser = require('cookie-parser');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 
 require('dotenv').config();
 
-// const mongoose = require('mongoose');
-// mongoose.connect(process.env.connectionString, { useNewUrlParser: true });
-
-// var routes = require('./server/routes/index');
-
 const app = express();
 
 // view engine setup
-app.set('views', path.join(__dirname, 'server', 'views'));
+app.set('views', path.join(process.cwd(), 'server', 'views'));
 app.set('view engine', 'hjs');
 
 // uncomment after placing your favicon in /public
 // app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
-app.use(logger('dev'));
-app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: false }));
+
+app.use(bodyParser.json({ limit: '50mb' }));
+app.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'client', 'build')));
 app.use(express.static(path.join(__dirname, 'client', 'public')));
 app.use(compression());
 
+const helmet = require("helmet");
 
-app.get('/api/test', (req, res, next) => {
-    res.json({ ants: ['bob', 'harry'] });
-});
+// rewrite '/profile/:uuid' to route to either the UI or the API
+app.use(async (req, res, next) => {
+    if (req.url.startsWith('/profile')) {
+        if (req.header('content-type') === "application/json") {
+            req.url = `/api${req.url}`;
+        }
+    }
+    next();
+})
 
-app.use('/app', require('./server/routes/appApi.js'));
+app.use('/app', helmet(), require('./server/routes/appApi.js'));
 app.use('/api', require('./server/routes/publicApi.js'));
 app.get('*', (req, res, next) => {
-    // res.render('index', { title: 'Express' });
     res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
 });
 

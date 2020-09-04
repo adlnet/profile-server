@@ -46,17 +46,8 @@ router.use('/template', templates);
 const patterns = require('./patterns');
 router.use('/pattern', patterns);
 
-router.get('/profile/:profile', async (req, res, next) => {
-    const profile = await models.profile.findOne({ uuid: req.params.profile });
-    if (!profile) {
-        return res.status(404).send();
-    }
-
-    res.send({
-        success: true,
-        profile: profile,
-    });
-});
+const profiles = require('./profiles');
+router.use('/profile', profiles);
 
 router.get('/concept/:concept', async (req, res, next) => {
     const concept = await models.concept.findOne({ uuid: req.params.concept });
@@ -91,7 +82,7 @@ router.get('/concept', async (req, res, next) => {
             ],
         };
     }
-    const results = await models.concept.find(query).where({ isActive: true });
+    const results = await models.concept.find(query);
     res.send({
         success: true,
         concepts: results,
@@ -114,7 +105,7 @@ router.get('/profile', async (req, res, next) => {
             ],
         };
     }
-    const results = await models.profile.find(query).where({ isActive: true });
+    const results = await models.profile.find(query);
     res.send({
         success: true,
         profiles: results,
@@ -136,7 +127,7 @@ router.get('/organization', async (req, res, next) => {
         };
     }
 
-    const results = await models.organization.find(query).where({ isActive: true });
+    const results = await models.organization.find(query);
     console.log('results', JSON.stringify(results));
     res.send({
         success: true,

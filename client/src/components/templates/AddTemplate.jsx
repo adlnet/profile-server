@@ -53,7 +53,24 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
             if (profileVersion.state === 'draft') {
                 dispatch(editProfileVersion(newProfileVersion));
             } else if (profileVersion.state === 'published') {
-                dispatch(createNewProfileDraft(newProfileVersion));
+                // if editing the published profile, we need to clean up 
+                // the values param since we create a new draft from the published version.
+                let newVersion = {
+                    tags: newProfileVersion.tags,
+                    concepts: newProfileVersion.concepts,
+                    externalConcepts: newProfileVersion.externalConcepts,
+                    templates: newProfileVersion.templates,
+                    patterns: newProfileVersion.patterns,
+                    translations: newProfileVersion.translations,
+                    name: newProfileVersion.name,
+                    description: newProfileVersion.description,
+                    moreInformation: newProfileVersion.moreInformation,
+                    version: newProfileVersion.version,
+                    iri: newProfileVersion.iri
+                };
+                // Need to verify iri is a new one, not the original published version (profileVersion)
+                if (newVersion.iri === profileVersion.iri) delete newVersion.iri;
+                dispatch(createNewProfileDraft(newVersion));
             }
 
             dispatch(loadProfileTemplates(versionId));
@@ -105,7 +122,7 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                 searchFunction={(searchValues) => dispatch(searchTemplates(searchValues))}
                 clearSearchFunction={() => dispatch(clearTemplateResults())}
                 searchMessage="Search for existing statement templates"
-                searchResults={templateResults && templateResults.filter(t =>templateResultsFilter(t))}
+                searchResults={templateResults && templateResults.filter(t => templateResultsFilter(t))}
                 selectResultFunction={(template) => dispatch(selectTemplateResult(template))}
                 removeSelectedResultFunction={(template) => dispatch(deselectTemplateResult(template))}
                 clearSelectedResultsFunction={() => dispatch(clearTemplateResults())}
@@ -113,7 +130,7 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                 isOneSelectionOnly={isOneTemplateOnly}
                 oneSelectionOnlyMessage={"Only one template may be selected for this profile."}
                 selectionMessage={`Selected Template${isOneTemplateOnly ? '' : 's'}`}
-                resultView={<TemplateResultView onViewDetailsClick={onViewDetailsClick}/>}
+                resultView={<TemplateResultView onViewDetailsClick={onViewDetailsClick} />}
             />
 
             <div className="grid-row">
@@ -122,23 +139,23 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                 </div>
                 <div className="grid-col">
                     <button
-                            onClick={handleAddToProfileClick}
-                            className="usa-button margin-right-0 pin-right"
-                            disabled={!(selectedResults && selectedResults.length > 0)}
+                        onClick={handleAddToProfileClick}
+                        className="usa-button margin-right-0 pin-right"
+                        disabled={!(selectedResults && selectedResults.length > 0)}
                     >
                         Add to Profile
                     </button>
                 </div>
             </div>
             <Flyout
-                    show={showTemplateInfopanel}
-                    onClose={onFlyoutClose}
-                    hasOnPrevious={hasFlyoutOnPrevious}
-                    onPrevious={onFlyoutPrevious}
+                show={showTemplateInfopanel}
+                onClose={onFlyoutClose}
+                hasOnPrevious={hasFlyoutOnPrevious}
+                onPrevious={onFlyoutPrevious}
             >
-                { 
-                    (showConceptInfopanel && infoPanelConcept)  &&
-                        <ConceptInfoPanel concept={infoPanelConcept} />
+                {
+                    (showConceptInfopanel && infoPanelConcept) &&
+                    <ConceptInfoPanel concept={infoPanelConcept} />
                 }
                 {
                     (showTemplateInfopanel && infoPanelTemplate) &&

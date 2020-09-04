@@ -13,10 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
+const BaseError = require('./baseError');
+module.exports = function NotAllowedError(message) {
+    BaseError.call(this, message);
+    this.status = 405;
+};
 
-export default function EditStatementExample({ statmentExample }) {
-    return (<>
-    
-    </>);
-}
+require('util').inherits(module.exports, BaseError);

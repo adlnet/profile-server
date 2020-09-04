@@ -19,7 +19,7 @@ import { useSelector } from 'react-redux';
 
 import DeterminingPropertyTableRow from './DeterminingPropertyTableRow';
 
-export default function DeterminingPropertyTable({ removeDeterminingProperty, url }) {
+export default function DeterminingPropertyTable({ removeDeterminingProperty, url, isMember }) {
     const determiningProperties = useSelector(state => state.application.selectedDeterminingProperties);
 
     return (<>
@@ -33,24 +33,26 @@ export default function DeterminingPropertyTable({ removeDeterminingProperty, ur
             </thead>
             <tbody style={{ lineHeight: 3 }}>
                 {(determiningProperties && determiningProperties.length > 0) ?
-                    determiningProperties.map((determiningProperty, i) => 
-                        <DeterminingPropertyTableRow 
-                            key={i} 
+                    determiningProperties.map((determiningProperty, i) =>
+                        <DeterminingPropertyTableRow
+                            key={i}
                             determiningProperty={determiningProperty}
                             removeDeterminingProperty={removeDeterminingProperty}
-                            url={url}/>
-                        ) :
+                            url={url} isMember={isMember} />
+                    ) :
                     <tr key={1}>
-                        <td className="font-sans-xs" colSpan="3" style={{paddingLeft: '0px'}}>
+                        <td className="font-sans-xs" colSpan="3" style={{ paddingLeft: '0px' }}>
                             <p>There are no determining properties set for this statement template.</p>
                             <p>At least one determining property is needed to validate statements to rules in this template. If properties are not added, statements will not be matched to this template.</p>
                         </td></tr>
                 }
             </tbody>
         </table>
-        <Link
-            to={`${url}/create`}>
-            <button className="usa-button">Add Determining Property</button>
-        </Link>
+        {isMember &&
+            <Link
+                to={`${url}/create`}>
+                <button className="usa-button">Add Determining Property</button>
+            </Link>
+        }
     </>);
 }

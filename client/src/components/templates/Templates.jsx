@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { useRouteMatch, useParams, Switch, Route, NavLink, Link } from 'react-router-dom';
+import { useRouteMatch, Switch, Route, NavLink, Link, Redirect } from 'react-router-dom';
 import { useDispatch, useSelector } from "react-redux";
 
 import AddTemplate from "./AddTemplate";
@@ -23,19 +23,18 @@ import CreateTemplateForm from "./CreateTemplateForm";
 import SortingTable from '../SortingTable';
 import { loadProfileTemplates, deleteTemplate } from "../../actions/templates";
 
-export default function Templates() {
+export default function Templates({ isMember }) {
     const { url, path } = useRouteMatch();
-    const { versionId } = useParams();
     const dispatch = useDispatch();
+    const { selectedProfileVersionId } = useSelector(state => state.application);
 
     useEffect(() => {
-            dispatch(loadProfileTemplates(versionId));
-        }, [dispatch]
-    );
+        dispatch(loadProfileTemplates(selectedProfileVersionId));
+    }, [selectedProfileVersionId]);
 
     const templates = useSelector((state) => state.templates);
-    let data = React.useMemo(() => templates);
-    let columns = React.useMemo(() => getColumns(dispatch));
+    let data = React.useMemo(() => templates, [templates]);
+    let columns = React.useMemo(() => getColumns(dispatch, isMember), [isMember]);
 
     return (
         <>
@@ -52,27 +51,35 @@ export default function Templates() {
                             data={data}
                             emptyMessage="There are no statement templates associated with this profile. Add statement templates manually or import from a JSON file." />
                     </div>
-                    <div className="grid-row padding-top-2">
-                        <div className="desktop:grid-col-3">
-                            <NavLink exact
-                                to={`${url}/add`}
-                                className="usa-button">
-                                <span>Add Statement Template</span>
-                            </NavLink>
+                    {isMember &&
+                        <div className="grid-row padding-top-2">
+                            <div className="desktop:grid-col-3">
+                                <NavLink exact
+                                    to={`${url}/add`}
+                                    className="usa-button">
+                                    <span>Add Statement Template</span>
+                                </NavLink>
+                            </div>
+                            <div className="desktop:grid-col-3">
+                                <button className="usa-button ">Import from JSON File</button>
+                            </div>
                         </div>
-                        <div className="desktop:grid-col-3">
-                            <button className="usa-button ">Import from JSON File</button>
-                        </div>
-                    </div>
+                    }
                 </Route>
                 <Route exact path={`${path}/add`}>
-                    <AddTemplate rootUrl={url} />
+                    {isMember ?
+                        <AddTemplate rootUrl={url} />
+                        : <Redirect to={url} />
+                    }
                 </Route>
                 <Route exact path={`${path}/create`}>
-                    <CreateTemplateForm />
+                    {isMember ?
+                        <CreateTemplateForm />
+                        : <Redirect to={url} />
+                    }
                 </Route>
                 <Route path={`${path}/:templateId`}>
-                    <Template />
+                    <Template isMember={isMember} />
                 </Route>
             </Switch>
         </>
@@ -80,8 +87,8 @@ export default function Templates() {
 }
 
 
-function getColumns(dispatch) {
-    return [
+function getColumns(dispatch, isMember) {
+    const cols = [
         {
             Header: 'Name',
             id: 'name',
@@ -92,8 +99,8 @@ function getColumns(dispatch) {
             ) {
                 return (
                     <Link
-                            to={`templates/${uuid}`}
-                            className="usa-link button-link"
+                        to={`templates/${uuid}`}
+                        className="usa-link button-link"
                     >
                         <span>{value}</span>
                     </Link >
@@ -117,14 +124,20 @@ function getColumns(dispatch) {
             style: {
                 width: '25%'
             }
-        },
-        {
-            Header: ' ',
-            id: 'remove',
-            disableSortBy: true,
-            accessor: function removeItem(rowdata) {
-                return <button className="usa-button  usa-button--unstyled" onClick={() => dispatch(deleteTemplate(rowdata))}><span className="text-bold">Remove</span></button>
-            }
-        },
+        }
     ]
+
+    if (isMember) {
+        cols.push(
+            {
+                Header: ' ',
+                id: 'remove',
+                disableSortBy: true,
+                accessor: function removeItem(rowdata) {
+                    return <button className="usa-button  usa-button--unstyled" onClick={() => dispatch(deleteTemplate(rowdata))}><span className="text-bold">Remove</span></button>
+                }
+            }
+        )
+    }
+    return cols;
 }

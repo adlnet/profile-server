@@ -17,10 +17,11 @@ const mongoose = require('mongoose');
 const { fakeServerWithClock } = require('sinon');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
-const TemplateModel = require('../../../ODM/models').template;
-const PatternModel = require('../../../ODM/models').pattern;
-const ProfileVersionModel = require('../../../ODM/models').profileVersion;
-const PatternLayer = require('../../../controllers/importProfile/PatternLayer')
+const TemplateModel = require('../../../../ODM/models').template;
+const PatternModel = require('../../../../ODM/models').pattern;
+const PatternComponentModel = require('../../../../ODM/models').patternComponent;
+const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const PatternLayer = require('../../../../controllers/importProfile/PatternLayer')
     .PatternLayer;
 
 const mongoServer = new MongoMemoryServer();
@@ -36,14 +37,25 @@ afterAll(async () => {
     await mongoServer.stop();
 });
 
-// So for some reason, pattern models that are assigned to patterns are becoming just ObjectIDs on assignment.
-// We haven't figured out why yet so for now will just test pattern components by model id.
-
 describe('for prefLabel and definition tests, see ConceptLayerFactory.test', () => {});
+let parentProfile;
+beforeEach(async () => {
+    parentProfile = new ProfileVersionModel({
+        iri: 'parent_profile_id',
+        name: 'profile_name',
+        description: 'profile_description',
+    });
+    await parentProfile.save();
+});
+
+afterEach(async () => {
+    await parentProfile.remove();
+});
+
 describe('PatternLayer#scanscanProfileComponentLayer', () => {
     describe('Pattern type', () => {
         let patternDocument;
-        beforeEach(() => {
+        beforeEach(async () => {
             patternDocument = {
                 id: 'pattern1_id',
                 prefLabel: { en: 'test_name' },
@@ -57,6 +69,7 @@ describe('PatternLayer#scanscanProfileComponentLayer', () => {
                 try {
                     const patternLayer = new PatternLayer({
                         patternDocument: patternDocument,
+                        parentProfile: parentProfile,
                     });
                 } catch (err) {
                     error = err.message;
@@ -75,6 +88,7 @@ describe('PatternLayer#scanscanProfileComponentLayer', () => {
                 try {
                     const patternLayer = new PatternLayer({
                         patternDocument: patternDocument,
+                        parentProfile: parentProfile,
                     });
                 } catch (err) {
                     error = err.message;
@@ -90,6 +104,7 @@ describe('PatternLayer#scanscanProfileComponentLayer', () => {
 
                 const patternLayer = new PatternLayer({
                     patternDocument: patternDocument,
+                    parentProfile: parentProfile,
                 });
                 const patternModel = await patternLayer.scanProfileComponentLayer();
 
@@ -100,37 +115,130 @@ describe('PatternLayer#scanscanProfileComponentLayer', () => {
 
     describe('when the pattern exists on the server', () => {
         let existingPattern;
-        beforeEach(async () => {
-            existingPattern = new PatternModel({
-                iri: 'existing_pattern_id',
-                name: 'existing_pattern_name',
-                description: 'existing_pattern_description',
+        let existingPatternComponents;
+        let existingId;
+        let patternLayer;
+        describe('and that pattern is a parentless template', () => {
+            beforeEach(async () => {
+                existingPattern = new TemplateModel({
+                    iri: 'existing_pattern_id',
+                });
+                await existingPattern.save();
+
+                existingPatternComponents = [...Array(2).keys()].map(k => (
+                    new PatternComponentModel({ componentType: 'template', component: existingPattern })));
+                await Promise.all(existingPatternComponents.map(async e => e.save()));
+
+                existingId = existingPattern._id.toString();
+
+                patternLayer = new PatternLayer({
+                    patternDocument: {
+                        id: 'existing_pattern_id',
+                        prefLabel: { en: 'existing_pattern_name' },
+                        definition: { en: 'existing_pattern_description' },
+                        zeroOrMore: 'pattern2_id',
+                    },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                });
             });
-            await existingPattern.save();
-        });
 
-        afterEach(async () => {
-            await existingPattern.remove();
-        });
-
-        test('it should throw an error.', async () => {
-            const patternLayer = new PatternLayer({
-                patternDocument: {
-                    id: 'existing_pattern_id',
-                    prefLabel: { en: 'existing_pattern_name' },
-                    definition: { en: 'existing_pattern_description' },
-                    zeroOrMore: 'pattern2_id',
-                },
+            afterEach(async () => {
+                await Promise.all(existingPatternComponents.map(async e => e.remove()));
+                await existingPattern.remove();
             });
 
-            let error;
-            try {
+            test('it should return a pattern model with the correct values and an id equal to the parentless template.', async () => {
                 const patternModel = await patternLayer.scanProfileComponentLayer();
-            } catch (err) {
-                error = err.message;
-            }
 
-            expect(error).toMatch(/Pattern existing_pattern_id already exists/);
+                expect(patternModel._id.toString()).toEqual(existingId);
+                expect(patternModel.iri).toEqual('existing_pattern_id');
+                expect(patternModel.name).toEqual('existing_pattern_name');
+                expect(patternModel.description).toEqual('existing_pattern_description');
+                expect(patternModel.parentProfile.iri).toEqual('parent_profile_id');
+                expect(patternModel.parentProfile.name).toEqual('parent_profile_name');
+                expect(patternModel.parentProfile.description).toEqual('parent_profile_description');
+            });
+
+            describe('and save is called on the pattern layer object', () => {
+                let patternModel;
+                afterEach(async () => {
+                    await patternModel.remove();
+                });
+
+                test('it should delete the existing parentless model from the database.', async () => {
+                    patternModel = await patternLayer.scanProfileComponentLayer();
+                    await patternLayer.save();
+                    const existingParentlessModel = await TemplateModel.findOne({ iri: 'existing_pattern_id' });
+
+                    expect(existingParentlessModel).toBeFalsy();
+                });
+
+                test('it should add the new pattern model to the database.', async () => {
+                    patternModel = await patternLayer.scanProfileComponentLayer();
+                    await patternLayer.save();
+                    const savedPatternModel = await PatternModel.findOne({ iri: 'existing_pattern_id' });
+
+                    expect(savedPatternModel.equals(patternModel)).toBeTruthy();
+                });
+
+                test('it should update all instances of PatternComponentModels that had the parentless template with the new patternModel and label it as a pattern type.', async () => {
+                    patternModel = await patternLayer.scanProfileComponentLayer();
+                    await patternLayer.save();
+
+                    const newPatternCompModels = await PatternComponentModel.find({ component: patternModel }).populate('component');
+
+                    expect(newPatternCompModels.every(n => n.componentType === 'template')).toBeFalsy();
+                    // expect(newPatternCompModels.every(n => n.component)).toBeFalsy();
+                    expect(newPatternCompModels.length).toEqual(existingPatternComponents.length);
+                    expect(newPatternCompModels.every(n => n.componentType === 'pattern')).toBeTruthy();
+                    expect(newPatternCompModels.every(n => n.component.equals(patternModel))).toBeTruthy();
+                });
+            });
+        });
+
+        describe('and that pattern is not a parentless template', () => {
+            beforeEach(async () => {
+                existingPattern = new PatternModel({
+                    iri: 'existing_pattern_id',
+                    name: 'existing_pattern_name',
+                    description: 'existing_pattern_description',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                });
+                await existingPattern.save();
+            });
+
+            afterEach(async () => {
+                await existingPattern.remove();
+            });
+
+            test('it should throw an error.', async () => {
+                const patternLayer = new PatternLayer({
+                    patternDocument: {
+                        id: 'existing_pattern_id',
+                        prefLabel: { en: 'existing_pattern_name' },
+                        definition: { en: 'existing_pattern_description' },
+                        zeroOrMore: 'pattern2_id',
+                    },
+                    parentProfile: parentProfile,
+                });
+
+                let error;
+                try {
+                    const patternModel = await patternLayer.scanProfileComponentLayer();
+                } catch (err) {
+                    error = err.message;
+                }
+
+                expect(error).toMatch(/Pattern existing_pattern_id already exists/);
+            });
         });
     });
 
@@ -207,6 +315,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
             patternDocument.zeroOrMore = 'pattern1_id';
             const patternLayer = new PatternLayer({
                 patternDocument: patternDocument,
+                parentProfile: parentProfile,
             });
 
             let error;
@@ -222,18 +331,22 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
     });
 
     describe('if the members are not found on the server or in this profile version', () => {
-        test('it should throw an error.', async () => {
-            patternDocument.sequence = ['non_existant_template_id'];
-            const patternLayer = new PatternLayer({ patternDocument: patternDocument });
+        test('it should return a pattern model with the member added as a parentless component on the server.', async () => {
+            patternDocument.sequence = ['non_existent_template_id'];
+            patternDocument.primary = 'true';
+            const patternLayer = new PatternLayer({
+                patternDocument: patternDocument,
+                parentProfile: parentProfile,
+            });
 
-            let error;
-            try {
-                const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
-            } catch (err) {
-                error = err.message;
-            }
+            const patternModel = await (await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns))
+                .execPopulate({
+                    path: 'sequence',
+                    populate: { path: 'component' },
+                });
 
-            expect(error).toMatch(/non_existant_template_id cannot be a sequence member of pattern1_id because it is not on the server or in this profile version/);
+            expect(patternModel.sequence[0].component.iri).toEqual('non_existent_template_id');
+            expect(patternModel.sequence[0].componentType).toEqual('template');
         });
     });
 
@@ -243,7 +356,10 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                 describe('and this pattern is not a primary', () => {
                     test('it should throw an error.', async () => {
                         patternDocument.sequence = ['template1_id'];
-                        const patternLayer = new PatternLayer({ patternDocument: patternDocument });
+                        const patternLayer = new PatternLayer({
+                            patternDocument: patternDocument,
+                            parentProfile: parentProfile,
+                        });
 
                         let error;
                         try {
@@ -262,7 +378,10 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                     describe('and the member is a pattern', () => {
                         test('it should throw an error.', async () => {
                             patternDocument.sequence = ['pattern2_id'];
-                            const patternLayer = new PatternLayer({ patternDocument: patternDocument });
+                            const patternLayer = new PatternLayer({
+                                patternDocument: patternDocument,
+                                parentProfile: parentProfile,
+                            });
 
                             let error;
                             try {
@@ -291,6 +410,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                                 patternDocument.sequence = ['existing_template_id'];
                                 const patternLayer = new PatternLayer({
                                     patternDocument: patternDocument,
+                                    parentProfile: parentProfile,
                                 });
                                 const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
 
@@ -305,6 +425,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                                 patternDocument.sequence = ['template1_id'];
                                 const patternLayer = new PatternLayer({
                                     patternDocument: patternDocument,
+                                    parentProfile: parentProfile,
                                 });
                                 const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
 
@@ -319,6 +440,26 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
             });
 
             describe('if there is more than one member', () => {
+                // We are now allowing duplicate members.
+                // describe('and there are duplicate members', () => {
+                //     test('it should throw and error.', async () => {
+                //         patternDocument.sequence = ['template1_id', 'template1_id'];
+                //         const patternLayer = new PatternLayer({
+                //             patternDocument: patternDocument,
+                //             parentProfile: parentProfile,
+                //         });
+
+                //         let error;
+                //         try {
+                //             const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
+                //         } catch (err) {
+                //             error = err.message;
+                //         }
+
+                //         expect(error).toMatch(/The sequence property in pattern1_id contains duplicates/);
+                //     });
+                // });
+
                 describe('and all members are found on the server', () => {
                     let existingTemplate;
                     let existingPattern;
@@ -337,6 +478,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                         patternDocument.sequence = ['existing_template_id', 'existing_pattern_id'];
                         const patternLayer = new PatternLayer({
                             patternDocument: patternDocument,
+                            parentProfile: parentProfile,
                         });
                         const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
                         await patternModel.execPopulate('sequence.component');
@@ -354,6 +496,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                         patternDocument.sequence = ['pattern3_id', 'pattern2_id'];
                         const patternLayer = new PatternLayer({
                             patternDocument: patternDocument,
+                            parentProfile: parentProfile,
                         });
                         const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
 
@@ -371,7 +514,10 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
             describe('if there is only one member', () => {
                 test('it should throw an error.', async () => {
                     patternDocument.alternates = ['pattern2_id'];
-                    const patternLayer = new PatternLayer({ patternDocument: patternDocument });
+                    const patternLayer = new PatternLayer({
+                        patternDocument: patternDocument,
+                        parentProfile: parentProfile,
+                    });
 
                     let error;
                     try {
@@ -385,10 +531,33 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
             });
 
             describe('if there is more than one member', () => {
+                // We are now allowing duplicate members.
+                // describe('and there are duplicate members', () => {
+                //     test('it should throw and error.', async () => {
+                //         patternDocument.alternates = ['pattern3_id', 'pattern3_id'];
+                //         const patternLayer = new PatternLayer({
+                //             patternDocument: patternDocument,
+                //             parentProfile: parentProfile,
+                //         });
+
+                //         let error;
+                //         try {
+                //             const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
+                //         } catch (err) {
+                //             error = err.message;
+                //         }
+
+                //         expect(error).toMatch(/The alternates property in pattern1_id contains duplicates/);
+                //     });
+                // });
+
                 describe('if one of the members is an optional pattern', () => {
                     test('it should throw an error.', async () => {
                         patternDocument.alternates = ['pattern3_id', 'template1_id'];
-                        const patternLayer = new PatternLayer({ patternDocument: patternDocument });
+                        const patternLayer = new PatternLayer({
+                            patternDocument: patternDocument,
+                            parentProfile: parentProfile,
+                        });
 
                         let error;
                         try {
@@ -404,7 +573,10 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                 describe('if one of the members is a zeroOrMore pattern', () => {
                     test('it should throw an error.', async () => {
                         patternDocument.alternates = ['pattern2_id', 'template1_id'];
-                        const patternLayer = new PatternLayer({ patternDocument: patternDocument });
+                        const patternLayer = new PatternLayer({
+                            patternDocument: patternDocument,
+                            parentProfile: parentProfile,
+                        });
 
                         let error;
                         try {
@@ -423,6 +595,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                             patternDocument.alternates = ['pattern4_id', 'template1_id'];
                             const patternLayer = new PatternLayer({
                                 patternDocument: patternDocument,
+                                parentProfile: parentProfile,
                             });
                             const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
 
@@ -442,6 +615,7 @@ describe('PatternLayer#scanSubcomponentLayer', () => {
                 patternDocument.zeroOrMore = 'pattern4_id';
                 const patternLayer = new PatternLayer({
                     patternDocument: patternDocument,
+                    parentProfile: parentProfile,
                 });
                 const patternModel = await patternLayer.scanSubcomponentLayer(profileTemplates, profilePatterns);
 

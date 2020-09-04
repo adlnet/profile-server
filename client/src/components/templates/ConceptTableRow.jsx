@@ -15,25 +15,26 @@
 **************************************************************** */
 import React from 'react';
 import { Link, } from 'react-router-dom';
-// import { useDispatch } from 'react-redux';
-// import { removeConceptFromTemplate } from "../../actions/templates"
-// import { removeConcept } from "../../actions/profiles"
-
 
 export default function ConceptTableRow(props) {
     return (
         <tr>
             <th width="20%" scope="row">
-                <Link
-                    to={`${props.site_url}/${props.uuid}`}
-                    className="usa-link button-link"
-                >
-                    <span>{props.name}</span>
-                </Link>
+                {
+                    props.name ? (
+                        <Link
+                            to={`${props.site_url}/${props.uuid}`}
+                            className="usa-link button-link"
+                        >
+                            <span>{props.name}</span>
+                        </Link>
+                    )
+                        : props.iri
+                }
             </th>
 
-            <td><span width="20%" className="font-sans-3xs">{props.conceptType}</span></td>
-            <td><span width="20%" className="font-sans-3xs">{props.parentProfile.name}</span></td>
+            <td><span width="20%" className="font-sans-3xs">{props.conceptType || 'unknown'}</span></td>
+            <td><span width="20%" className="font-sans-3xs">{(props.parentProfile && props.parentProfile.name) || 'unknown'}</span></td>
             <td><span width="10%" className="font-sans-3xs">{(props.updatedOn) ? (new Date(props.updatedOn)).toLocaleDateString() : "Unknown"}</span></td>
         </tr>
     );

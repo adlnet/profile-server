@@ -19,8 +19,9 @@ const Passport = require('passport');
 const passport = new Passport.Passport();
 const LocalStrategy = require('passport-local');
 const hashPassword = require('../utils/hashPassword');
+const mongoSanitize = require('mongo-sanitize');
 
-
+const safeCompare = require('safe-compare');
 
 // var CryptoJS = require("./utils/pbkdf2.js").CryptoJS;
 
@@ -37,14 +38,12 @@ function toCaseInsenstiveRegexp(text) {
     return new RegExp(escapeRegExp(text), 'i');
 }
 module.exports.passport = passport;
-exports.setupPassport = function() {
+exports.setupPassport = function () {
+    const settings = require('../settings');
     passport.use(
         'rootSiteLogin',
         new LocalStrategy({ passReqToCallback: true }, (req, username, password, done) => {
-            user.findOne(
-                {
-                    email: toCaseInsenstiveRegexp(username),
-                },
+            user.findOne({ email: username },
                 async (err, user) => {
                     if (err) {
                         console.log(err);
@@ -52,7 +51,7 @@ exports.setupPassport = function() {
                         return;
                     }
                     if (user) {
-                        if (user.checkPassword(password) || password === process.env.SERVER_SECRET) {
+                        if (user.checkPassword(password) || safeCompare(password, settings.SERVER_SECRET)) {
                             user.passwordResetKey = null;
                             user.lastLogin = new Date();
                             user.lastLoginIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
@@ -71,8 +70,7 @@ exports.setupPassport = function() {
                     } else {
                         done(null, false);
                     }
-                },
-            );
+                });
         }),
     );
     passport.serializeUser((user, done) => {
@@ -101,7 +99,7 @@ function postLogoutCookie(req, res) {
     // totally destroy session on logout
     res.cookie('session', '', { expires: new Date() });
 }
-exports.logout = function(req, res, next) {
+exports.logout = function (req, res, next) {
     req.logout();
     req.session = null;
     postLogoutCookie(req, res);
@@ -110,19 +108,20 @@ exports.logout = function(req, res, next) {
     });
 };
 
-exports.status = function(req, res, next) {
+exports.status = function (req, res, next) {
     res.send({
         success: true,
         loggedIn: !!req.user,
         user: req.user ? {
             username: req.user.username,
             email: req.user.email,
+            type: req.user.type,
         } : null,
     });
 };
 
 // Create a new user account
-exports.createUser = function(req, res, next) {
+exports.createUser = function (req, res, next) {
     const request = req.body;
 
     // Ensure that the email address is unique
@@ -162,7 +161,7 @@ exports.createUser = function(req, res, next) {
     );
 };
 
-exports.getUser = function(req, res, next) {
+exports.getUser = function (req, res, next) {
     user.findOne(
         {
             email: toCaseInsenstiveRegexp(req.user.email),
@@ -177,7 +176,7 @@ exports.getUser = function(req, res, next) {
     );
 };
 
-exports.salt = function(req, res, next) {
+exports.salt = function (req, res, next) {
     user.findOne(
         {
             email: toCaseInsenstiveRegexp(req.query.email),
@@ -203,7 +202,7 @@ exports.salt = function(req, res, next) {
     );
 };
 
-exports.login = function(req, res, next) {
+exports.login = function (req, res, next) {
     // ensureNotLoggedIn should prevent this
     if (req.user) {
         return res.status(200).send({
@@ -211,7 +210,7 @@ exports.login = function(req, res, next) {
         });
     }
     passport.authenticate('rootSiteLogin', (err, user, info) => {
-        // console.log(err, user, info)
+        // console.log(err, user, info);
         if (err) {
             return next(err);
         }
@@ -253,7 +252,7 @@ exports.login = function(req, res, next) {
     })(req, res, next);
 };
 
-exports.validateEmail = function(req, res, next) {
+exports.validateEmail = function (req, res, next) {
     // Get user by verify code
 
     user.findOne(
@@ -292,7 +291,7 @@ exports.validateEmail = function(req, res, next) {
     );
 };
 
-exports.resendValidation = function(req, res, next) {
+exports.resendValidation = function (req, res, next) {
     res.status(200).send({
         success: true,
         err: 'validation resent',
@@ -312,7 +311,7 @@ exports.resendValidation = function(req, res, next) {
     );
 };
 
-exports.resetPassword = async function(req, res, next) {
+exports.resetPassword = async function (req, res, next) {
     if (req.user.checkPassword(req.body.oldpassword) || req.user.checkResetKey(req.body.oldpassword, req.session.passwordResetKey)) {
         try {
             await req.user.resetPassword(req.body.password);
@@ -333,16 +332,16 @@ exports.resetPassword = async function(req, res, next) {
     }
 };
 
-exports.deleteAccount = function(req, res, next) {
+exports.deleteAccount = function (req, res, next) {
     req.user.remove(() => {
-        req.logout(() => {});
+        req.logout(() => { });
     });
     res.status(400).send({
         success: true,
     });
 };
 
-exports.forgotPassword = function(req, res, next) {
+exports.forgotPassword = function (req, res, next) {
     user.findOne(
         {
             email: toCaseInsenstiveRegexp(req.body.email),
@@ -374,7 +373,7 @@ exports.forgotPassword = function(req, res, next) {
 };
 
 
-exports.search = async function(req, res, next) {
+exports.search = async function (req, res, next) {
     const query = {
         publicAccount: true, // must have allowed listing
         $or: [{ username: new RegExp(req.query.search) }, { email: new RegExp(req.query.search) }, { uuid: new RegExp(req.query.search) }],
@@ -391,7 +390,7 @@ exports.search = async function(req, res, next) {
 };
 
 
-exports.editAccount = async function(req, res) {
+exports.editAccount = async function (req, res) {
     const validator = require('validator');
     if (!validator.isEmail(req.body.email)) {
         return res.status(400).send('Please use a valid email address.');

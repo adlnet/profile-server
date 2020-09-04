@@ -13,67 +13,77 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { Formik, Form, Field, ErrorMessage } from 'formik';
-import * as Yup from 'yup';
-import ConceptResultView from '../concepts/ConceptResultView';
+import React, { useState } from 'react';
+import { Formik, Form, ErrorMessage } from 'formik';
+
+import { CodeEditorField } from '../controls/codeEditor';
+
 
 export default function CreateStatementExample({ initialValues, onSubmit, onCancelClick }) {
+    const [codeErrors, setCodeErrors] = useState();
     return (<>
         <Formik
-            initialValues={initialValues ? {statementExample: initialValues} : {statementExample: ""}}
-            validationSchema={Yup.object({
-                statementExample: Yup.string()
-                    .required('Required')
-                    // .test("json", "Invalid JSON.", function(val) {
-                        
-                    //     try {
-                    //         JSON.parse(JSON.stringify(val));
-                    //     } catch(e) {
-                    //         console.log(e);
-                    //         return true;
-                    //     }
-                    //     return false;
-                    // }),
-            })}
+            initialValues={initialValues ? { statementExample: initialValues } : { statementExample: "" }}
+            validate={(values) => {
+                const errors = {};
+                if (values.statementExample === undefined || values.statementExample === null) {
+                    errors.statementExample = "Required";
+                } else if (codeErrors) {
+                    let err = codeErrors.map(err => { if (err.text) return err.text });
+                    if (err.length)
+                        errors.statementExample = err;
+                } else {
+                    try {
+                        JSON.parse(values.statementExample);
+                    } catch (e) {
+                        if (values.statementExample.trim() !== "") errors.statementExample = e.message;
+                    }
+                }
+
+                return errors;
+            }}
             onSubmit={(values) => {
+                try {
+                    values.statementExample = JSON.stringify(JSON.parse(values.statementExample), null, 3)
+                } catch (e) {
+                    // didn't parse to JSON, set to empty string
+                    values.statementExample = "";
+                }
                 onSubmit(values);
             }}
         >
             <Form>
                 <div className="grid-row">
                     <div className="grid-col display-flex flex-align-center">
-                        <span className="font-sans-3xs text-base-light ">            
+                        <span className="font-sans-3xs text-base-light ">
                             It is highly recommended that an example be added to this template for...
                         </span>
                     </div>
                     <div className="grid-col display-flex flex-column flex-align-end">
                         <div>
-                        <button 
+                            <button
                                 className="usa-button usa-button--unstyled margin-105"
                                 type="button"
                                 onClick={onCancelClick}
-                        >
-                            <b>Cancel</b>
-                        </button>
-                        <button 
-                                className="usa-button margin-top-2" style={{margin: '0'}}
+                            >
+                                <b>Cancel</b>
+                            </button>
+                            <button
+                                className="usa-button margin-top-2" style={{ margin: '0' }}
                                 type="submit"
-                        >
-                            Add to Statement Template
+                            >
+                                Add to Statement Template
                         </button>
                         </div>
                     </div>
                 </div>
                 <div className="grid-row margin-top-2">
                     <ErrorMessage name="statementExample" />
-                    <Field 
-                        name="statementExample" 
-                        component="textarea"
-                        className="font-sans-xs border-1px border-base-lighter minh-mobile maxh-mobile width-full padding-1 overflow-auto"
-                        style={{lineHeight: '1.5'}}
+                    <CodeEditorField
+                        name="statementExample"
                         id="statementExample"
                         aria-required="true"
+                        onValidate={setCodeErrors}
                     />
                 </div>
             </Form>

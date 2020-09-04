@@ -16,7 +16,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function DeterminingPropertyTableRow({ determiningProperty, removeDeterminingProperty, onPropertyClick, url }) {
+export default function DeterminingPropertyTableRow({ determiningProperty, removeDeterminingProperty, onPropertyClick, url, isMember }) {
 
     return (
         <tr>
@@ -27,38 +27,49 @@ export default function DeterminingPropertyTableRow({ determiningProperty, remov
                 {
                     Array.isArray(determiningProperty.properties) ?
                         determiningProperty.properties.map((property, key) => (
-                            <Link 
+                            property.name ? (
+                                <Link
                                     className="usa-link button-link display-block margin-y-1"
                                     key={key}
                                     to={`${url}/${property.uuid}`}
-                            >
-                                {property && property.name}
-                            </Link>
-                        )) :
-                        <Link
-                                className="usa-link button-link"
-                                to={`${url}/${determiningProperty.properties.uuid}`}
-                        >
-                            {determiningProperty.properties && determiningProperty.properties.name}
-                        </Link>
+                                >
+                                    {property.name}
+                                </Link>
+                            )
+                                : property.iri
+                        ))
+                        : (
+                            determiningProperty.properties && determiningProperty.properties.name ? (
+                                <Link
+                                    className="usa-link button-link"
+                                    to={`${url}/${determiningProperty.properties.uuid}`}
+                                >
+                                    {determiningProperty.properties && determiningProperty.properties.name}
+                                </Link>
+                            )
+                                : determiningProperty.properties.iri
+                        )
                 }
             </td>
-            <td>
-                <Link
-                        className="usa-button  usa-button--unstyled"
-                        to={`${url}/${determiningProperty.propertyType}/edit`}
-                >
-                    <span className="text-bold" >Edit</span>
-                </Link>
-            </td>
-            <td>
-                <button
-                    className="usa-button  usa-button--unstyled"
-                    onClick={() => removeDeterminingProperty(determiningProperty.propertyType)}
-                >
-                    <span className="text-bold">Remove</span>
-                </button>
-            </td>
+            {isMember &&
+                <>
+                    <td>
+                        <Link
+                            className="usa-button  usa-button--unstyled"
+                            to={`${url}/${determiningProperty.propertyType}/edit`}
+                        >
+                            <span className="text-bold" >Edit</span>
+                        </Link>
+                    </td>
+                    <td>
+                        <button
+                            className="usa-button  usa-button--unstyled"
+                            onClick={() => removeDeterminingProperty(determiningProperty.propertyType)}
+                        >
+                            <span className="text-bold">Remove</span>
+                        </button>
+                    </td>
+                </>}
         </tr>
     );
 }

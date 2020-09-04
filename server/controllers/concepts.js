@@ -20,6 +20,7 @@ const organizationModel = require('../ODM/models').organization;
 const profileModel = require('../ODM/models').profile;
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
+const mongoSanitize = require('mongo-sanitize');
 
 async function getVersionConcepts(versionUuid) {
     let concepts;
@@ -65,7 +66,6 @@ async function getAllConcepts() {
     try {
         concepts = await conceptModel
             .find({}, 'uuid iri name description conceptType updatedOn')
-            .where({ isActive: true })
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name',
@@ -84,7 +84,6 @@ exports.getAllConcepts = getAllConcepts;
 async function searchConcepts(search) {
     const query = queryBuilder.buildSearchQuery(search);
     const results = await conceptModel.find(query)
-        .where({ isActive: true })
         .populate({
             path: 'parentProfile',
             select: 'uuid iri name',
@@ -109,8 +108,9 @@ exports.getTemplatesUsingConcept = async function (conceptId, profileVersionId) 
         if (profileVersionId) {
             const profileVersion = await profileVersionModel
                 .findByUuid(profileVersionId)
-                .where({ isActive: true })
-                .populate('templates');
+                .populate({
+                    path: 'templates',
+                });
 
             if (!profileVersion) {
                 throw new Error('Invalid profile version id.');
@@ -118,7 +118,7 @@ exports.getTemplatesUsingConcept = async function (conceptId, profileVersionId) 
 
             templates = profileVersion.templates;
         } else {
-            templates = await templateModel.find({ isActive: true });
+            templates = await templateModel.find();
         }
     } catch (err) {
         console.error(err);
@@ -204,8 +204,8 @@ exports.onlyCreateConcept = async function (orguuid, versionuuid, conceptBody) {
     }
 
     if (!conceptBody.iri) {
-        const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-        conceptBody.iri = createIRI.concept(profileuuid, conceptBody.name, conceptBody.type);
+        const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+        conceptBody.iri = createIRI.concept(profileiri, conceptBody.name, conceptBody.type);
     }
     conceptBody.parentProfile = profileVersion._id;
 

@@ -16,6 +16,12 @@ const profile = require('../ODM/profile');
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+/**
+ * Converts an array of profile version objects into the format used
+ * in the jsonld.
+ *
+ * @param {array} profileVersions Array of profile version objects
+ */
 module.exports = function (profileVersions) {
     if (!profileVersions) return;
 

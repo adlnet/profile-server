@@ -64,11 +64,11 @@ export function loadProfileTemplates(profileVersionId) {
         const state = getState();
         const organizationId = state.application.selectedOrganizationId;
         const profileId = state.application.selectedProfileId;
-        
+
         dispatch({
             type: START_GET_TEMPLATES,
         });
-        
+
         let templates = [];
         try {
             templates = await API.getTemplates(organizationId, profileId, profileVersionId);
@@ -95,12 +95,25 @@ export function createTemplate(template) {
             type: START_CREATE_TEMPLATE,
         });
 
-        let profileVersionId = state.application.selectedProfileVersionId;
+        const selectedProfileVersion = state.application.selectedProfileVersion;
+        let profileVersionId = selectedProfileVersion.uuid;
         try {
-            if (state.application.selectedProfileVersion.state === 'published') {
+            if (selectedProfileVersion.state === 'published') {
+                let newVersion = {
+                    tags: selectedProfileVersion.tags,
+                    concepts: selectedProfileVersion.concepts,
+                    externalConcepts: selectedProfileVersion.externalConcepts,
+                    templates: selectedProfileVersion.templates,
+                    translations: selectedProfileVersion.translations,
+                    patterns: selectedProfileVersion.patterns,
+                    name: selectedProfileVersion.name,
+                    description: selectedProfileVersion.description,
+                    moreInformation: selectedProfileVersion.moreInformation,
+                    version: selectedProfileVersion.version
+                };
                 const newProfileVersion = await API.createProfileVersion(
                     state.application.selectedOrganizationId, state.application.selectedProfileId,
-                    Object.assign({}, state.application.selectedProfileVersion))
+                    newVersion);
                 profileVersionId = newProfileVersion.uuid;
             }
 
@@ -108,7 +121,7 @@ export function createTemplate(template) {
                 state.application.selectedOrganizationId, state.application.selectedProfileId,
                 profileVersionId, template
             );
-            
+
             dispatch(selectTemplate(newTemplate.uuid));
             dispatch(selectProfile(state.application.selectedOrganizationId, state.application.selectedProfileId));
             dispatch(selectProfileVersion(
@@ -141,7 +154,7 @@ export function editTemplate(template) {
             const newTemplate = await API.editTemplate(
                 state.application.selectedOrganizationId, state.application.selectedProfileId,
                 state.application.selectedProfileVersionId, template);
-            
+
             dispatch(selectTemplate(newTemplate.uuid));
         } catch (err) {
             dispatch({
@@ -177,7 +190,7 @@ export function deleteTemplate(template) {
                 state.application.selectedOrganizationId, state.application.selectedProfileId,
                 profileVersionId, template.uuid
             );
-            
+
             dispatch(selectProfile(state.application.selectedOrganizationId, state.application.selectedProfileId));
             dispatch(selectProfileVersion(
                 state.application.selectedOrganizationId, state.application.selectedProfileId, profileVersionId));
@@ -262,7 +275,7 @@ export function selectInfopanelTemplate(templateId) {
 }
 
 export function clearTemplateResults() {
-    return function(dispatch) {
+    return function (dispatch) {
         dispatch({
             type: CLEAR_TEMPLATE_RESULTS,
         });
@@ -298,14 +311,14 @@ export function selectDeterminingProperties(template) {
         });
 
         const propertyTypes = [
-            'verb', 'objectActivityType','contextCategoryActivityType', 'contextGroupingActivityType',
+            'verb', 'objectActivityType', 'contextCategoryActivityType', 'contextGroupingActivityType',
             'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType'
         ]
 
         let determiningProperties = propertyTypes
-            .filter(propertyType => ( template[propertyType] ? 
-                (Array.isArray(template[propertyType]) ? 
-                    (template[propertyType].length > 0 ? 
+            .filter(propertyType => (template[propertyType] ?
+                (Array.isArray(template[propertyType]) ?
+                    (template[propertyType].length > 0 ?
                         true : false) : true) : false))
             .map(propertyType => ({ propertyType: propertyType, properties: template[propertyType] }));
 

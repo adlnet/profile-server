@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const organizationModel = require('../ODM/models').organization;
+const mongoSanitize = require('mongo-sanitize');
 
 exports.getOrganizations = async function (req, res) {
     let organizations;
@@ -73,7 +74,6 @@ exports.getOrganization = async function (req, res) {
     let organization;
     try {
         organization = await organizationModel.findByUuid(req.params.org)
-            .where({ isActive: true })
             .populate('createdBy', 'uuid username')
             .populate({
                 path: 'profiles',

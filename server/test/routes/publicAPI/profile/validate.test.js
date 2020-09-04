@@ -15,18 +15,53 @@
 **************************************************************** */
 const mongoose = require('mongoose');
 const request = require('supertest');
-const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
+const fs = require('fs');
+const path = require('path');
 
 const app = require('../../../../../app');
-const createIRI = require('../../../../utils/createIRI');
 
-describe('Validate', () => {
-    // const mongoServer = new MongoMemoryServer();
+const profileDir = 'server/test/routes/publicAPI/profile';
+const goodProfile1Path = './test_resources/good_1.jsonld';
+const scromProfile1Path = './test_resources/scorm.jsonld';
+const badProfile1Path = './test_resources/bad_1.jsonld';
 
-    // beforeAll(async () => {
-    //     const dburi = await mongoServer.getUri();
-    //     await mongoose.connect(dburi, { useNewUrlParser: true, useUnifiedTopology: true });
-    // });
 
-    it.todo('test validation endpoint');
+describe('Validate good', () => {
+    test('test validation endpoint - good basic', async () => {
+        const goodProfile1 = JSON.parse(fs.readFileSync(path.join(profileDir, goodProfile1Path)));
+        const res = await request(app)
+            .post('/api/validate')
+            .send(goodProfile1);
+        expect(res.status).toEqual(200);
+        expect(res.body.success).toBe(true);
+    });
+
+    test('test validation endpoint - scorm profile', async () => {
+        const goodProfile1 = JSON.parse(fs.readFileSync(path.join(profileDir, scromProfile1Path)));
+        const res = await request(app)
+            .post('/api/validate')
+            .send(goodProfile1);
+        expect(res.status).toEqual(200);
+        expect(res.body.success).toBe(true);
+    });
+});
+
+describe('Validate bad', () => {
+    test('test validation endpoint - bad basic', async () => {
+        const badProfile1 = JSON.parse(fs.readFileSync(path.join(profileDir, badProfile1Path)));
+        const res = await request(app)
+            .post('/api/validate')
+            .send(badProfile1);
+        expect(res.status).toEqual(400);
+        expect(res.body.success).toBe(false);
+    });
+
+    test('test validation endpoint - bad null', async () => {
+        const badProfile1 = null;
+        const res = await request(app)
+            .post('/api/validate')
+            .send(badProfile1);
+        expect(res.status).toEqual(400);
+        expect(res.body.success).toBe(false);
+    });
 });

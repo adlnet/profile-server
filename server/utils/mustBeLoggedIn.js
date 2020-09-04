@@ -13,6 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+/**
+ * Middleware added to routes that require a logged in user. Will
+ * look for a user in req.user.
+ */
 module.exports = function mustBeLoggedIn(req, res, next) {
     if (!req.user) {
         return res.status(401).send({

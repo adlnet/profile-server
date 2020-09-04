@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { useRouteMatch, Route, Switch, Link, useHistory, useParams } from 'react-router-dom';
+import { useRouteMatch, Route, Switch, Link, useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 import CreateConcept from "./CreateConcept";
@@ -23,21 +23,21 @@ import { createConcept, loadProfileConcepts } from "../../actions/concepts";
 import ConceptDetail from "./ConceptDetails"
 import SortingTable from '../SortingTable';
 
-export default function Concepts() {
+export default function Concepts({ isMember }) {
     const { path, url } = useRouteMatch();
-    const { versionId } = useParams();
     const dispatch = useDispatch();
     const history = useHistory();
+    const { selectedProfileVersionId } = useSelector(state => state.application);
 
     useEffect(() => {
-        dispatch(loadProfileConcepts(versionId));
-    }, [dispatch, versionId])
+        dispatch(loadProfileConcepts(selectedProfileVersionId));
+    }, [selectedProfileVersionId])
 
     const concepts = useSelector((state) => state.concepts)
-    
 
-    let data = React.useMemo(() => concepts);
-    let columns = React.useMemo(() => getColumns(dispatch));
+
+    let data = React.useMemo(() => concepts, [concepts]);
+    let columns = React.useMemo(() => getColumns());
 
     function onCreateConcept(concept) {
         dispatch(createConcept(concept));
@@ -52,16 +52,18 @@ export default function Concepts() {
                         <div className="desktop:grid-col">
                             <h2 style={{ marginBottom: 0 }}>Concepts</h2>
                         </div>
-                        <div className="grid-col display-flex flex-column flex-align-end">
-                            <Link
-                                to={`${url}/add`}
-                            >
-                                <button className="usa-button margin-top-2 margin-right-0">
-                                    <i className="fa fa-plus margin-right-05"></i>
-                                    Add Concept
-                                </button>
-                            </Link>
-                        </div>
+                        {isMember &&
+                            <div className="grid-col display-flex flex-column flex-align-end">
+                                <Link
+                                    to={`${url}/add`}
+                                >
+                                    <button className="usa-button margin-top-2 margin-right-0">
+                                        <i className="fa fa-plus margin-right-05"></i>
+                                        Add Concept
+                                    </button>
+                                </Link>
+                            </div>
+                        }
                     </div>
                     <div className="grid-row">
                         <SortingTable
@@ -77,7 +79,7 @@ export default function Concepts() {
                     <AddConcepts rootUrl={url} addToName="Profile"></AddConcepts>
                 </Route>
                 <Route path={`${path}/:conceptId`}>
-                    <ConceptDetail />
+                    <ConceptDetail isMember={isMember} />
                 </Route>
 
             </Switch>
@@ -85,8 +87,8 @@ export default function Concepts() {
     );
 }
 
-function getColumns(dispatch) {
-    return [
+function getColumns() {
+    const cols = [
         {
             Header: 'Name',
             id: 'name',
@@ -97,8 +99,8 @@ function getColumns(dispatch) {
             ) {
                 return (
                     <Link
-                            to={`concepts/${uuid}`}
-                            className="usa-link button-link"
+                        to={`concepts/${uuid}`}
+                        className="usa-link button-link"
                     >
                         <span>{value}</span>
                     </Link >
@@ -139,15 +141,21 @@ function getColumns(dispatch) {
             style: {
                 width: '15%'
             }
-        },
-        // {
-        //     Header: ' ',
-        //     id: 'remove',
-        //     disableSortBy: true,
-        //     accessor: function removeItem(rowdata) {
-        //         //TODO: verify this will show with correct values
-        //         return rowdata.fromTemplate == 0 || rowdata.inTemplate ? <button className="usa-button  usa-button--unstyled" onClick={() => removeClick(rowdata, dispatch)}><span className="text-bold">Remove</span></button> : ""
-        //     }
-        // },
-    ]
+        }
+    ];
+
+    // if (isMember) {
+    //     cols.push(
+    //         {
+    //             Header: ' ',
+    //             id: 'remove',
+    //             disableSortBy: true,
+    //             accessor: function removeItem(rowdata) {
+    //                 //TODO: verify this will show with correct values
+    //                 return rowdata.fromTemplate == 0 || rowdata.inTemplate ? <button className="usa-button  usa-button--unstyled" onClick={() => removeClick(rowdata, dispatch)}><span className="text-bold">Remove</span></button> : ""
+    //             }
+    //         }
+    //     )
+    // }
+    return cols;
 }

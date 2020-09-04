@@ -39,11 +39,87 @@ div.usa-radio:first-of-type
 
 @media (min-width: 64em)
 {
+    /* title nav menu items */
+    #title-banner .usa-nav__primary>.usa-nav__primary-item>a {
+        color: #FFFFFF;
+    }
+
+    /* title nav menu items on hover */
+    #title-banner .usa-nav__primary>.usa-nav__primary-item>a:hover {
+        color: #FFFFFF;
+        background: #005EA2;
+    }
+
+    #title-banner .usa-nav__primary-item .usa-nav__link.usa-current::after {
+        background-color: #FFFFFF;
+    }
+
+    /* title banner nav item for user/login */
+    #title-banner .usa-nav__primary button[aria-expanded='false'],
+    #title-banner .usa-nav__primary button:hover[aria-expanded='false']
+    {
+        color: #FFFFFF;
+        background-image: url('/assets/uswds/2.4.0/img/angle-arrow-down-white.svg'), linear-gradient(transparent, transparent);
+    }
+
+    /* title banner nav item for user/login */
+    #title-banner .usa-nav__primary button:hover[aria-expanded='false'] {
+        background-color: #005EA2;
+    }
+
+    /* title banner nav item for user/login */
+    #title-banner .usa-nav__primary button[aria-expanded='true'],
+    #title-banner .usa-nav__primary button:hover[aria-expanded='true']
+    {
+        background-color: #FFFFFF;
+        color: #333333;
+        background-image: url('/assets/uswds/2.4.0/img/angle-arrow-up-primary.svg'), linear-gradient(transparent, transparent);
+    }
+
+    #title-banner .usa-nav__primary button {
+        color: #FFFFFF
+    }
+
+    #title-banner .usa-nav__primary button:hover {
+        color: #FFFFFF
+    }
+    
+    #title-banner .usa-nav__submenu {
+        background-color: #FFFFFF;
+        box-shadow: 4px 6px 4px rgba(51,51,51,0.4), 
+                   -4px 6px 4px rgba(51,51,51,0.4);
+        width: fit-content;
+    }
+    
+    #title-banner .usa-nav__submenu .usa-nav__submenu-item {
+        width: fit-content;
+    }
+
+    #title-banner .usa-nav__submenu .usa-nav__submenu-item a {
+        color: #005ea2;
+    }
+    
+    #title-banner .usa-nav__submenu .usa-nav__submenu-item a:hover {
+        color: #005ea2;
+    }
+    
+    #title-banner .usa-logo {
+        font-size: 1.65rem;
+        margin: 2rem 0 1.5rem;
+        max-width: 50%;
+    }
+
     .usa-header--extended .usa-logo {
         font-size: 2.13rem;
         margin: 0rem 0 0.5rem;
         max-width: 50%;
     }
+
+    #title-banner .usa-logo a {
+        color: white;
+        text-decoration: none;
+    }
+
     .usa-header+.usa-section, .usa-header+main {
         border-top: 2px solid #dcdee0;
     }
@@ -78,6 +154,17 @@ div.usa-radio:first-of-type
     padding-top: 2em;
     border-top: 2px solid #dfdfdf;
 }
+
+/* #title-banner */
+#title-banner {
+    background: #25303E;
+}
+
+#title-banner .usa-nav__inner
+{
+    border-bottom: none;
+}
+
 form.usa-search>.usa-select
 {
     border: 2px solid #005ea2;
@@ -419,6 +506,7 @@ h2.profile-edit button
 {
     border-bottom: 2px solid #dfdfdf;
 }
+
 .outer-alert
 {   
     max-width: 64em;

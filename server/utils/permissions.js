@@ -18,12 +18,12 @@ const Organization = require('../ODM/models').organization;
 
 module.exports = function enforcePermissions(resourceSelector = 'resource', requiredLevel = ['any']) {
     if (!Array.isArray(requiredLevel)) { requiredLevel = [requiredLevel]; }
-    return async function(req, res, next) {
+    return async function (req, res, next) {
         let parent = req[resourceSelector];
         if (!parent) {
             return res.status(500).send({
                 success: false,
-                message: 'Could not determi ne resource in permissions enforcement.',
+                message: 'Could not determine resource in permissions enforcement.',
             });
         }
         if (!req.user) {

@@ -14,28 +14,76 @@
 * limitations under the License.
 **************************************************************** */
 const JsonLdToModel = require('./JsonLdToModel').JsonLdToModel;
+const jsonLdDiff = require('../../utils/jsonLdDiff');
 const TemplateModel = require('../../ODM/models').template;
 const ConceptModel = require('../../ODM/models').concept;
 const { conflictError, validationError } = require('../../errorTypes/errors');
+const hasNoDuplicates = require('../../utils/hasNoDuplicates');
+
+async function testModel(templateDocument, templateModel, versionStatus, parentProfileId) {
+    let thisModel;
+    let testedModel;
+
+    const exists = await TemplateModel.findOne({ iri: templateDocument.id });
+    if (exists) {
+        if (exists.parentProfile) {
+            if (versionStatus === 'new') {
+                const existingJsonLd = await exists.export(parentProfileId);
+                jsonLdDiff(existingJsonLd, templateDocument, (path, action, value) => {
+                    const splitPath = path.split('.');
+                    if (!(
+                        (action === 'add' && ['prefLabel', 'definition'].some(s => splitPath.includes(s)))
+                        || (['add', 'update', 'delete'].includes(action) && splitPath.includes('deprecated'))
+                        || (['add', 'update', 'delete'].includes(action) && path === 'rules.scopeNote')
+                    )) {
+                        let actionError;
+                        if (action === 'add') {
+                            actionError = 'added to';
+                        } else if (action === 'delete') {
+                            actionError = 'deleted from';
+                        } else {
+                            actionError = 'updated on';
+                        }
+
+                        throw new conflictError(
+                            `${path} cannot be ${actionError} published template ${templateDocument.id}`,
+                        );
+                    }
+                }, ['id', 'location']);
+            } else if (versionStatus === 'draft') {
+            } else {
+                throw new conflictError(`Template ${templateDocument.id} already exists.`);
+            }
+            templateModel.parentProfile = undefined;
+        }
+
+        thisModel = templateModel.toObject();
+        delete thisModel._id;
+        exists.set(thisModel);
+        testedModel = exists;
+    } else {
+        testedModel = templateModel;
+    }
+
+    return testedModel;
+}
 
 exports.TemplateLayer = function (versionLayer) {
     const jsonLdToModel = new JsonLdToModel();
     const templateDocument = versionLayer.templateDocument;
-    const model = new TemplateModel({
+    let model = new TemplateModel({
         iri: templateDocument.id,
         parentProfile: versionLayer.parentProfile,
         name: jsonLdToModel.toName(templateDocument.prefLabel),
         description: jsonLdToModel.toDescription(templateDocument.definition),
         translations: jsonLdToModel.toTranslations(templateDocument.prefLabel, templateDocument.definition),
         isDeprecated: jsonLdToModel.toIsDeprecated(templateDocument.deprecated),
+        rules: templateDocument.rules,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            const exists = await TemplateModel.findOne({ iri: templateDocument.id });
-            if (exists) {
-                throw new conflictError(`Template ${templateDocument.id} already exists.`);
-            }
+            model = await testModel(templateDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
 
             return model;
         },
@@ -60,11 +108,18 @@ exports.TemplateLayer = function (versionLayer) {
             };
 
             async function getConcept(conceptId, property) {
-                const exists = profileConcepts.find(c => c.iri === conceptId)
+                let exists = profileConcepts.find(c => c.iri === conceptId)
                     || await ConceptModel.findOne({ iri: conceptId });
                 if (!exists) {
-                    throw new validationError(`Concept ${conceptId} cannot be a ${property} for this template because it is does not exist in this profile version or on the server.`);
+                    exists = new ConceptModel({ iri: conceptId });
+                    await exists.save();
+                    return exists;
                 }
+
+                if (!exists.parentProfile) {
+                    return exists;
+                }
+
                 if (!propertyTypeMap[exists.conceptType].includes(property)) {
                     throw new validationError(`Concept ${conceptId} cannot be the ${property} for this template because it is type ${exists.conceptType}.`);
                 }
@@ -73,22 +128,24 @@ exports.TemplateLayer = function (versionLayer) {
             }
 
             const propertyObj = {};
-            await Promise.all(properties.filter(p => Object.keys(templateDocument).includes(p)).map(
-                async property => {
-                    if (templateDocument[property]) {
-                        let props;
-                        if (Array.isArray(templateDocument[property])) {
-                            props = await Promise.all(templateDocument[property].map(
-                                async p => getConcept(p, property),
-                            ));
-                        } else {
-                            props = await getConcept(templateDocument[property], property);
+            for (const property of properties.filter(p => Object.keys(templateDocument).includes(p))) {
+                if (templateDocument[property]) {
+                    let props;
+                    if (Array.isArray(templateDocument[property])) {
+                        if (!hasNoDuplicates(templateDocument[property])) {
+                            throw new validationError(`Template ${templateDocument.id} has a duplicate concept id in property ${property}.`);
                         }
 
-                        propertyObj[property] = props;
+                        props = await Promise.all(templateDocument[property].map(
+                            async p => getConcept(p, property),
+                        ));
+                    } else {
+                        props = await getConcept(templateDocument[property], property);
                     }
-                },
-            ));
+
+                    propertyObj[property] = props;
+                }
+            }
 
             if (templateDocument.objectStatementRefTemplate
                     && templateDocument.objectStatementRefTemplate.length > 0) {
@@ -116,7 +173,7 @@ exports.TemplateLayer = function (versionLayer) {
                 );
             }
 
-            propertyObj.rules = templateDocument.rules;
+            // propertyObj.rules = templateDocument.rules;
 
             Object.assign(model, propertyObj);
             return model;

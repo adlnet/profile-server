@@ -13,6 +13,14 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+/**
+ * Create the prefLabel language map out of the values in the model
+ * @param {string} name The value in the name property of the model,
+ * will be used as the value of the en property in the language map
+ * @param {string} translations The  translationName values out of
+ * the translations property in the model, will be added to the
+ * returned language map
+ */
 exports.prefLabel = function (name, translations) {
     const out = {
         en: name,
@@ -24,6 +32,14 @@ exports.prefLabel = function (name, translations) {
     return out;
 };
 
+/**
+ * Create the definition language map out of the values in the model
+ * @param {string} description The value in the description property of the model,
+ * will be used as the value of the en property in the language map
+ * @param {string} translations The translationDesc values out of
+ * the translations property in the model, will be added to the returned
+ * language map
+ */
 exports.definition = function (description, translations) {
     return {
         en: description,

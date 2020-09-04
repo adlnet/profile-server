@@ -13,6 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+/**
+ * Middleware added to test if a resource is available to be edited.
+ * Looks for req.resource to be populated with a model with lock properties.
+ *
+ * @param {boolean} _continue To call next and move on to the next
+ * function on the route
+ */
 module.exports = function (_continue = false) {
     return async function lock(req, res, next) {
         if (!req.user) throw new Error('Anonymous users cannot lock a resource');

@@ -15,24 +15,27 @@
 **************************************************************** */
 
 import React from 'react';
-import {  Route, Redirect, } from 'react-router-dom';
-import {useSelector} from 'react-redux';
+import { Route, Redirect, useLocation } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-export default function NotLoggedInRoute({ component, ...rest }){
-    let userData = useSelector( (store) => store.userData);
+export default function NotLoggedInRoute({ component, ...rest }) {
+    const location = useLocation();
+    let userData = useSelector((store) => store.userData);
     let children = rest.children;
     rest.children = null;
-    if(component)
-    rest.children = [
-        (props) => (
-            <component {...props} />
-       )
-    ]
-    if(!userData.user)
-    return <Route {...rest} render={() => children} />
-    else 
-    return <Route {...rest} render={(props) => (
-         <Redirect to='/' />
-    )} />
+    if (component)
+        rest.children = [
+            (props) => (
+                <component {...props} />
+            )
+        ]
+
+    if (!userData.user)
+        return <Route {...rest} render={() => children} />
+    else
+        return <Route {...rest} render={(props) => {
+            return < Redirect to={location.originurl || location} />
+        }
+        } />
 }
 

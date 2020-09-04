@@ -18,7 +18,7 @@ import { useSelector } from 'react-redux';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
 
-export default function TemplateDetail({ onEditClick }) {
+export default function TemplateDetail({ onEditClick, isMember }) {
     let template = useSelector((state) => state.application.selectedTemplate)
 
     return (
@@ -41,13 +41,15 @@ export default function TemplateDetail({ onEditClick }) {
                 </Detail>
             </div>
             <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
-                <button
-                    className="usa-button padding-x-105 margin-bottom-2 margin-right-0"
-                    onClick={onEditClick}
-                >
-                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                {isMember &&
+                    <button
+                        className="usa-button padding-x-105 margin-bottom-2 margin-right-0"
+                        onClick={onEditClick}
+                    >
+                        <span className="fa fa-pencil fa-lg margin-right-1"></span>
                      Edit Statement Template Details
-                </button>
+                    </button>
+                }
                 <div className="details-metadata-box width-full">
                     <Detail title="updated" >
                         {(template.updatedOn) ? (new Date(template.updatedOn)).toLocaleDateString() : "Unknown"}

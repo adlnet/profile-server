@@ -16,6 +16,8 @@
 const ConceptModel = require('../../ODM/models').concept;
 const JsonLdToModel = require('./JsonLdToModel').JsonLdToModel;
 const { conflictError, validationError } = require('../../errorTypes/errors');
+const hasNoDuplicates = require('../../utils/hasNoDuplicates');
+const jsonLdDiff = require('../../utils/jsonLdDiff');
 
 async function conceptExists(id) {
     const exists = await ConceptModel.findOne({ iri: id });
@@ -36,19 +38,64 @@ function commonConceptProperties(conceptDocument, parentProfile) {
     };
 }
 
+async function testModel(conceptDocument, conceptModel, versionStatus, parentProfileId) {
+    let thisModel;
+    let testedModel;
+
+    const exists = await conceptExists(conceptDocument.id);
+    if (exists) {
+        if (exists.parentProfile) {
+            if (versionStatus === 'new') {
+                const existingJsonLd = await exists.export(parentProfileId);
+                jsonLdDiff(existingJsonLd, conceptDocument, (path, action, value) => {
+                    const splitPath = path.split('.');
+                    if (!(
+                        (action === 'add' && ['prefLabel', 'definition'].some(s => splitPath.includes(s)))
+                        || (['add', 'update', 'delete'].includes(action) && splitPath.includes('deprecated'))
+                    )) {
+                        let actionError;
+                        if (action === 'add') {
+                            actionError = 'added to';
+                        } else if (action === 'delete') {
+                            actionError = 'deleted from';
+                        } else {
+                            actionError = 'updated on';
+                        }
+
+                        throw new conflictError(
+                            `${path} cannot be ${actionError} published concept ${conceptDocument.id}`,
+                        );
+                    }
+                }, ['id']);
+            } else if (versionStatus === 'draft') {
+            } else {
+                throw new conflictError(`Concept ${conceptDocument.id} already exists.`);
+            }
+
+            conceptModel.parentProfile = undefined;
+        }
+
+        thisModel = conceptModel.toObject();
+        delete thisModel._id;
+        exists.set(thisModel);
+        testedModel = exists;
+    } else {
+        testedModel = conceptModel;
+    }
+
+    return testedModel;
+}
+
 function SemanticallyRelatableConceptLayer (versionLayer) {
     const conceptDocument = versionLayer.conceptDocument;
-    const model = new ConceptModel({
+    let model = new ConceptModel({
         ...commonConceptProperties(conceptDocument, versionLayer.parentProfile),
         conceptType: conceptDocument.type,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            const exists = await conceptExists(conceptDocument.id);
-            if (exists) {
-                throw new conflictError(`Concept ${conceptDocument.id} already exists.`);
-            }
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
 
             return model;
         },
@@ -57,23 +104,33 @@ function SemanticallyRelatableConceptLayer (versionLayer) {
             const profileRelationTypes = ['related', 'broader', 'narrower'];
 
             const similarTerms = [];
-            await Promise.all(externalRelationTypes.map(async e => {
-                const terms = conceptDocument[e] || [];
-                await Promise.all(terms.map(async t => {
-                    const externalConcept = await conceptExists(t);
-                    if (externalConcept) {
-                        similarTerms.push({
-                            relationType: e,
-                            concept: externalConcept,
-                        });
-                    } else {
-                        throw new validationError(`Concept ${t} cannot have a ${e} relation because it does not exist on the server`);
+            for (const type of externalRelationTypes.filter(t => Object.keys(conceptDocument).includes(t))) {
+                if (!hasNoDuplicates(conceptDocument[type])) {
+                    throw new validationError(`Concept ${conceptDocument.id} has duplicate concepts in property ${type}`);
+                }
+                await Promise.all(conceptDocument[type].map(async t => {
+                    if (profileConcepts.find(p => p.iri === t)) {
+                        throw new validationError(`Concept ${t} cannot have a ${type} relation because it is part of this profile version.`);
                     }
-                }));
-            }));
 
-            profileRelationTypes.forEach(e => {
+                    let externalConcept = await conceptExists(t);
+                    if (!externalConcept) {
+                        externalConcept = new ConceptModel({ iri: t });
+                        await externalConcept.save();
+                    }
+
+                    similarTerms.push({
+                        relationType: type,
+                        concept: externalConcept,
+                    });
+                }));
+            }
+
+            profileRelationTypes.filter(t => Object.keys(conceptDocument).includes(t)).forEach(e => {
                 const terms = conceptDocument[e] || [];
+                if (!hasNoDuplicates(terms)) {
+                    throw new validationError(`Concept ${conceptDocument.id} has duplicate concepts in property ${e}`);
+                }
                 terms.forEach(t => {
                     const profileConcept = profileConcepts.find(p => p.iri === t);
                     if (profileConcept) {
@@ -99,8 +156,9 @@ function SemanticallyRelatableConceptLayer (versionLayer) {
 function DocumentConceptLayer (versionLayer) {
     const jsonLdToModel = new JsonLdToModel();
     const conceptDocument = versionLayer.conceptDocument;
-    const model = new ConceptModel({
+    let model = new ConceptModel({
         ...commonConceptProperties(conceptDocument, versionLayer.parentProfile),
+        contextIri: conceptDocument.context,
         conceptType: 'Document',
         mediaType: conceptDocument.contentType,
         ...jsonLdToModel.toSchema(conceptDocument.inlineSchema, conceptDocument.schema),
@@ -108,10 +166,7 @@ function DocumentConceptLayer (versionLayer) {
 
     return {
         scanProfileComponentLayer: async function () {
-            const exists = await conceptExists(conceptDocument.id);
-            if (exists) {
-                throw new conflictError(`Concept ${conceptDocument.id} already exists.`);
-            }
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
 
             return model;
         },
@@ -124,18 +179,16 @@ function DocumentConceptLayer (versionLayer) {
 function ExtensionConceptLayer (versionLayer) {
     const jsonLdToModel = new JsonLdToModel();
     const conceptDocument = versionLayer.conceptDocument;
-    const model = new ConceptModel({
+    let model = new ConceptModel({
         ...commonConceptProperties(conceptDocument, versionLayer.parentProfile),
+        contextIri: conceptDocument.context,
         conceptType: 'Extension',
         ...jsonLdToModel.toSchema(conceptDocument.inlineSchema, conceptDocument.schema),
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            const exists = await conceptExists(conceptDocument.id);
-            if (exists) {
-                throw new conflictError(`Concept ${conceptDocument.id} already exists.`);
-            }
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
 
             return model;
         },
@@ -150,6 +203,9 @@ function ExtensionConceptLayer (versionLayer) {
                         `Concept ${conceptDocument.id} has a recommendedActivityTypes property but is not an ActivityExtension type`,
                     );
                 }
+                if (!hasNoDuplicates(recommendedActivityTypes)) {
+                    throw new validationError(`Concept ${conceptDocument.id} has duplicate concepts in property recommendedActivityTypes`);
+                }
 
                 await Promise.all(recommendedActivityTypes.map(async a => {
                     let recommendedActivityType = profileConcepts.find(p => p.iri === a);
@@ -157,9 +213,8 @@ function ExtensionConceptLayer (versionLayer) {
                         recommendedActivityType = await conceptExists(a);
                     }
                     if (!recommendedActivityType) {
-                        throw new validationError(
-                            `Concept ${a} cannot be a recommended activity type for ${conceptDocument.id} because it is not in this profile version or on the server.`,
-                        );
+                        recommendedActivityType = new ConceptModel({ iri: a, type: 'ActivityType' });
+                        await recommendedActivityType.save();
                     }
                     if (recommendedActivityType.type !== 'ActivityType') {
                         throw new validationError(
@@ -177,7 +232,9 @@ function ExtensionConceptLayer (versionLayer) {
                         `Concept ${conceptDocument.id} has a recommendedVerbs property but is not a ContextExtension or a ResultExtension type`,
                     );
                 }
-
+                if (!hasNoDuplicates(recommendedVerbs)) {
+                    throw new validationError(`Concept ${conceptDocument.id} has duplicate concepts in property recommendedVerbs`);
+                }
 
                 await Promise.all(recommendedVerbs.map(async v => {
                     let recommendedVerb = profileConcepts.find(p => p.iri === v);
@@ -185,9 +242,8 @@ function ExtensionConceptLayer (versionLayer) {
                         recommendedVerb = await conceptExists(v);
                     }
                     if (!recommendedVerb) {
-                        throw new validationError(
-                            `Concept ${v} cannot be a recommended verb for ${conceptDocument.id} because it is not in this profile version or on the server.`,
-                        );
+                        recommendedVerb = new ConceptModel({ iri: v, type: 'Verb' });
+                        await recommendedVerb.save();
                     }
                     if (recommendedVerb.type !== 'Verb') {
                         throw new validationError(
@@ -208,7 +264,7 @@ function ExtensionConceptLayer (versionLayer) {
 function ActivityConceptLayer (versionLayer) {
     const jsonLdToModel = new JsonLdToModel();
     const conceptDocument = versionLayer.conceptDocument;
-    const model = new ConceptModel({
+    let model = new ConceptModel({
         conceptType: conceptDocument.type,
         iri: conceptDocument.id,
         type: conceptDocument.type,
@@ -218,10 +274,7 @@ function ActivityConceptLayer (versionLayer) {
 
     return {
         scanProfileComponentLayer: async function () {
-            const exists = await conceptExists(conceptDocument.id);
-            if (exists) {
-                throw new conflictError(`Concept ${conceptDocument.id} already exists.`);
-            }
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
 
             return model;
         },

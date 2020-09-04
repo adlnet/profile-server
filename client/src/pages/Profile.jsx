@@ -20,29 +20,42 @@ import Lock from "../components/users/lock";
 import Templates from '../components/templates/Templates';
 import Concepts from '../components/concepts/Concepts';
 import Patterns from '../components/patterns/Patterns'
-import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, editProfileVersion } from "../actions/profiles";
+import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, editProfileVersion, resolveProfile } from "../actions/profiles";
 import history from "../history";
 import CreateProfileForm from '../components/profiles/CreateProfileForm';
 import ProfileDetails from '../components/profiles/ProfileDetails';
 import ErrorPage from '../components/errors/ErrorPage';
 import ProfilePublishButton from '../components/profiles/profilePublishButton';
+import { selectOrganization } from '../actions/organizations';
 
-export default function Profile ({ rootUrl }) {
+export default function Profile() {
     const dispatch = useDispatch();
-    const { path } = useRouteMatch();
+    const { url, path } = useRouteMatch();
     const { organizationId, profileId, versionId } = useParams();
 
     const profile = useSelector((state) => state.application.selectedProfile);
     const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
+    const organization = useSelector(state => state.application.selectedOrganization);
+
+    let isMember = !!organizationId && organization && organization.membership;
 
     useEffect(() => {
-        dispatch(selectProfile(organizationId, profileId));
-        dispatch(selectProfileVersion(organizationId, profileId, versionId));
-    }, [])
+        // url might be /profile/:uuid .. or /organization/uuid/profile/uuid/version/uuid
+        if (profileId && versionId) {
+            dispatch(selectProfile(organizationId, profileId));
+            dispatch(selectProfileVersion(organizationId, profileId, versionId));
+        } else if (profileId) {
+            // url must be /profile/:uuid.. figure out what id they sent us
+            dispatch(resolveProfile(profileId));
+        }
 
-    if (!profile || !profileVersion) return '';
+        if (organizationId) {
+            dispatch(selectOrganization(organizationId));
+        }
+    }, [organizationId, profileId, versionId])
 
-    const url = `${rootUrl}/profile/${profile.uuid}/version/${profileVersion.uuid}`;
+    if (!(profile && profileVersion && organization)) return '';
+
 
     function publishProfile() {
         if (profileVersion.state !== 'draft') return;
@@ -51,7 +64,24 @@ export default function Profile ({ rootUrl }) {
 
     function handleEditProfile(values) {
         if (values.state === 'published') {
-            dispatch(createNewProfileDraft(values));
+            // if editing the published profile, we need to clean up 
+            // the values param since we create a new draft from the published version.
+            let newVersion = {
+                tags: values.tags,
+                concepts: values.concepts,
+                externalConcepts: values.externalConcepts,
+                templates: values.templates,
+                patterns: values.patterns,
+                translations: values.translations,
+                name: values.name,
+                description: values.description,
+                moreInformation: values.moreInformation,
+                version: values.version,
+                iri: values.iri
+            };
+            // Need to verify iri is a new one, not the original published version (profileVersion)
+            if (newVersion.iri === profileVersion.iri) delete newVersion.iri;
+            dispatch(createNewProfileDraft(newVersion));
         } else {
             dispatch(editProfileVersion(values));
         }
@@ -67,7 +97,7 @@ export default function Profile ({ rootUrl }) {
         const max = Math.max(...profile.versions.map(v => v.version));
         return version === max;
     }
-    
+
     return (<>
         {
             profileVersion.state === 'draft' ?
@@ -103,7 +133,7 @@ export default function Profile ({ rootUrl }) {
             <nav aria-label="Primary navigation" className="usa-nav">
                 <div className="usa-nav__inner">
                     <button className="usa-nav__close"><i className="fa fa-close"></i></button>
-                    <ul className="usa-nav__primary usa-accordion"  style={{marginBottom: '-.15rem'}}>
+                    <ul className="usa-nav__primary usa-accordion" style={{ marginBottom: '-.15rem' }}>
                         <li className={`usa-nav__primary-item`}>
                             <NavLink exact
                                 to={`${url}`}
@@ -136,20 +166,19 @@ export default function Profile ({ rootUrl }) {
                                 <span className="text-bold">
                                     Concepts ({
                                         profileVersion.concepts && profileVersion.externalConcepts ?
-                                        profileVersion.concepts.length + profileVersion.externalConcepts.length: 0
+                                            profileVersion.concepts.length + profileVersion.externalConcepts.length : 0
                                     })
                                 </span>
                             </NavLink>
                         </li>
                     </ul>
-                    <div className="usa-nav__secondary">
-                        <div className="pull-right">
-                            <ProfilePublishButton onPublish={publishProfile} />
+                    {isMember &&
+                        <div className="usa-nav__secondary">
+                            <div className="pull-right">
+                                <ProfilePublishButton onPublish={publishProfile} />
+                            </div>
                         </div>
-                    </div>
-                    
-                   
-                    
+                    }
                 </div>
             </nav>
         </header>
@@ -157,27 +186,29 @@ export default function Profile ({ rootUrl }) {
 
             <Switch>
                 <Route exact path={path}>
-                    <ProfileDetails />
+                    <ProfileDetails isMember={isMember} />
                 </Route>
-                <Route path={`${path}/templates`}>
-                    <Templates />
+                <Route path={`${path}/templates`} >
+                    <Templates isMember={isMember} />
                 </Route>
-                <Route path={`${path}/patterns`}>
-                    <Patterns />
+                <Route path={`${path}/patterns`} >
+                    <Patterns isMember={isMember} />
                 </Route>
-                <Route path={`${path}/concepts`}>
-                    <Concepts />
+                <Route path={`${path}/concepts`} >
+                    <Concepts isMember={isMember} />
                 </Route>
                 <Route path={`${path}/edit`}>
-                    <h2>Edit Profile Details</h2>
-                   
-                    <Lock resourceUrl={`/org/${organizationId}/profile/${profileId}/version/${versionId}`}>
-                        <CreateProfileForm
-                            handleSubmit={handleEditProfile}
-                            handleCancel={handleCancelEditProfile}
-                            initialValue={profileVersion}
-                        />
-                    </Lock>
+                    {isMember ? <>
+                        <h2>Edit Profile Details</h2>
+
+                        <Lock resourceUrl={`/org/${organization.uuid}/profile/${profile.uuid}/version/${profileVersion.uuid}`}>
+                            <CreateProfileForm
+                                handleSubmit={handleEditProfile}
+                                handleCancel={handleCancelEditProfile}
+                                initialValue={profileVersion}
+                            />
+                        </Lock> </>
+                        : <p>You do not have permissions to edit this profile. <a href={path} className="usa-link">Go Back</a></p>}
                 </Route>
                 <Route>
                     <ErrorPage />

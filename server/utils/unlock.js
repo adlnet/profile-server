@@ -13,9 +13,13 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+/**
+ * Called to unlock a resource
+ * @param {boolean} _continue Used as middleware and should call next
+ */
 module.exports = function unlock(_continue = false) {
-    return async function(req, res, next) {
-        console.log('unlocking')
+    return async function (req, res, next) {
+        console.log('unlocking');
         if (!req.user) throw new Error('anonymous cannot lock');
         if (!req.resource) throw new Error('resource not found');
 

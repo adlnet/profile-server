@@ -16,11 +16,12 @@
 const validate = require('jsonschema').validate;
 const _ = require('lodash');
 module.exports = function validateTypeWrapper(type) {
-    const middleware = function(req, res, next) {
+    const middleware = function (req, res, next) {
         const dataRequest = req.body;
 
         const output = validate(dataRequest, type);
 
+        console.log('validator.js ', { output });
         if (output.errors.length === 0) {
             next();
         } else {

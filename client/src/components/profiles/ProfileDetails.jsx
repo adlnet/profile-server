@@ -13,47 +13,44 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useEffect } from 'react';
-import { Link, useParams, useRouteMatch } from 'react-router-dom';
+import React from 'react';
+import { Link, useRouteMatch } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
-// import API from '../../api';
 import { Detail, Translations, Tags } from '../DetailComponents';
-import { selectProfile, selectProfileVersion } from '../../actions/profiles';
+import { selectProfileVersion } from '../../actions/profiles';
 
 import Sparkline from "../controls/sparkline";
 
 
-export default function ProfileDetails() {
-    // const [orgdata, setOrgData] = useState({});
+export default function ProfileDetails({ isMember }) {
+
     const dispatch = useDispatch();
     const { url } = useRouteMatch();
-    const { organizationId, profileId, versionId } = useParams();
 
     const profile = useSelector((state) => state.application.selectedProfile);
     const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
+    const organization = useSelector(state => state.application.selectedOrganization);
 
-    useEffect(() => {
-        dispatch(selectProfile(organizationId, profileId));
-        dispatch(selectProfileVersion(organizationId, profileId, versionId));
-    }, [dispatch]);
-    if (!profile || !profileVersion) return '';
+    if (!(profile && profileVersion && organization)) return '';
 
     let versions = [...profile.versions];
     versions.sort((a, b) => b.version - a.version);
 
     return (
         <>
-             <Sparkline url={`/org/${organizationId}/profile/${profileId}/usage`} ></Sparkline>
+
             <div className="grid-row profile-edit">
                 <h2 className="profile-edit">
-                    <Link to={`${url}/edit`}>
-                        <button className="usa-button  usa-button--primary ">
-                            <span className="font-sans-2xs text-bold ">
-                                <span className="fa fa-pencil fa-lg margin-right-1"></span>
-                                Edit Profile Details</span>
-                        </button>
-                    </Link>
+                    {isMember &&
+                        <Link to={`${url}/edit`}>
+                            <button className="usa-button  usa-button--primary ">
+                                <span className="font-sans-2xs text-bold ">
+                                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                                    Edit Profile Details</span>
+                            </button>
+                        </Link>
+                    }
                 </h2>
                 <div className="desktop:grid-col-2">
                     <h2>Profile Details</h2>
@@ -90,12 +87,18 @@ export default function ProfileDetails() {
                     <div className="details-metadata-box">
                         <Detail title="version">
                             <select
-                                name="type" value={`${profileVersion.uuid}`} onChange={(e) => dispatch(selectProfileVersion(organizationId, profileId, e.target.value))} rows="3"
+                                name="type" value={`${profileVersion.uuid}`} onChange={(e) => dispatch(selectProfileVersion(organization.uuid, profile.uuid, e.target.value))} rows="3"
                                 className="profile-version-select" id="type" aria-required="true"
                             >
                                 {
                                     versions.map(version => (
-                                        <option key={version.uuid} value={version.uuid}>{`${version.version} ${version.state ? version.state : ''}`}</option>
+                                        <option
+                                            key={version.uuid}
+                                            value={version.uuid}
+                                            disabled={version.isShallowVersion}
+                                        >
+                                            {`${version.version} ${version.state ? version.state : ''}`}
+                                        </option>
                                     ))
                                 }
                             </select>
@@ -105,6 +108,9 @@ export default function ProfileDetails() {
                         </Detail>
                         <Detail title="author">
                             {profileVersion.organization.name}
+                        </Detail>
+                        <Detail title="total views for the last 30 days">
+                            <Sparkline url={`/org/${organization.uuid}/profile/${profile.uuid}/usage`} ></Sparkline>
                         </Detail>
                     </div>
                 </div>

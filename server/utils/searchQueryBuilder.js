@@ -17,6 +17,10 @@ function setRegex(column, searchArray) {
     return searchArray.map(s => ({ [column]: { $regex: new RegExp(s, 'i') } }));
 }
 
+/**
+ * Creates a mongo query based on the provided search terms
+ * @param {string} searchString The string to search for
+ */
 exports.buildSearchQuery = function (searchString) {
     const search = searchString.split(' ')
         .map(s => s.trim())
@@ -29,4 +33,4 @@ exports.buildSearchQuery = function (searchString) {
             { $or: setRegex('iri', search) },
         ],
     };
-}
+};

@@ -52,20 +52,44 @@ describe('Create Profile', () => {
         const res = await request(app)
             .post('/api/profile')
             .set('Content-Type', 'application/json')
-            .set('api-key', key.uuid)
-            .send(goodProfile1);
+            .set('x-api-key', key.uuid)
+            .send({
+                status: 'draft',
+                profile: goodProfile1,
+            });
         expect(res.status).toEqual(200);
         expect(res.body.success).toBe(true);
-        expect(res.body.metadata.id).toBe(goodProfile1.id);
+        expect(res.body.metadata.profile_id).toBe(goodProfile1.id);
+        expect(res.body.metadata.status.published).toBeFalsy();
     });
+
+    // describe('and status is `draft`', () => {
+    //     test('should accept a valid profile ld doc', async () => {
+    //         const goodProfile1 = JSON.parse(fs.readFileSync(path.join(profileDir, goodProfile1Path)));
+    //         const res = await request(app)
+    //             .post('/api/profile')
+    //             .set('Content-Type', 'application/json')
+    //             .set('x-api-key', key.uuid)
+    //             .send({
+    //                 status: 'published',
+    //                 profile: goodProfile1,
+    //             });
+    //         expect(res.status).toEqual(200);
+    //         expect(res.body.success).toBe(true);
+    //         expect(res.body.metadata.profile_id).toBe(goodProfile1.id);
+    //         expect(res.body.metadata.status.published).toBeFalsy();
+    //     });
+    // });
 
     test('should reject an invalid profile', async () => {
         const badProfile1 = JSON.parse(fs.readFileSync(path.join(profileDir, badProfile1Path)));
         const res = await request(app)
             .post('/api/profile')
             .set('Content-Type', 'application/json')
-            .set('api-key', key.uuid)
-            .send(badProfile1);
+            .set('x-api-key', key.uuid)
+            .send({
+                profile: badProfile1,
+            });
         expect(res.status).toEqual(400);
         expect(res.body.success).toBe(false);
     });
@@ -74,7 +98,7 @@ describe('Create Profile', () => {
         const res = await request(app)
             .post('/api/profile')
             .set('Content-Type', 'application/json')
-            .set('api-key', key.uuid)
+            .set('x-api-key', key.uuid)
             .send();
 
         expect(res.status).toEqual(400);
@@ -86,7 +110,7 @@ describe('Create Profile', () => {
         const res = await request(app)
             .post('/api/profile')
             .set('Content-Type', 'application/json')
-            .set('api-key', key.uuid)
+            .set('x-api-key', key.uuid)
             .send(goodProfile1);
 
         const profileModel = await profile.findOne({ iri: goodProfile1.id });

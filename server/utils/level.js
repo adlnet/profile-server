@@ -14,11 +14,17 @@
 * limitations under the License.
 **************************************************************** */
 const levels = ['member', 'admin', 'owner', 'sysadmin'];
-module.exports = function(level) {
+/**
+ * Middleware that sets a permission level on a route. The value of
+ * req.permission must be of the same level or greater to gain access.
+ *
+ * @param {enum} level ['member', 'admin', 'owner', 'sysadmin']
+ */
+module.exports = function (level) {
     const required = levels.indexOf(level);
     if (required == -1) { throw new Error("don't understand this permission level."); }
 
-    return function(req, res, next) {
+    return function (req, res, next) {
         const has = levels.indexOf(req.permissionLevel);
 
         if (has < required) {

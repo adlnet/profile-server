@@ -14,42 +14,39 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react'
-import {useState,useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import api from '../../api';
-export default function Lock({children=[],resourceUrl})
-{
-    let [haveLock,setLock] = useState(false);
-    let [lockMessage,setLockMessage] = useState("");
+export default function Lock({ children = [], resourceUrl }) {
+    let [haveLock, setLock] = useState(false);
+    let [lockMessage, setLockMessage] = useState("");
 
-    let func = async function(){
-            
-        if(haveLock)
-            return; 
-        let lockState = await api.getJSON(resourceUrl +"/lock");
-        
-        if(lockState.success == false)
-        {
+    let func = async function () {
+
+        if (haveLock)
+            return;
+        let lockState = await api.getJSON("/app" + resourceUrl + "/lock");
+
+        if (lockState.success == false) {
             setLock(false); setLockMessage(lockState.message);
         }
-        if(lockState.success == true)
-        {
+        if (lockState.success == true) {
             setLock(true); setLockMessage(lockState.message);
         }
-        
-    }; 
 
-    useEffect(()=>{
+    };
+
+    useEffect(() => {
 
         func();
-        return () =>{
-        
-            api.getJSON(resourceUrl +"/unlock");
+        return () => {
+
+            api.getJSON("/app" + resourceUrl + "/unlock");
         }
-    },[])
-    if(!haveLock) return <div>
-        <div><p>{ lockMessage || "Trying to obtain write lock." }</p></div> 
-        <div className="usa-button" onClick={()=>func()}> Retry </div> 
+    }, [])
+    if (!haveLock) return <div>
+        <div><p>{lockMessage || "Trying to obtain write lock."}</p></div>
+        <div className="usa-button" onClick={() => func()}> Retry </div>
     </div>
-    else 
-    return children;
+    else
+        return children;
 }

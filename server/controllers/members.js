@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const User = require('../ODM/models').user;
+const mongoSanitize = require('mongo-sanitize');
 
 module.exports.getMembers = async function(req, res, next) {
     await req.resource.populate({ path: 'members.user', select: 'uuid username' }).execPopulate();
@@ -27,7 +28,7 @@ module.exports.getMembers = async function(req, res, next) {
 
 module.exports.addMember = async function (req, res, next) {
     // member must exist;
-    const member = await User.findOne({ _id: req.body.user.id });
+    const member = await User.findOne(mongoSanitize(mongoSanitize({ _id: req.body.user.id })));
     if (!member) { return next(new Error('User not found in add member')); }
 
     for (const i in req.resource.members) {
@@ -57,7 +58,7 @@ module.exports.addMember = async function (req, res, next) {
 
 module.exports.updateMember = async function (req, res, next) {
     // member must exist;
-    const member = await User.findOne({ uuid: req.body.uuid });
+    const member = await User.findOne(mongoSanitize({ uuid: req.body.uuid }));
     if (!member) { return next(new Error('User not found in add member')); }
 
     for (const i in req.resource.members) {
@@ -78,7 +79,7 @@ module.exports.updateMember = async function (req, res, next) {
 
 module.exports.removeMember = async function (req, res, next) {
     // member must exist;
-    const member = await User.findOne({ _id: req.params.memberId });
+    const member = await User.findOne(mongoSanitize({ _id: req.params.memberId }));
     if (!member) { return next(new Error('User not found in add member')); }
     let idx = -1;
     for (const i in req.resource.members) {

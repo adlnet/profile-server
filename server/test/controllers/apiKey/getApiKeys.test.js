@@ -75,7 +75,6 @@ describe('Retrieving all active api keys for an organization', () => {
             expect(data).not.toBeUndefined();
             expect(data.length).toEqual(4);
             expect(data).toStrictEqual(expectedApiKeys);
-            expect(data.map(d => d.isActive).every(a => a)).toBeTruthy();
         });
     });
 

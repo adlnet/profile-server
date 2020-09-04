@@ -16,6 +16,7 @@
 const mongoose = require('mongoose');
 const uuid = require('uuid');
 const locks = require('./locks');
+const mongoSanitize = require('mongo-sanitize');
 const organization = new mongoose.Schema({
     name: {
         type: String,
@@ -53,10 +54,6 @@ const organization = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
     },
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
 }, { toJSON: { virtuals: true } });
 
 organization.virtual('profiles', {
@@ -64,7 +61,6 @@ organization.virtual('profiles', {
     localField: '_id',
     foreignField: 'organization',
     justOne: false,
-    match: { isActive: true },
 });
 
 organization.virtual('apiKeys', {
@@ -73,17 +69,16 @@ organization.virtual('apiKeys', {
     foreignField: 'scopeObject',
     justOne: false,
     match: {
-        isActive: true,
         scope: 'organization',
     },
 });
 
 organization.statics.findByUuid = function (uuid, callback) {
-    return this.findOne({ uuid: uuid }, callback);
+    return this.findOne(mongoSanitize({ uuid: uuid }), callback);
 };
 
 organization.statics.deleteByUuid = async function (uuid) {
-    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false, updatedOn: new Date() });
+    await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
 };
 
 module.exports = organization;

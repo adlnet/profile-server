@@ -91,7 +91,7 @@ describe('Validating an api key', () => {
                     const req = httpmocks.createRequest({
                         method: 'GET',
                         url: `/profile/${p_profile.uuid}`,
-                        headers: { 'api-key': 'goofy api key' },
+                        headers: { 'x-api-key': 'goofy api key' },
                         params: { profile: p_profile.uuid },
                     });
                     const res = httpmocks.createResponse();
@@ -113,7 +113,7 @@ describe('Validating an api key', () => {
                         const req = httpmocks.createRequest({
                             method: 'GET',
                             url: `/profile/${p_profile.uuid}`,
-                            headers: { 'api-key': otherApiKey.uuid },
+                            headers: { 'x-api-key': otherApiKey.uuid },
                             params: { profile: p_profile.uuid },
                         });
                         const res = httpmocks.createResponse();
@@ -129,7 +129,7 @@ describe('Validating an api key', () => {
                         const req = httpmocks.createRequest({
                             method: 'GET',
                             url: '/profile/badProfileId',
-                            headers: { 'api-key': apiKey.uuid },
+                            headers: { 'x-api-key': apiKey.uuid },
                             params: { profile: 'badProfileId' },
                         });
                         res = httpmocks.createResponse();
@@ -171,7 +171,7 @@ describe('Validating an api key', () => {
                         const req = httpmocks.createRequest({
                             method: 'GET',
                             url: `/profile/${p_profile.uuid}`,
-                            headers: { 'api-key': apiKey.uuid },
+                            headers: { 'x-api-key': apiKey.uuid },
                             params: { profile: p_profile.uuid },
                         });
                         const res = httpmocks.createResponse();

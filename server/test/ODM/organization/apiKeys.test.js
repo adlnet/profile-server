@@ -43,13 +43,12 @@ describe('Using organization apiKeys virtual property', () => {
         const user = new userModel({ name: 'name' });
         testOrg = new organizationModel({ name: 'name' });
         await testOrg.save();
-        testApiKeys = [...Array(3).keys()].map((a, i) => new apiKeyModel({
+        testApiKeys = [...Array(2).keys()].map((a, i) => new apiKeyModel({
             name: `test_${i}`,
             scope: 'organization',
             scopeObject: testOrg,
             createdBy: user,
             updatedBy: user,
-            isActive: i !== 0,
         }));
         await Promise.all(testApiKeys.map(async (t) => t.save()));
 
@@ -71,10 +70,6 @@ describe('Using organization apiKeys virtual property', () => {
     describe('when there are 3 api keys scoped to an organization and 1 not scoped to that organization', () => {
         test('it should return only those api keys scoped to the organization.', () => {
             expect(virtualKeys.map(v => testApiKeys.map(t => t._id.toString()).includes(v._id.toString())).every(v => v)).toBeTruthy();
-        });
-
-        test('it should return only the active api keys.', () => {
-            expect(virtualKeys.map(v => console.isActive).every(v => v));
         });
     });
 });

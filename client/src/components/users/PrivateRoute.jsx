@@ -15,28 +15,28 @@
 **************************************************************** */
 
 import React from 'react';
-import {  Route, Redirect, } from 'react-router-dom';
-import {useSelector} from 'react-redux';
+import { Route, Redirect, } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 
-export default function PrivateRoute({ component, ...rest }){
-    let userData = useSelector( (store) => store.userData);
+export default function PrivateRoute({ component, ...rest }) {
+    let userData = useSelector((store) => store.userData);
     let children = rest.children;
     rest.children = null;
-    if(component)
-    rest.children = [
-        (props) => (
-         
-            <component {...props} />
-           
-       )
-    ]
-    if(userData.user)
-    return <Route {...rest} render={() => children} />
-    else 
-    return <Route {...rest} render={(props) => (
-         
-        
-         <Redirect to='/user/login' />
-    )} />
+    if (component)
+        rest.children = [
+            (props) => (
+
+                <component {...props} />
+
+            )
+        ]
+    if (userData.user)
+        return <Route {...rest} render={() => children} />
+    else
+        return <Route {...rest} render={(props) => (
+
+            < Redirect to={{ pathname: '/user/login', originurl: props.location }} />
+        )
+        } />
 }
 

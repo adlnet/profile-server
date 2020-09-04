@@ -16,32 +16,31 @@
 import fetch from "cross-fetch";
 
 
-const appApiRoot = "http://localhost:3000/app"
+const appApiRoot = "/app"
 
 class API {
-    async checkStatus (res, method) {
-        if (res.status >= 200 && res.status < 400 ) {
+    async checkStatus(res, method) {
+        if (res.status >= 200 && res.status < 400) {
             return res.json();
-        } else if (res.status == 409 && (method == "POST" || method == "PUT") ) {
+        } else if (res.status == 409 && (method == "POST" || method == "PUT")) {
             let store = require("./store").default;
             store.dispatch({
-                type:"permissionError"
+                type: "permissionError"
             })
-        } 
-        if (res.status == 409 ) {
+        }
+        if (res.status == 409) {
             return res.json();
         } else {
-            if(res.status === 401)
-            {
+            if (res.status === 401) {
                 let store = require("./store").default;
                 store.dispatch({
-                    type:"GLOBAL_ERROR",
-                    errorType:"permissionError",
-                    message:res.json().message,
+                    type: "GLOBAL_ERROR",
+                    errorType: "permissionError",
+                    message: res.json().message,
                     stack: (new Error()).stack
                 })
             }
-            let errorMessage; 
+            let errorMessage;
             try {
                 const err = await res.json();
                 errorMessage = err.message;
@@ -54,8 +53,7 @@ class API {
     }
 
     async putJSON(url, json) {
-        if(url.indexOf("http") !== 0)
-            url = appApiRoot + url;
+
         try {
             let res = await fetch(url, {
                 method: "PUT",
@@ -67,20 +65,19 @@ class API {
             })
 
             return this.checkStatus(res, "PUT");
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             throw new Error(err);
         }
     }
 
     async deleteJSON(url) {
-        if(url.indexOf("http") !== 0)
-            url = appApiRoot + url;
+
         try {
             let res = await fetch(url, {
                 method: "DELETE",
             });
-            
+
             return this.checkStatus(res);
         } catch (err) {
             console.error(err);
@@ -89,8 +86,7 @@ class API {
     }
 
     async postJSON(url, json) {
-        if(url.indexOf("http") !== 0)
-            url = appApiRoot + url;
+
         try {
             let res = await fetch(url, {
                 method: "POST",
@@ -102,27 +98,28 @@ class API {
             })
 
             return this.checkStatus(res, "POST");
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             return {};
         }
     }
     async getJSON(url) {
-        if(url.indexOf("http") !== 0)
-            url = appApiRoot + url;
+
         try {
             let res = await fetch(url, {
                 method: "GET",
             })
 
             return this.checkStatus(res);
-        } catch(err) {
+        } catch (err) {
             console.error(err);
             throw err;
         }
     }
 
-
+    async resolveProfile(profileId) {
+        return this.getJSON(`${appApiRoot}/profile/resolve/${profileId}`);
+    }
 
     async getProfile(organizationId, profileId) {
         let body;
@@ -165,8 +162,10 @@ class API {
         return body.profileVersion;
     }
 
-
-
+    async publishProfileVersion(profileId) {
+        let body = await this.postJSON(`${appApiRoot}/profile/${profileId}/publish`);
+        return body;
+    }
 
     async getOrganization(uuid) {
         let body = await this.getJSON(`${appApiRoot}/org/${uuid}`);
@@ -193,15 +192,15 @@ class API {
         let body = await this.getJSON(`${appApiRoot}/org/${organizationId}/member`);
         return body.members;
     }
-    async removeMember(organizationId,memberId) {
+    async removeMember(organizationId, memberId) {
         let body = await this.deleteJSON(`${appApiRoot}/org/${organizationId}/member/${memberId}`);
         return body.members;
     }
-    async addMember(organizationId,member) {
+    async addMember(organizationId, member) {
         let body = await this.postJSON(`${appApiRoot}/org/${organizationId}/member`, member);
         return body.members;
     }
-    async editMember(organizationId,member) {
+    async editMember(organizationId, member) {
         let body = await this.putJSON(`${appApiRoot}/org/${organizationId}/member`, member);
         return body.member;
     }
@@ -224,7 +223,7 @@ class API {
 
     async getConcept(organizationId, profileId, versionId, conceptId) {
         let body;
-        if  (organizationId && profileId)
+        if (organizationId && profileId)
             body = await this.getJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/${conceptId}`);
         else
             body = await this.getJSON(`${appApiRoot}/concept/${conceptId}`);
@@ -293,7 +292,7 @@ class API {
         return body.apiKey;
     }
     async getApiKey(organizationId, apiKeyId) {
-        const body = await this.getJSON(`${appApiRoot}/org/${organizationId}/apiKey/${apiKeyId}`); 
+        const body = await this.getJSON(`${appApiRoot}/org/${organizationId}/apiKey/${apiKeyId}`);
         return body.apiKey;
     }
     async editApiKey(organizationId, apiKey) {
@@ -301,7 +300,7 @@ class API {
         return body.apiKey;
     }
     async deleteApiKey(organizationId, apiKeyId) {
-        await this.deleteJSON(`${appApiRoot}/org/${organizationId}/apiKey/${apiKeyId}`); 
+        await this.deleteJSON(`${appApiRoot}/org/${organizationId}/apiKey/${apiKeyId}`);
         return;
     }
 
@@ -329,28 +328,28 @@ class API {
         let body = await this.getJSON(`${appApiRoot}/user/?search=${search}`);
         return body.users;
     }
-    
+
     async getUserStatus() {
         let body = await this.getJSON(`${appApiRoot}/user/status`);
         return body;
     }
     async login(loginRequest) {
-        let body = await this.postJSON(`${appApiRoot}/user/login`,loginRequest);
+        let body = await this.postJSON(`${appApiRoot}/user/login`, loginRequest);
         return body;
     }
     async logout() {
-        let body = await this.postJSON(`${appApiRoot}/user/logout`,{});
+        let body = await this.postJSON(`${appApiRoot}/user/logout`, {});
         return body;
     }
     async createUser(createRequest) {
-        let body = await this.postJSON(`${appApiRoot}/user/create`,createRequest);
+        let body = await this.postJSON(`${appApiRoot}/user/create`, createRequest);
         return body;
     }
     async getSalt(email) {
         let body = await this.getJSON(`${appApiRoot}/user/salt?email=` + email);
         return body.salt;
     }
-    async search(type,searchString) {
+    async search(type, searchString) {
         let body = await this.getJSON(`${appApiRoot}/search/${type}/?search=` + searchString);
         return body.results;
     }

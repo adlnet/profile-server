@@ -18,6 +18,7 @@ const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
+const mongoSanitize = require('mongo-sanitize');
 
 async function getVersionTemplates(versionUuid) {
     let templates;
@@ -47,8 +48,7 @@ exports.getVersionTemplates = getVersionTemplates;
 
 async function searchTemplates(search) {
     const query = queryBuilder.buildSearchQuery(search);
-    const results = await templateModel.find(query)
-        .where({ isActive: true })
+    const results = await templateModel.find(mongoSanitize(query))
         .populate({
             path: 'parentProfile',
             select: 'uuid iri name state',
@@ -93,7 +93,6 @@ async function getAllTemplates() {
     try {
         templates = await templateModel
             .find({}, 'uuid iri name description updatedOn ')
-            .where({ isActive: true })
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name state',
@@ -147,8 +146,8 @@ exports.createTemplate = async function (req, res) {
         }
 
         if (!req.body.iri) {
-            const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-            req.body.iri = createIRI.template(profileuuid, req.body.name);
+            const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+            req.body.iri = createIRI.template(profileiri, req.body.name);
         }
         req.body.parentProfile = profileVersion._id;
 
@@ -282,9 +281,7 @@ exports.deleteTemplate = async function (req, res) {
         }
 
         if (template.parentProfile.equals(profileVersion._id)) {
-            template.isActive = false;
-            template.updatedOn = new Date();
-            await template.save();
+            await template.remove();
         }
 
         profileVersion.templates = [...profileVersion.templates].filter(t => !t.equals(template._id));

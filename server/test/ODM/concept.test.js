@@ -68,8 +68,8 @@ async function createDraft(org, profile, draftInfo) {
 
 async function addConcept(profileVersion, conceptBody) {
     if (!conceptBody.iri) {
-        const profileuuid = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.uuid;
-        conceptBody.iri = createIRI.concept(profileuuid, conceptBody.name, conceptBody.type);
+        const profileiri = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile.iri;
+        conceptBody.iri = createIRI.concept(profileiri, conceptBody.name, conceptBody.type);
     }
 
     const concept = new models.concept(conceptBody);

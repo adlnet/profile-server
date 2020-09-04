@@ -14,11 +14,12 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const { concept } = require('../../../../ODM/models');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
-const ConceptModel = require('../../../ODM/models').concept;
-const ProfileVersionModel = require('../../../ODM/models').profileVersion;
-const ConceptLayerFactory = require('../../../controllers/importProfile/ConceptLayerFactory')
+const ConceptModel = require('../../../../ODM/models').concept;
+const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const ConceptLayerFactory = require('../../../../controllers/importProfile/ConceptLayerFactory')
     .ConceptLayerFactory;
 
 const mongoServer = new MongoMemoryServer();
@@ -72,7 +73,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name' },
                                 definition: { en: 'test_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -99,7 +106,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name', es: 'spanish_name' },
                                 definition: { en: 'test_description', es: 'spanish_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -131,7 +144,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name', es: 'spanish_name', fr: 'french_name' },
                                 definition: { en: 'test_description', es: 'spanish_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -174,7 +193,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name', es: 'spanish_name' },
                                 definition: { en: 'test_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -206,7 +231,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name' },
                                 definition: { en: 'test_description', es: 'spanish_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -240,7 +271,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name' },
                                 definition: { es: 'spanish_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -267,7 +304,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name', es: 'spanish_name' },
                                 definition: { es: 'spanish_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                         conceptModel = await conceptLayer.scanProfileComponentLayer();
                     });
 
@@ -300,7 +343,13 @@ describe('ConceptLayer contructor', () => {
                             type: 'Verb',
                             prefLabel: { es: 'spanish_name', fr: 'french_name' },
                             definition: { es: 'spanish_definition', fr: 'french_description' },
-                        } });
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
                     conceptModel = await conceptLayer.scanProfileComponentLayer();
                 });
 
@@ -331,7 +380,13 @@ describe('ConceptLayer contructor', () => {
                             conceptDocument: {
                                 iri: 'new_iri',
                                 type: 'Verb',
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                     } catch (err) {
                         error = err.message;
                     }
@@ -344,7 +399,13 @@ describe('ConceptLayer contructor', () => {
                                 iri: 'new_iri',
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                     } catch (err) {
                         error = err.message;
                     }
@@ -357,7 +418,13 @@ describe('ConceptLayer contructor', () => {
                                 iri: 'new_iri',
                                 type: 'Verb',
                                 definition: { en: 'test_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                     } catch (err) {
                         error = err.message;
                     }
@@ -377,7 +444,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: {},
                                 definition: {},
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                     } catch (err) {
                         error = err.message;
                     }
@@ -391,7 +464,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: { en: 'test_name' },
                                 definition: {},
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                     } catch (err) {
                         error = err.message;
                     }
@@ -405,7 +484,13 @@ describe('ConceptLayer contructor', () => {
                                 type: 'Verb',
                                 prefLabel: {},
                                 definition: { en: 'test_description' },
-                            } });
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
                     } catch (err) {
                         error = err.message;
                     }
@@ -425,7 +510,13 @@ describe('ConceptLayer contructor', () => {
                             prefLabel: { en: 'spanish_name' },
                             definition: { en: 'spanish_definition' },
                             deprecated: true,
-                        } });
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
                     const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                     expect(conceptModel.isDeprecated).toBeTruthy();
@@ -441,7 +532,13 @@ describe('ConceptLayer contructor', () => {
                             prefLabel: { en: 'spanish_name' },
                             definition: { en: 'spanish_definition' },
                             deprecated: false,
-                        } });
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
                     const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                     expect(conceptModel.isDeprecated).toBeFalsy();
@@ -456,7 +553,13 @@ describe('ConceptLayer contructor', () => {
                             type: 'Verb',
                             prefLabel: { en: 'spanish_name' },
                             definition: { en: 'spanish_definition' },
-                        } });
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
                     const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                     expect(conceptModel.isDeprecated).toBeFalsy();
@@ -479,7 +582,13 @@ describe('ConceptLayer contructor', () => {
                             definition: { en: 'test_description' },
                             inlineSchema: 'http://path/to/iri',
                             schema: '{ \'type\': \'object\'}',
-                        } });
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
                 } catch (err) {
                     error = err.message;
                 }
@@ -495,7 +604,13 @@ describe('ConceptLayer contructor', () => {
                             definition: { en: 'test_description' },
                             inlineSchema: 'http://path/to/iri',
                             schema: '{ \'type\': \'object\'}',
-                        } });
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
                 } catch (err) {
                     error = err.message;
                 }
@@ -508,24 +623,38 @@ describe('ConceptLayer contructor', () => {
             test('it should return a concept model with the correct schemaString value.', async () => {
                 let conceptLayer;
                 let conceptModel;
-                conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                    id: 'new_id',
-                    type: 'StateResource',
-                    prefLabel: { en: 'test_name' },
-                    definition: { en: 'test_description' },
-                    schema: '{ \'type\': \'object\'}',
-                } });
+                conceptLayer = ConceptLayerFactory({
+                    conceptDocument: {
+                        id: 'new_id',
+                        type: 'StateResource',
+                        prefLabel: { en: 'test_name' },
+                        definition: { en: 'test_description' },
+                        schema: '{ \'type\': \'object\'}',
+                    },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
+                });
                 conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                 expect(conceptModel.schemaString).toEqual('{ \'type\': \'object\'}');
 
-                conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                    id: 'new_id',
-                    type: 'ContextExtension',
-                    prefLabel: { en: 'test_name' },
-                    definition: { en: 'test_description' },
-                    schema: '{ \'type\': \'object\'}',
-                } });
+                conceptLayer = ConceptLayerFactory({
+                    conceptDocument: {
+                        id: 'new_id',
+                        type: 'ContextExtension',
+                        prefLabel: { en: 'test_name' },
+                        definition: { en: 'test_description' },
+                        schema: '{ \'type\': \'object\'}',
+                    },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
+                });
                 conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                 expect(conceptModel.schemaString).toEqual('{ \'type\': \'object\'}');
@@ -536,24 +665,38 @@ describe('ConceptLayer contructor', () => {
             test('it should return a concept model with the correct inlineSchema value.', async () => {
                 let conceptLayer;
                 let conceptModel;
-                conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                    id: 'new_id',
-                    type: 'StateResource',
-                    prefLabel: { en: 'test_name' },
-                    definition: { en: 'test_description' },
-                    inlineSchema: 'http://path/to/iri',
-                } });
+                conceptLayer = ConceptLayerFactory({
+                    conceptDocument: {
+                        id: 'new_id',
+                        type: 'StateResource',
+                        prefLabel: { en: 'test_name' },
+                        definition: { en: 'test_description' },
+                        inlineSchema: 'http://path/to/iri',
+                    },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
+                });
                 conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                 expect(conceptModel.inlineSchema).toEqual('http://path/to/iri');
 
-                conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                    id: 'new_id',
-                    type: 'ContextExtension',
-                    prefLabel: { en: 'test_name' },
-                    definition: { en: 'test_description' },
-                    inlineSchema: 'http://path/to/iri',
-                } });
+                conceptLayer = ConceptLayerFactory({
+                    conceptDocument: {
+                        id: 'new_id',
+                        type: 'ContextExtension',
+                        prefLabel: { en: 'test_name' },
+                        definition: { en: 'test_description' },
+                        inlineSchema: 'http://path/to/iri',
+                    },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
+                });
                 conceptModel = await conceptLayer.scanProfileComponentLayer();
 
                 expect(conceptModel.inlineSchema).toEqual('http://path/to/iri');
@@ -567,15 +710,36 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
         test('it should return a SemanticallyRelatableConceptLayer', async () => {
             let conceptLayer;
             let conceptModel;
-            conceptLayer = ConceptLayerFactory({ conceptDocument: { id: 'new_id', prefLabel: { en: 'test_name' }, definition: { en: 'test_description' }, type: 'Verb' } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: { id: 'new_id', prefLabel: { en: 'test_name' }, definition: { en: 'test_description' }, type: 'Verb' },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Verb');
 
-            conceptLayer = ConceptLayerFactory({ conceptDocument: { id: 'new_id', prefLabel: { en: 'test_name' }, definition: { en: 'test_description' }, type: 'ActivityType' } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: { id: 'new_id', prefLabel: { en: 'test_name' }, definition: { en: 'test_description' }, type: 'ActivityType' },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('ActivityType');
 
-            conceptLayer = ConceptLayerFactory({ conceptDocument: { id: 'new_id', prefLabel: { en: 'test_name' }, definition: { en: 'test_description' }, type: 'AttachmentUsageType' } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: { id: 'new_id', prefLabel: { en: 'test_name' }, definition: { en: 'test_description' }, type: 'AttachmentUsageType' },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('AttachmentUsageType');
         });
@@ -583,32 +747,80 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
         // We really need to consider if this is legitimate. Is the iri the same but the parts are different?
         describe('when the concept exist on the server', () => {
             let existingConcept;
-            beforeEach(async () => {
-                existingConcept = new ConceptModel({ iri: 'existing_id', name: 'existing_concept' });
-                await existingConcept.save();
-            });
 
             afterEach(async () => {
                 await existingConcept.remove();
             });
 
-            test('it should throw an error.', async () => {
-                const conceptLayer = ConceptLayerFactory({
-                    conceptDocument: {
-                        type: 'Verb',
-                        id: 'existing_id',
-                        prefLabel: { en: 'test_name' },
-                        definition: { en: 'test_description' },
-                    },
+            describe('and that existing concept is not a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({
+                        iri: 'existing_id',
+                        name: 'existing_concept',
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                        }),
+                    });
+                    await existingConcept.save();
                 });
-                let error;
-                try {
-                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
-                } catch (err) {
-                    error = err.message;
-                }
 
-                expect(error).toMatch(/Concept existing_id already exists/);
+                test('it should throw an error.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'Verb',
+                            id: 'existing_id',
+                            prefLabel: { en: 'test_name' },
+                            definition: { en: 'test_description' },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    let error;
+                    try {
+                        const conceptModel = await conceptLayer.scanProfileComponentLayer();
+                    } catch (err) {
+                        error = err.message;
+                    }
+
+                    expect(error).toMatch(/Concept existing_id already exists/);
+                });
+            });
+
+            describe('and that existing concept is a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({ iri: 'existing_id' });
+                    await existingConcept.save();
+                });
+
+                test('it should return a concept model with the correct values and an id equal to the parentless component.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'Verb',
+                            id: 'existing_id',
+                            prefLabel: { en: 'test_name' },
+                            definition: { en: 'test_description' },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
+
+                    expect(conceptModel.equals(existingConcept)).toBeTruthy();
+                    expect(conceptModel.type).toEqual('Verb');
+                    expect(conceptModel.conceptType).toEqual('Verb');
+                    expect(conceptModel.name).toEqual('test_name');
+                    expect(conceptModel.description).toEqual('test_description');
+                });
             });
         });
     });
@@ -617,63 +829,131 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
         test('it should return an ExtensionConceptLayer', async () => {
             let conceptLayer;
             let conceptModel;
-            conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                id: 'new_id',
-                type: 'ContextExtension',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-            } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: {
+                    id: 'new_id',
+                    type: 'ContextExtension',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Extension');
 
-            conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                id: 'new_id',
-                type: 'ResultExtension',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-            } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: {
+                    id: 'new_id',
+                    type: 'ResultExtension',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Extension');
 
-            conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                id: 'new_id',
-                type: 'ActivityExtension',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-            } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: {
+                    id: 'new_id',
+                    type: 'ActivityExtension',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Extension');
         });
 
-        // We really need to consider if this is legitimate. Is the iri the same but the parts are different?
         describe('when the concept exist on the server', () => {
             let existingConcept;
-            beforeEach(async () => {
-                existingConcept = new ConceptModel({ iri: 'existing_id', name: 'existing_concept' });
-                await existingConcept.save();
-            });
 
             afterEach(async () => {
                 await existingConcept.remove();
             });
 
-            test('it should throw an error.', async () => {
-                const conceptLayer = ConceptLayerFactory({
-                    conceptDocument: {
-                        type: 'ContextExtension',
-                        id: 'existing_id',
-                        prefLabel: { en: 'test_name' },
-                        definition: { en: 'test_description' },
-                    },
+            describe('and that existing concept is not a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({
+                        iri: 'existing_id',
+                        name: 'existing_concept',
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                        }),
+                    });
+                    await existingConcept.save();
                 });
-                let error;
-                try {
-                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
-                } catch (err) {
-                    error = err.message;
-                }
 
-                expect(error).toMatch(/Concept existing_id already exists/);
+                test('it should throw an error.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'ContextExtension',
+                            id: 'existing_id',
+                            prefLabel: { en: 'test_name' },
+                            definition: { en: 'test_description' },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    let error;
+                    try {
+                        const conceptModel = await conceptLayer.scanProfileComponentLayer();
+                    } catch (err) {
+                        error = err.message;
+                    }
+
+                    expect(error).toMatch(/Concept existing_id already exists/);
+                });
+            });
+
+            describe('and that existing concept is a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({ iri: 'existing_id' });
+                    await existingConcept.save();
+                });
+
+                test('it should return a concept model with the correct values and an id equal to the parentless component.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'ContextExtension',
+                            id: 'existing_id',
+                            prefLabel: { en: 'test_name' },
+                            definition: { en: 'test_description' },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
+
+                    expect(conceptModel.equals(existingConcept)).toBeTruthy();
+                    expect(conceptModel.type).toEqual('ContextExtension');
+                    expect(conceptModel.conceptType).toEqual('Extension');
+                    expect(conceptModel.name).toEqual('test_name');
+                    expect(conceptModel.description).toEqual('test_description');
+                });
             });
         });
     });
@@ -682,30 +962,51 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
         test('it should return an DocumentConceptLayer', async () => {
             let conceptLayer;
             let conceptModel;
-            conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                id: 'new_id',
-                type: 'StateResource',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-            } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: {
+                    id: 'new_id',
+                    type: 'StateResource',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Document');
 
-            conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                id: 'new_id',
-                type: 'AgentProfileResource',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-            } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: {
+                    id: 'new_id',
+                    type: 'AgentProfileResource',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Document');
 
-            conceptLayer = ConceptLayerFactory({ conceptDocument: {
-                id: 'new_id',
-                type: 'ActivityProfileResource',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-            } });
+            conceptLayer = ConceptLayerFactory({
+                conceptDocument: {
+                    id: 'new_id',
+                    type: 'ActivityProfileResource',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Document');
         });
@@ -713,32 +1014,80 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
         // We really need to consider if this is legitimate. Is the iri the same but the parts are different?
         describe('when the concept exist on the server', () => {
             let existingConcept;
-            beforeEach(async () => {
-                existingConcept = new ConceptModel({ iri: 'existing_id', name: 'existing_concept' });
-                await existingConcept.save();
-            });
 
             afterEach(async () => {
                 await existingConcept.remove();
             });
 
-            test('it should throw an error.', async () => {
-                const conceptLayer = ConceptLayerFactory({
-                    conceptDocument: {
-                        type: 'StateResource',
-                        id: 'existing_id',
-                        prefLabel: { en: 'test_name' },
-                        definition: { en: 'test_description' },
-                    },
+            describe('and that existing concept is not a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({
+                        iri: 'existing_id',
+                        name: 'existing_concept',
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                        }),
+                    });
+                    await existingConcept.save();
                 });
-                let error;
-                try {
-                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
-                } catch (err) {
-                    error = err.message;
-                }
 
-                expect(error).toMatch(/Concept existing_id already exists/);
+                test('it should throw an error.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'StateResource',
+                            id: 'existing_id',
+                            prefLabel: { en: 'test_name' },
+                            definition: { en: 'test_description' },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    let error;
+                    try {
+                        const conceptModel = await conceptLayer.scanProfileComponentLayer();
+                    } catch (err) {
+                        error = err.message;
+                    }
+
+                    expect(error).toMatch(/Concept existing_id already exists/);
+                });
+            });
+
+            describe('and that existing concept is a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({ iri: 'existing_id' });
+                    await existingConcept.save();
+                });
+
+                test('it should return a concept model with the correct values and an id equal to the parentless component.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'StateResource',
+                            id: 'existing_id',
+                            prefLabel: { en: 'test_name' },
+                            definition: { en: 'test_description' },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
+
+                    expect(conceptModel.equals(existingConcept)).toBeTruthy();
+                    expect(conceptModel.type).toEqual('StateResource');
+                    expect(conceptModel.conceptType).toEqual('Document');
+                    expect(conceptModel.name).toEqual('test_name');
+                    expect(conceptModel.description).toEqual('test_description');
+                });
             });
         });
 
@@ -752,6 +1101,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                         definition: { en: 'test_description' },
                         contentType: 'application/json',
                     },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
                 });
                 const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -770,42 +1124,106 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                         '@context': 'some_context',
                         name: 'activity_1',
                     },
-                } });
+                },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
+            });
             const conceptModel = await conceptLayer.scanProfileComponentLayer();
             expect(conceptModel.conceptType).toEqual('Activity');
         });
 
-        // We really need to consider if this is legitimate. Is the iri the same but the parts are different?
         describe('when the concept exist on the server', () => {
             let existingConcept;
-            beforeEach(async () => {
-                existingConcept = new ConceptModel({ iri: 'existing_id', name: 'existing_concept' });
-                await existingConcept.save();
-            });
 
             afterEach(async () => {
                 await existingConcept.remove();
             });
 
-            test('it should throw an error.', async () => {
-                const conceptLayer = ConceptLayerFactory({
-                    conceptDocument: {
-                        type: 'Activity',
-                        id: 'existing_id',
-                        activityDefinition: {
-                            '@context': 'some_context',
-                            name: 'activity_1',
-                        },
-                    },
+            describe('and that existing concept is not a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({
+                        iri: 'existing_id',
+                        name: 'existing_concept',
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                        }),
+                    });
+                    await existingConcept.save();
                 });
-                let error;
-                try {
-                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
-                } catch (err) {
-                    error = err.message;
-                }
 
-                expect(error).toMatch(/Concept existing_id already exists/);
+                test('it should throw an error.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'Activity',
+                            id: 'existing_id',
+                            activityDefinition: {
+                                '@context': 'some_context',
+                                name: { en: 'activity1_name' },
+                                description: { en: 'activity1_description' },
+                                type: 'some_activity_type',
+                                moreInfo: 'some_more_info',
+                                extensions: { extension1: 'some_extension_iri' },
+                            },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    let error;
+                    let conceptModel;
+                    try {
+                        conceptModel = await conceptLayer.scanProfileComponentLayer();
+                    } catch (err) {
+                        error = err.message;
+                    }
+
+                    expect(error).toMatch(/Concept existing_id already exists/);
+                });
+            });
+
+            describe('and that existing concept is a parentless component', () => {
+                beforeEach(async () => {
+                    existingConcept = new ConceptModel({ iri: 'existing_id' });
+                    await existingConcept.save();
+                });
+
+                test('it should return a concept model with the correct values and an id equal to the parentless component.', async () => {
+                    const conceptLayer = ConceptLayerFactory({
+                        conceptDocument: {
+                            type: 'Activity',
+                            id: 'existing_id',
+                            activityDefinition: {
+                                '@context': 'some_context',
+                                name: { en: 'activity1_name' },
+                                description: { en: 'activity1_description' },
+                                type: 'some_activity_type',
+                                moreInfo: 'some_more_info',
+                                extensions: { extension1: 'some_extension_iri' },
+                            },
+                        },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
+                    });
+
+                    const conceptModel = await conceptLayer.scanProfileComponentLayer();
+
+                    expect(conceptModel.equals(existingConcept)).toBeTruthy();
+                    expect(conceptModel.type).toEqual('Activity');
+                    expect(conceptModel.conceptType).toEqual('Activity');
+                    expect(conceptModel.name).toEqual('activity1_name');
+                    expect(conceptModel.description).toEqual('activity1_description');
+                });
             });
         });
 
@@ -819,6 +1237,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 type: 'Activity',
                                 id: 'concept_1',
                             },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
                         });
                     } catch (err) {
                         error = err.message;
@@ -850,6 +1273,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                         test('it should return a concept model with the correct values.', async () => {
                             const conceptLayer = ConceptLayerFactory({
                                 conceptDocument: conceptDocument,
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                             const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -872,6 +1300,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                             try {
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                             } catch (err) {
                                 error = err.message;
@@ -896,6 +1329,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 moreInfo: 'some_more_info',
                                 extensions: { extension1: 'some_extension_iri' },
                             },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
                         };
                     });
 
@@ -921,6 +1359,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                             try {
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                             } catch (err) {
                                 error = err.message;
@@ -944,6 +1387,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 try {
                                     const conceptLayer = ConceptLayerFactory({
                                         conceptDocument: conceptDocument,
+                                        parentProfile: new ProfileVersionModel({
+                                            iri: 'parent_profile_id',
+                                            name: 'profile_name',
+                                            description: 'profile_description',
+                                        }),
                                     });
                                 } catch (err) {
                                     error = err.message;
@@ -957,6 +1405,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                             test('it should return a concept model with the correct values.', async () => {
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                                 const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -989,6 +1442,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 try {
                                     const conceptLayer = ConceptLayerFactory({
                                         conceptDocument: conceptDocument,
+                                        parentProfile: new ProfileVersionModel({
+                                            iri: 'parent_profile_id',
+                                            name: 'profile_name',
+                                            description: 'profile_description',
+                                        }),
                                     });
                                 } catch (err) {
                                     error = err.message;
@@ -1004,6 +1462,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
 
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                                 const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -1037,6 +1500,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 try {
                                     const conceptLayer = ConceptLayerFactory({
                                         conceptDocument: conceptDocument,
+                                        parentProfile: new ProfileVersionModel({
+                                            iri: 'parent_profile_id',
+                                            name: 'profile_name',
+                                            description: 'profile_description',
+                                        }),
                                     });
                                 } catch (err) {
                                     error = err.message;
@@ -1053,6 +1521,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
 
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                                 const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -1087,6 +1560,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 try {
                                     const conceptLayer = ConceptLayerFactory({
                                         conceptDocument: conceptDocument,
+                                        parentProfile: new ProfileVersionModel({
+                                            iri: 'parent_profile_id',
+                                            name: 'profile_name',
+                                            description: 'profile_description',
+                                        }),
                                     });
                                 } catch (err) {
                                     error = err.message;
@@ -1102,6 +1580,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
 
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                                 const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -1135,6 +1618,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                 try {
                                     const conceptLayer = ConceptLayerFactory({
                                         conceptDocument: conceptDocument,
+                                        parentProfile: new ProfileVersionModel({
+                                            iri: 'parent_profile_id',
+                                            name: 'profile_name',
+                                            description: 'profile_description',
+                                        }),
                                     });
                                 } catch (err) {
                                     error = err.message;
@@ -1150,6 +1638,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
 
                                 const conceptLayer = ConceptLayerFactory({
                                     conceptDocument: conceptDocument,
+                                    parentProfile: new ProfileVersionModel({
+                                        iri: 'parent_profile_id',
+                                        name: 'profile_name',
+                                        description: 'profile_description',
+                                    }),
                                 });
                                 const conceptModel = await conceptLayer.scanProfileComponentLayer();
 
@@ -1180,6 +1673,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                     id: 'concept_1',
                                     activityDefinition: {},
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                         } catch (err) {
                             error = err.message;
@@ -1196,6 +1694,11 @@ describe('Using the ConceptLayerFactory to get conceptModels by calling the scan
                                         '@context': 'some_context',
                                     },
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                         } catch (err) {
                             error = err.message;
@@ -1224,6 +1727,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                     prefLabel: { en: 'test_name' },
                     definition: { en: 'test_description' },
                 },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
             });
             let profileCompModel = await conceptLayer.scanProfileComponentLayer();
             let conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
@@ -1239,6 +1747,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                         name: 'activity_1',
                     },
                 },
+                parentProfile: new ProfileVersionModel({
+                    iri: 'parent_profile_id',
+                    name: 'profile_name',
+                    description: 'profile_description',
+                }),
             });
             profileCompModel = await conceptLayer.scanProfileComponentLayer();
             conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
@@ -1248,6 +1761,40 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
     });
 
     describe('Concept#SimilarTerms', () => {
+        describe('if there are duplicate concept ids in the terms', () => {
+            test('it should throw an error.', async () => {
+                const profileConcepts = [
+                    new ConceptModel({ iri: 'concept1_id', name: 'concept_1' }),
+                    new ConceptModel({ iri: 'concept2_id', name: 'concept_2' }),
+                    new ConceptModel({ iri: 'concept3_id', name: 'concept_3' }),
+                ];
+                const broaderDoc = ['concept2_id', 'concept4_id', 'concept2_id'];
+                const conceptLayer = ConceptLayerFactory({
+                    conceptDocument: {
+                        id: 'concept1_id',
+                        type: 'Verb',
+                        prefLabel: { en: 'test_name' },
+                        definition: { en: 'test_description' },
+                        broader: broaderDoc,
+                    },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
+                });
+
+                let error;
+                try {
+                    const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                } catch (err) {
+                    error = err.message;
+                }
+
+                expect(error).toMatch(/Concept concept1_id has duplicate concepts in property broader/);
+            });
+        });
+
         describe('if the terms are to be in this profile version', () => {
             describe('and all the concepts are in this profile version', () => {
                 test('it should return a conceptModel with a the correct similar term entries.', async () => {
@@ -1265,6 +1812,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                             definition: { en: 'test_description' },
                             broader: broaderDoc,
                         },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
                     });
                     const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1292,6 +1844,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                             definition: { en: 'test_description' },
                             broader: broaderDoc,
                         },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
                     });
 
                     let error;
@@ -1338,6 +1895,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                             definition: { en: 'test_description' },
                             broadMatch: broadMatchDoc,
                         },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
                     });
                     const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1350,31 +1912,139 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
             });
 
             describe('and there are concepts not found on the server', () => {
-                test('it should throw an error.', async () => {
-                    const profileConcepts = [
+                let profileConcepts;
+                let conceptDocument;
+                beforeEach(() => {
+                    profileConcepts = [
                         new ConceptModel({ iri: 'concept1_id', name: 'concept_1' }),
                         new ConceptModel({ iri: 'concept2_id', name: 'concept_2' }),
                         new ConceptModel({ iri: 'concept3_id', name: 'concept_3' }),
                     ];
+
+                    conceptDocument = {
+                        id: 'concept1_id',
+                        type: 'Verb',
+                        prefLabel: { en: 'test_name' },
+                        definition: { en: 'test_description' },
+                        broadMatch: ['concept5_id'],
+                    };
+                });
+
+                test('it should create and save a parentless version of that concept on the server and add it.', async () => {
                     const broadMatchDoc = ['concept5_id'];
                     const conceptLayer = ConceptLayerFactory({
-                        conceptDocument: {
-                            id: 'concept1_id',
-                            type: 'Verb',
-                            prefLabel: { en: 'test_name' },
-                            definition: { en: 'test_description' },
-                            broadMatch: broadMatchDoc,
-                        },
+                        conceptDocument: conceptDocument,
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
                     });
 
-                    let error;
-                    try {
-                        const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
-                    } catch (err) {
-                        error = err.message;
-                    }
+                    const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                    const parentlessConcept = await ConceptModel.findOne({ iri: 'concept5_id' });
 
-                    expect(error).toMatch(/Concept concept5_id cannot have a broadMatch relation because it does not exist on the server/);
+                    expect(parentlessConcept).toBeTruthy();
+                    expect(parentlessConcept.iri).toEqual('concept5_id');
+                    expect(parentlessConcept.parentProfile).toBeFalsy();
+
+                    expect(conceptModel.similarTerms.map(t => t.relationType).every(t => t === 'broadMatch'))
+                        .toBeTruthy();
+                    expect(conceptModel.similarTerms.length).toEqual(1);
+                    expect([...conceptModel.similarTerms.map(t => t.concept.iri).sort()])
+                        .toEqual(broadMatchDoc.sort());
+
+                    await parentlessConcept.remove();
+                });
+
+                describe('and the same concept is also another similar term', () => {
+                    let parentlessConcept;
+                    let conceptModel;
+                    beforeEach(async () => {
+                        conceptDocument.narrowMatch = ['concept5_id'];
+
+                        const conceptLayer = new ConceptLayerFactory({
+                            conceptDocument: conceptDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
+
+                        conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                        parentlessConcept = await ConceptModel.findOne({ iri: 'concept5_id' });
+                    });
+
+                    afterEach(async () => {
+                        await parentlessConcept.remove();
+                    });
+
+                    test('it should return a a concept model with the the similar terms concepts as parentless concepts.', () => {
+                        expect(conceptModel.similarTerms.length).toEqual(2);
+                        expect(conceptModel.similarTerms.find(s => s.relationType === 'narrowMatch').concept.iri).toEqual('concept5_id');
+                        expect(conceptModel.similarTerms.find(s => s.relationType === 'broadMatch').concept.iri).toEqual('concept5_id');
+                        expect(parentlessConcept.iri).toEqual('concept5_id');
+                    });
+
+                    test('it should have the exact parentless concept as both similar terms.', () => {
+                        expect(conceptModel.similarTerms.find(s => s.relationType === 'narrowMatch').concept._id.toString())
+                            .toEqual(conceptModel.similarTerms.find(s => s.relationType === 'broadMatch').concept._id.toString());
+                    });
+                });
+
+                describe('and the concept is also a similar term in another concept', () => {
+                    let conceptLayer;
+                    let parentlessConcept;
+                    let otherConceptDocument;
+                    let otherConceptLayer;
+                    let conceptModels;
+                    beforeEach(async () => {
+                        const conceptLayer = new ConceptLayerFactory({
+                            conceptDocument: conceptDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
+
+                        otherConceptDocument = {
+                            id: 'concept2_id',
+                            type: 'Verb',
+                            prefLabel: { en: 'concept_2' },
+                            definition: { en: 'test_description_2' },
+                            broadMatch: ['concept5_id'],
+                        };
+                        otherConceptLayer = new ConceptLayerFactory({
+                            conceptDocument: otherConceptDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
+
+                        // conceptModels = await Promise.all([conceptLayer, otherConceptLayer].map(
+                        //     async c => c.scanSubcomponentLayer(profileConcepts),
+                        // ));
+                        conceptModels = [];
+                        for (const layer of [conceptLayer, otherConceptLayer]) {
+                            const model = await layer.scanSubcomponentLayer(profileConcepts);
+                            conceptModels.push(model);
+                        }
+
+                        parentlessConcept = await ConceptModel.findOne({ iri: 'concept5_id' });
+                    });
+
+                    afterEach(async () => {
+                        await parentlessConcept.remove();
+                    });
+
+                    test('it should return an array of concept models where all instances of the shared similar term are the exact same parentless concept.', () => {
+                        expect(conceptModels[0].similarTerms[0].concept._id.toString())
+                            .toEqual(conceptModels[1].similarTerms[0].concept._id.toString());
+                    });
                 });
             });
 
@@ -1386,7 +2056,7 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
 
     describe('Concept#RecommendedTerms', () => {
         describe('when the concept document has no recommended terms properties', () => {
-            test('it should return a model an empty recommendedTerms property.', async () => {
+            test('it should return a model an with an empty recommendedTerms property.', async () => {
                 const profileConcepts = [
                     new ConceptModel({ iri: 'concept1_id', name: 'concept_1', type: 'Activity' }),
                     new ConceptModel({ iri: 'concept2_id', name: 'concept_2', type: 'Activity' }),
@@ -1399,6 +2069,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                         prefLabel: { en: 'test_name' },
                         definition: { en: 'test_description' },
                     },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'profile_name',
+                        description: 'profile_description',
+                    }),
                 });
                 const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1408,6 +2083,40 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
 
         describe('when the concept document has a recommendedVerbs property', () => {
             describe('and the concept is a ContextExtension or a ResultExtension type', () => {
+                describe('if there are duplicate concept ids in the recommendedVerbs property', () => {
+                    test('it should throw an error.', async () => {
+                        const profileConcepts = [
+                            new ConceptModel({ iri: 'concept1_id', name: 'concept_1' }),
+                            new ConceptModel({ iri: 'concept2_id', name: 'concept_2' }),
+                            new ConceptModel({ iri: 'concept3_id', name: 'concept_3' }),
+                        ];
+                        const conceptLayer = ConceptLayerFactory({
+                            conceptDocument: {
+                                id: 'concept1_id',
+                                type: 'ContextExtension',
+                                prefLabel: { en: 'test_name' },
+                                definition: { en: 'test_description' },
+                                recommendedVerbs: ['concept2_id', 'concept3_id', 'concept2_id'],
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
+
+                        let error;
+                        let conceptModel;
+                        try {
+                            conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                        } catch (err) {
+                            error = err.message;
+                        }
+
+                        expect(error).toMatch(/Concept concept1_id has duplicate concepts in property recommendedVerbs/);
+                    });
+                });
+
                 describe('and the concepts in the recommendedVerbs array are in this profile version', () => {
                     describe('and the concepts in the recommendedVerbs property are are not verbs', () => {
                         test('it should throw an error.', async () => {
@@ -1424,6 +2133,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedVerbs: ['concept2_id', 'concept3_id'],
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
 
                             let error;
@@ -1453,6 +2167,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedVerbs: recommendedVerbs,
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                             const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1485,6 +2204,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedVerbs: ['existing_concept'],
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
 
                             let error;
@@ -1516,6 +2240,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedVerbs: recommendedVerbs,
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                             const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1526,7 +2255,7 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                 });
 
                 describe('and the concepts in the recommendedVerbs array are not in this profile version or on the server', () => {
-                    test('it should throw and error.', async () => {
+                    test('it should return the model with parentless concepts that are now on the server.', async () => {
                         const profileConcepts = [
                             new ConceptModel({ iri: 'concept1_id', name: 'concept_1', type: 'Activity' }),
                             new ConceptModel({ iri: 'concept2_id', name: 'concept_2', type: 'Activity' }),
@@ -1540,16 +2269,28 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                 definition: { en: 'test_description' },
                                 recommendedVerbs: ['concept5_id', 'concept6_id'],
                             },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
                         });
 
-                        let error;
-                        try {
-                            const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
-                        } catch (err) {
-                            error = err.message;
-                        }
+                        const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                        const parentlessConcept1 = await ConceptModel.findOne({ iri: 'concept5_id' });
+                        const parentlessConcept2 = await ConceptModel.findOne({ iri: 'concept6_id' });
 
-                        expect(error).toMatch(/Concept concept.+ cannot be a recommended verb for concept1_id because it is not in this profile version or on the server/);
+                        expect(conceptModel.iri).toEqual('concept1_id');
+                        expect(conceptModel.recommendedTerms.length).toEqual(2);
+                        expect(conceptModel.recommendedTerms.map(t => t._id).includes(parentlessConcept1._id)).toBeTruthy();
+                        expect(conceptModel.recommendedTerms.map(t => t._id).includes(parentlessConcept2._id)).toBeTruthy();
+                        expect(parentlessConcept1).toBeTruthy();
+                        expect(parentlessConcept1.iri).toEqual('concept5_id');
+                        expect(parentlessConcept2).toBeTruthy();
+                        expect(parentlessConcept2.iri).toEqual('concept6_id');
+
+                        await parentlessConcept1.remove();
+                        await parentlessConcept2.remove();
                     });
                 });
             });
@@ -1569,6 +2310,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                             definition: { en: 'test_description' },
                             recommendedVerbs: ['rec_verb_1'],
                         },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
                     });
 
                     let error;
@@ -1585,6 +2331,39 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
 
         describe('when the concept document has a recommendedActivityTypes property', () => {
             describe('and the concept is a ActivityExtension type', () => {
+                describe('if there are duplicate concept ids in the recommendedActivityTypes property', () => {
+                    test('it should throw an error.', async () => {
+                        const profileConcepts = [
+                            new ConceptModel({ iri: 'concept1_id', name: 'concept_1' }),
+                            new ConceptModel({ iri: 'concept2_id', name: 'concept_2' }),
+                            new ConceptModel({ iri: 'concept3_id', name: 'concept_3' }),
+                        ];
+                        const conceptLayer = ConceptLayerFactory({
+                            conceptDocument: {
+                                id: 'concept1_id',
+                                type: 'ActivityExtension',
+                                prefLabel: { en: 'test_name' },
+                                definition: { en: 'test_description' },
+                                recommendedActivityTypes: ['concept2_id', 'concept3_id', 'concept2_id'],
+                            },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
+                        });
+
+                        let error;
+                        try {
+                            const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                        } catch (err) {
+                            error = err.message;
+                        }
+
+                        expect(error).toMatch(/Concept concept1_id has duplicate concepts in property recommendedActivityTypes/);
+                    });
+                });
+
                 describe('and the concepts in the recommendedActivityTypes array are in this profile version', () => {
                     describe('and the concepts in the recommendedActivityTypes property are are not activity types', () => {
                         test('it should throw an error.', async () => {
@@ -1601,6 +2380,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedActivityTypes: ['concept2_id', 'concept3_id'],
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
 
                             let error;
@@ -1630,6 +2414,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedActivityTypes: recommendedActivityTypes,
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                             const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1662,6 +2451,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedActivityTypes: ['existing_concept'],
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
 
                             let error;
@@ -1693,6 +2487,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                     definition: { en: 'test_description' },
                                     recommendedActivityTypes: recommendedActivityTypes,
                                 },
+                                parentProfile: new ProfileVersionModel({
+                                    iri: 'parent_profile_id',
+                                    name: 'profile_name',
+                                    description: 'profile_description',
+                                }),
                             });
                             const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
 
@@ -1703,7 +2502,7 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                 });
 
                 describe('and the concepts in the recommendedActivityTypes array are not in this profile version or on the server', () => {
-                    test('it should throw and error.', async () => {
+                    test('it should return a concept model with the recommended concepts as parentless concepts.', async () => {
                         const profileConcepts = [
                             new ConceptModel({ iri: 'concept1_id', name: 'concept_1', type: 'Activity' }),
                             new ConceptModel({ iri: 'concept2_id', name: 'concept_2', type: 'Activity' }),
@@ -1717,16 +2516,28 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                                 definition: { en: 'test_description' },
                                 recommendedActivityTypes: ['concept5_id', 'concept6_id'],
                             },
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'profile_name',
+                                description: 'profile_description',
+                            }),
                         });
 
-                        let error;
-                        try {
-                            const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
-                        } catch (err) {
-                            error = err.message;
-                        }
+                        const conceptModel = await conceptLayer.scanSubcomponentLayer(profileConcepts);
+                        const parentlessConcept1 = await ConceptModel.findOne({ iri: 'concept5_id' });
+                        const parentlessConcept2 = await ConceptModel.findOne({ iri: 'concept6_id' });
 
-                        expect(error).toMatch(/Concept concept.+ cannot be a recommended activity type for concept1_id because it is not in this profile version or on the server/);
+                        expect(conceptModel.iri).toEqual('concept1_id');
+                        expect(conceptModel.recommendedTerms.length).toEqual(2);
+                        expect(conceptModel.recommendedTerms.map(t => t._id).includes(parentlessConcept1._id)).toBeTruthy();
+                        expect(conceptModel.recommendedTerms.map(t => t._id).includes(parentlessConcept2._id)).toBeTruthy();
+                        expect(parentlessConcept1).toBeTruthy();
+                        expect(parentlessConcept1.iri).toEqual('concept5_id');
+                        expect(parentlessConcept2).toBeTruthy();
+                        expect(parentlessConcept2.iri).toEqual('concept6_id');
+
+                        await parentlessConcept1.remove();
+                        await parentlessConcept2.remove();
                     });
                 });
             });
@@ -1746,6 +2557,11 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                             definition: { en: 'test_description' },
                             recommendedActivityTypes: ['rec_verb_1'],
                         },
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'profile_name',
+                            description: 'profile_description',
+                        }),
                     });
 
                     let error;

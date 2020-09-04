@@ -16,7 +16,8 @@
 const mongoose = require('mongoose');
 const uuid = require('uuid');
 const locks = require('./locks');
-
+const createAPIURL = require('../utils/createAPIURL');
+const mongoSanitize = require('mongo-sanitize');
 const profile = new mongoose.Schema({
     organization: {
         type: mongoose.Schema.Types.ObjectId,
@@ -45,16 +46,12 @@ const profile = new mongoose.Schema({
         ref: 'user',
     },
     currentPublishedVersion: {
-        type: String,
+        type: mongoose.Schema.Types.ObjectId,
         ref: 'profileVersion',
     },
     currentDraftVersion: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'profileVersion',
-    },
-    isActive: {
-        type: Boolean,
-        default: true,
     },
 }, { toJSON: { virtuals: true } });
 
@@ -65,12 +62,10 @@ profile.virtual('versions', {
     justOne: false,
 });
 
+profile.virtual('url').get(function () { return createAPIURL.profile(this.uuid); });
+
 profile.statics.findByUuid = function (uuid, callback) {
     return this.findOne({ uuid: uuid }, callback);
-};
-
-profile.statics.deleteByUuid = async function (uuid) {
-    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false, updatedOn: new Date() });
 };
 
 module.exports = profile;

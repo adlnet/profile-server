@@ -54,9 +54,7 @@ describe('Deleing an api key', () => {
             await apiKeyModel.deleteByUuid(uuid);
             const deletedApiKey = await apiKeyModel.findOne({ uuid: uuid });
 
-            expect(deletedApiKey).not.toBeUndefined();
-            expect(deletedApiKey).not.toBeNull();
-            expect(deletedApiKey.isActive).toBeFalsy();
+            expect(deletedApiKey).toBeNull();
         });
     });
 

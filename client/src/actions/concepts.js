@@ -15,7 +15,7 @@
 **************************************************************** */
 import API from '../api';
 import history from '../history'
-import { selectProfileVersion } from './profiles';
+import { selectProfile, selectProfileVersion } from './profiles';
 
 
 export const SELECT_CONCEPT = 'SELECT_CONCEPT';
@@ -85,20 +85,34 @@ export function createConcept(concept) {
             type: START_CREATE_CONCEPT,
         });
 
-        let profileVersionId = state.application.selectedProfileVersionId;
+        const selectedProfileVersion = state.application.selectedProfileVersion;
+        let profileVersionId = selectedProfileVersion.uuid;
         try {
-            if (state.application.selectedProfileVersion.state === 'published') {
+            if (selectedProfileVersion.state === 'published') {
+                let newVersion = {
+                    tags: selectedProfileVersion.tags,
+                    concepts: selectedProfileVersion.concepts,
+                    externalConcepts: selectedProfileVersion.externalConcepts,
+                    templates: selectedProfileVersion.templates,
+                    patterns: selectedProfileVersion.patterns,
+                    translations: selectedProfileVersion.translations,
+                    name: selectedProfileVersion.name,
+                    description: selectedProfileVersion.description,
+                    moreInformation: selectedProfileVersion.moreInformation,
+                    version: selectedProfileVersion.version
+                };
                 const newProfileVersion = await API.createProfileVersion(
                     state.application.selectedOrganizationId, state.application.selectedProfileId,
-                    Object.assign({}, state.application.selectedProfileVersion))
+                    newVersion);
                 profileVersionId = newProfileVersion.uuid;
             }
             const newConcept = await API.createConcept(organizationId, profileId, profileVersionId, concept);
-            
+
             dispatch(selectConcept(organizationId, profileId, profileVersionId, newConcept.uuid));
+            dispatch(selectProfile(organizationId, profileId));
             dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
             dispatch(loadProfileConcepts(profileVersionId));
-            
+
             history.push(`./concepts/${newConcept.uuid}`)
         } catch (err) {
             dispatch({
@@ -126,7 +140,7 @@ export function editConcept(concept) {
                 state.application.selectedOrganizationId, state.application.selectedProfileId,
                 state.application.selectedProfileVersion.uuid, concept
             );
-            
+
             dispatch(selectConcept(
                 state.application.selectedOrganizationId, state.application.selectedProfileId,
                 state.application.selectedProfileVersion.uuid, newConcept.uuid)
@@ -215,7 +229,7 @@ export function deselectConceptResult(concept) {
 }
 
 export function clearConceptResults() {
-    return function(dispatch) {
+    return function (dispatch) {
         dispatch({
             type: CLEAR_CONCEPT_RESULTS,
         });

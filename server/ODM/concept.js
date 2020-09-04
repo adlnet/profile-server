@@ -17,7 +17,7 @@ const mongoose = require('mongoose');
 const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
-
+const mongoSanitize = require('mongo-sanitize');
 const concept = new mongoose.Schema({
     uuid: {
         type: String,
@@ -149,20 +149,16 @@ const concept = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
 }, { toJSON: { virtuals: true } });
 
 // concept.virtual('templateCount').get(() => 0);
 
 concept.statics.findByUuid = function (uuid, callback) {
-    return this.findOne({ uuid: uuid }, callback);
+    return this.findOne(mongoSanitize({ uuid: uuid }), callback);
 };
 
 concept.statics.deleteByUuid = async function (uuid) {
-    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false });
+    await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
 };
 
 concept.methods.getInteractionComponents = async function () {

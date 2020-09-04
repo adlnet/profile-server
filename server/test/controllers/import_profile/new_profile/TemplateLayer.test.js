@@ -16,10 +16,10 @@
 const mongoose = require('mongoose');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
-const TemplateModel = require('../../../ODM/models').template;
-const ConceptModel = require('../../../ODM/models').concept;
-const ProfileVersionModel = require('../../../ODM/models').profileVersion;
-const TemplateLayer = require('../../../controllers/importProfile/TemplateLayer')
+const TemplateModel = require('../../../../ODM/models').template;
+const ConceptModel = require('../../../../ODM/models').concept;
+const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const TemplateLayer = require('../../../../controllers/importProfile/TemplateLayer')
     .TemplateLayer;
 
 const mongoServer = new MongoMemoryServer();
@@ -68,39 +68,83 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
     describe('when the template exists on the server', () => {
         let existingTemplate;
-        beforeEach(async () => {
-            existingTemplate = new TemplateModel({
-                iri: 'existing_template_id',
-                name: 'test_name',
-                description: 'test_description',
-            });
-            await existingTemplate.save();
-        });
 
         afterEach(async () => {
             await existingTemplate.remove();
         });
 
-        test('it should throw an error.,', async () => {
-            const templateDocument = {
-                id: 'existing_template_id',
-                prefLabel: { en: 'test_name' },
-                definition: { en: 'test_description' },
-                deprecated: 'true',
-            };
-            const templateLayer = new TemplateLayer({
-                templateDocument: templateDocument,
+        describe('and that that existing template is a not a parentless template', () => {
+            beforeEach(async () => {
+                existingTemplate = new TemplateModel({
+                    iri: 'existing_template_id',
+                    name: 'test_name',
+                    description: 'test_description',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                });
+                await existingTemplate.save();
             });
 
-            let templateModel;
-            let error;
-            try {
-                templateModel = await templateLayer.scanProfileComponentLayer();
-            } catch (err) {
-                error = err.message;
-            }
+            test('it should throw an error.,', async () => {
+                const templateDocument = {
+                    id: 'existing_template_id',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                    deprecated: 'true',
+                };
+                const templateLayer = new TemplateLayer({
+                    templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                });
 
-            expect(error).toMatch(/Template existing_template_id already exists/);
+                let templateModel;
+                let error;
+                try {
+                    templateModel = await templateLayer.scanProfileComponentLayer();
+                } catch (err) {
+                    error = err.message;
+                }
+
+                expect(error).toMatch(/Template existing_template_id already exists/);
+            });
+        });
+
+        describe('and that existing concept is a parentless template', () => {
+            beforeEach(async () => {
+                existingTemplate = new TemplateModel({ iri: 'existing_template_id' });
+                await existingTemplate.save();
+            });
+
+            test('it should return a template model with the correct values and an id equal to the parentless component.', async () => {
+                const templateDocument = {
+                    id: 'existing_template_id',
+                    prefLabel: { en: 'test_name' },
+                    definition: { en: 'test_description' },
+                    deprecated: 'true',
+                };
+                const templateLayer = new TemplateLayer({
+                    templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                });
+
+                const templateModel = await templateLayer.scanProfileComponentLayer();
+
+                expect(templateModel.equals(existingTemplate)).toBeTruthy();
+                expect(templateModel.name).toEqual('test_name');
+                expect(templateModel.description).toEqual('test_description');
+                expect(templateModel.isDeprecated).toBeTruthy();
+            });
         });
     });
 });
@@ -118,11 +162,56 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
             };
 
             profileConcepts = [
-                new ConceptModel({ iri: 'concept1_id', name: 'concept_1', conceptType: 'Verb' }),
-                new ConceptModel({ iri: 'concept2_id', name: 'concept_2', conceptType: 'ActivityType' }),
-                new ConceptModel({ iri: 'concept25_id', name: 'concept_25', conceptType: 'ActivityType' }),
-                new ConceptModel({ iri: 'concept3_id', name: 'concept_3', conceptType: 'AttachmentUsageType' }),
-                new ConceptModel({ iri: 'concept35_id', name: 'concept_35', conceptType: 'AttachmentUsageType' }),
+                new ConceptModel({
+                    iri: 'concept1_id',
+                    name: 'concept_1',
+                    conceptType: 'Verb',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                }),
+                new ConceptModel({
+                    iri: 'concept2_id',
+                    name: 'concept_2',
+                    conceptType: 'ActivityType',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                }),
+                new ConceptModel({
+                    iri: 'concept25_id',
+                    name: 'concept_25',
+                    conceptType: 'ActivityType',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                }),
+                new ConceptModel({
+                    iri: 'concept3_id',
+                    name: 'concept_3',
+                    conceptType: 'AttachmentUsageType',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                }),
+                new ConceptModel({
+                    iri: 'concept35_id',
+                    name: 'concept_35',
+                    conceptType: 'AttachmentUsageType',
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                    }),
+                }),
             ];
 
             profileTemplates = [];
@@ -135,6 +224,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.verb = 'concept1_id';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -149,6 +243,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.verb = 'concept2_id';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         let error;
@@ -200,6 +299,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'ActivityType',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -213,6 +317,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.verb = 'existing_concept';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         let error;
@@ -228,20 +337,96 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
             });
 
             describe('if the concept does not exist in profile version or on the server', () => {
-                test('it should throw an error.', async () => {
-                    templateDocument.verb = 'non-existant_concept';
+                test('it should return a template model with the verb as a parentless concept saved on the server.', async () => {
+                    templateDocument.verb = 'non-existent_concept';
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
                     });
 
-                    let error;
-                    try {
-                        const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
-                    } catch (err) {
-                        error = err.message;
-                    }
+                    const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
+                    const parentlessConcept = await ConceptModel.findOne({ iri: 'non-existent_concept' });
 
-                    expect(error).toMatch(/Concept non-existant_concept cannot be a verb for this template because it is does not exist in this profile version or on the server/);
+                    expect(parentlessConcept.iri).toEqual('non-existent_concept');
+                    expect(templateModel.verb.iri).toEqual('non-existent_concept');
+                    expect(templateModel.verb.id).toEqual(parentlessConcept.id);
+
+                    await parentlessConcept.remove();
+                });
+
+                describe('and it is also the objectActivityType for this template', () => {
+                    let templateLayer;
+                    let templateModel;
+                    let parentlessConcept;
+                    beforeEach(async () => {
+                        templateDocument.verb = 'non-existent_concept';
+                        templateDocument.objectActivityType = 'non-existent_concept';
+                        templateLayer = new TemplateLayer({
+                            templateDocument: templateDocument,
+                        });
+
+                        templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
+                        parentlessConcept = await ConceptModel.findOne({ iri: 'non-existent_concept' });
+                    });
+
+                    afterEach(async () => {
+                        await parentlessConcept.remove();
+                    });
+
+                    test('it should retrun a template model with the verb as a parentless concept saved on the server.', () => {
+                        expect(parentlessConcept.iri).toEqual('non-existent_concept');
+                        expect(templateModel.verb.iri).toEqual('non-existent_concept');
+                        expect(templateModel.verb.id).toEqual(parentlessConcept.id);
+                    });
+
+                    test('it should retrun a template model with the objectActivityType as a parentless concept saved on the server.', () => {
+                        expect(parentlessConcept.iri).toEqual('non-existent_concept');
+                        expect(templateModel.objectActivityType.iri).toEqual('non-existent_concept');
+                        expect(templateModel.objectActivityType.id).toEqual(parentlessConcept.id);
+                    });
+
+                    test('it should have the exact same concept document as the verb and the objectActivityType.', () => {
+                        expect(templateModel.verb._id.toString()).toEqual(templateModel.objectActivityType._id.toString());
+                    });
+                });
+
+                describe('and it is also in another template in this profile', () => {
+                    let templateLayer;
+                    let parentlessConcept;
+                    let otherTemplateDocument;
+                    let otherTemplateLayer;
+                    let templateModels;
+
+                    beforeEach(async () => {
+                        templateDocument.verb = 'non-existent_concept';
+                        templateDocument.objectActivityType = 'non-existent_concept';
+                        templateLayer = new TemplateLayer({
+                            templateDocument: templateDocument,
+                        });
+
+                        otherTemplateDocument = {
+                            id: 'template2_id',
+                            prefLabel: { en: 'test_name_2' },
+                            definition: { en: 'test_description_2' },
+                            verb: 'non-existent_concept',
+                        };
+                        otherTemplateLayer = new TemplateLayer({
+                            templateDocument: otherTemplateDocument,
+                        });
+
+                        // templateModels = await Promise.all([templateLayer, otherTemplateLayer].map(
+                        //     async layer => layer.scanSubcomponentLayer(profileConcepts, profileTemplates),
+                        // ))
+                        templateModels = [];
+                        for (const layer of [templateLayer, otherTemplateLayer]) {
+                            const model = await layer.scanSubcomponentLayer(profileConcepts, profileTemplates);
+                            templateModels.push(model);
+                        }
+                        parentlessConcept = await ConceptModel.findOne({ iri: 'non-existent_concept' });
+                    });
+
+                    test('it should return an array of templateModels where all instances of the concept model are the exact same parentless model.', () => {
+                        expect(templateModels[0].verb._id.toString()).toEqual(templateModels[1].verb._id.toString());
+                    });
                 });
             });
         });
@@ -290,6 +475,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'ActivityType',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -303,6 +493,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.objectActivityType = 'existing_concept';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -318,6 +513,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'Verb',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -346,20 +546,20 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
             });
 
             describe('if the concept does not exist in profile version or on the server', () => {
-                test('it should throw an error.', async () => {
-                    templateDocument.objectActivityType = 'non-existant_concept';
+                test('it should return a template model with the objectActivityType as a parentless concept saved on the server.', async () => {
+                    templateDocument.objectActivityType = 'non-existent_concept';
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
                     });
 
-                    let error;
-                    try {
-                        const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
-                    } catch (err) {
-                        error = err.message;
-                    }
+                    const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
+                    const parentlessConcept = await ConceptModel.findOne({ iri: 'non-existent_concept' });
 
-                    expect(error).toMatch(/Concept non-existant_concept cannot be a objectActivityType for this template because it is does not exist in this profile version or on the server/);
+                    expect(parentlessConcept.iri).toEqual('non-existent_concept');
+                    expect(templateModel.objectActivityType.iri).toEqual('non-existent_concept');
+                    expect(templateModel.objectActivityType.id).toEqual(parentlessConcept.id);
+
+                    await parentlessConcept.remove();
                 });
             });
         });
@@ -409,12 +609,22 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'ActivityType',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         otherExistingConcept = new ConceptModel({
                             iri: 'other_existing_concept',
                             name: 'other_test_name',
                             conceptType: 'ActivityType',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -430,6 +640,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.contextGroupingActivityType = ['existing_concept', 'other_existing_concept'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -445,6 +660,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'Verb',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -473,12 +693,31 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
             });
 
             describe('if the concept does not exist in profile version or on the server', () => {
-                test('it should throw an error.', async () => {
-                    templateDocument.contextGroupingActivityType = ['non-existant_concept'];
+                test('it should return a template model with the contextGroupingActivityType as a parentless concept saved on the server.', async () => {
+                    templateDocument.contextGroupingActivityType = ['non-existent_concept'];
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
                     });
 
+                    const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
+                    const parentlessConcept = await ConceptModel.findOne({ iri: 'non-existent_concept' });
+
+                    expect(parentlessConcept.iri).toEqual('non-existent_concept');
+                    expect(templateModel.contextGroupingActivityType[0].iri).toEqual('non-existent_concept');
+                    expect(templateModel.contextGroupingActivityType[0].id).toEqual(parentlessConcept.id);
+
+                    await parentlessConcept.remove();
+                });
+            });
+        });
+
+        describe('DeterminingProperties#AttachmentUsageType (determining properties that are array valued)', () => {
+            describe('if there is a duplicate id in the array', () => {
+                test('it should throw an error', async () => {
+                    templateDocument.attachmentUsageType = ['concept3_id', 'concept3_id', 'concept35_id'];
+                    const templateLayer = new TemplateLayer({
+                        templateDocument: templateDocument,
+                    });
                     let error;
                     try {
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -486,12 +725,10 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         error = err.message;
                     }
 
-                    expect(error).toMatch(/Concept non-existant_concept cannot be a contextGroupingActivityType for this template because it is does not exist in this profile version or on the server/);
+                    expect(error).toMatch(/Template template1_id has a duplicate concept id in property attachmentUsageType/);
                 });
             });
-        });
 
-        describe('DeterminingProperties#AttachmentUsageType', () => {
             describe('if the concepts exist in profile version', () => {
                 describe('and the concepts are activityType type', () => {
                     test('it should return a templateModel with the correct values.', async () => {
@@ -536,12 +773,22 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'AttachmentUsageType',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         otherExistingConcept = new ConceptModel({
                             iri: 'other_existing_concept',
                             name: 'other_test_name',
                             conceptType: 'AttachmentUsageType',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -557,6 +804,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.attachmentUsageType = ['existing_concept', 'other_existing_concept'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -572,6 +824,11 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             iri: 'existing_concept',
                             name: 'test_name',
                             conceptType: 'Verb',
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                            }),
                         });
 
                         await existingConcept.save();
@@ -600,20 +857,20 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
             });
 
             describe('if the concept does not exist in profile version or on the server', () => {
-                test('it should throw an error.', async () => {
-                    templateDocument.attachmentUsageType = ['non-existant_concept'];
+                test('it should return a template model with the attachmentUsageType as a parentless concept saved on the server.', async () => {
+                    templateDocument.attachmentUsageType = ['non-existent_concept'];
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
                     });
 
-                    let error;
-                    try {
-                        const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
-                    } catch (err) {
-                        error = err.message;
-                    }
+                    const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
+                    const parentlessConcept = await ConceptModel.findOne({ iri: 'non-existent_concept' });
 
-                    expect(error).toMatch(/Concept non-existant_concept cannot be a attachmentUsageType for this template because it is does not exist in this profile version or on the server/);
+                    expect(parentlessConcept.iri).toEqual('non-existent_concept');
+                    expect(templateModel.attachmentUsageType[0].iri).toEqual('non-existent_concept');
+                    expect(templateModel.attachmentUsageType[0].id).toEqual(parentlessConcept.id);
+
+                    await parentlessConcept.remove();
                 });
             });
         });

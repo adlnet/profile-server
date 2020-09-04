@@ -13,8 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, {useEffect} from 'react';
-import { useRouteMatch, useParams, useHistory, Link, Switch, Route } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useRouteMatch, useParams, useHistory, Link, Switch, Route, Redirect } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
@@ -22,15 +22,16 @@ import { selectPattern, editPattern } from '../../actions/patterns';
 import EditPattern from './EditPattern';
 
 
-export default function PatternDetail() {
+export default function PatternDetail({ isMember }) {
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
     const history = useHistory();
-    let { profileId, patternId } = useParams();
+    let { patternId } = useParams();
+    const profileVersion = useSelector(state => state.application.selectedProfileVersion);
 
     useEffect(() => {
         dispatch(selectPattern(patternId));
-    }, []);
+    }, [patternId]);
 
     const pattern = useSelector((state) => state.application.selectedPattern);
 
@@ -41,30 +42,34 @@ export default function PatternDetail() {
 
     if (!pattern) return '';
 
-    const belongsToAnotherProfile = pattern.parentProfile.parentProfile.uuid !== profileId;
+    // is the current pattern in the list of profile patterns
+    const belongsToAnotherProfile = !profileVersion.patterns.includes(pattern.id);
 
     return (<>
         <Switch>
             <Route path={`${path}/edit`}>
-                <EditPattern
-                    pattern={pattern}
-                    onEdit={handleEditPattern}
-                    onCancel={() => history.push(url)}
-                    root_url={url}
-                />
+                {isMember ?
+                    <EditPattern
+                        pattern={pattern}
+                        onEdit={handleEditPattern}
+                        onCancel={() => history.push(url)}
+                        root_url={url}
+                    />
+                    : <Redirect to={url} />
+                }
             </Route>
 
             <Route exact path={path}>
                 <>
                     {
                         belongsToAnotherProfile &&
-                            <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
-                                <div className="usa-alert__body">
-                                    <p className="usa-alert__text">
-                                        This pattern belongs to {pattern.parentProfile.name}.
+                        <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
+                            <div className="usa-alert__body">
+                                <p className="usa-alert__text">
+                                    This pattern belongs to {pattern.parentProfile.name}.
                                     </p>
-                                </div>
                             </div>
+                        </div>
                     }
                     <div className="grid-row">
                         <div className="desktop:grid-col-8">
@@ -99,12 +104,12 @@ export default function PatternDetail() {
                         </div>
                         <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
                             {
-                                !belongsToAnotherProfile &&
-                                    <Link
-                                            to={`${url}/edit/`}
-                                            className="usa-button padding-x-105 margin-top-2 margin-right-0 "
-                                    >
-                                        <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                                !belongsToAnotherProfile && isMember &&
+                                <Link
+                                    to={`${url}/edit/`}
+                                    className="usa-button padding-x-105 margin-top-2 margin-right-0 "
+                                >
+                                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
                                         Edit Pattern
                                     </Link>
                             }
@@ -129,7 +134,6 @@ export default function PatternDetail() {
 }
 
 function PatternComponentsTable({ components, patternType }) {
-    // let singleComponent = (patternType !== 'sequence' && patternType !== 'alternates');
     let singleComponent = false;
     if (!Array.isArray(components)) {
         singleComponent = true;
@@ -150,7 +154,7 @@ function PatternComponentsTable({ components, patternType }) {
             <tbody style={{ lineHeight: 3 }}>
                 {(components && components.length > 0) ?
                     components.map((component, i) => <PatternComponentTableRow key={i} component={component} />) :
-                        <tr key={1}><td className="font-sans-xs" colSpan="5">There are no components associated with this profile. Add a component to define relationships between your xAPI statements.</td></tr>
+                    <tr key={1}><td className="font-sans-xs" colSpan="5">There are no components associated with this profile. Add a component to define relationships between your xAPI statements.</td></tr>
                 }
             </tbody>
         </table>
@@ -160,13 +164,16 @@ function PatternComponentsTable({ components, patternType }) {
 function PatternComponentTableRow({ component }) {
     return (
         <tr>
-            <th scope="row"><a href={getURL(component)}><span>{component.component.name}</span></a></th>
+            <th scope="row">
+                <Link
+                    to={`../${component.componentType}s/${component.component.uuid}`}
+                    className="usa-link button-link"
+                >
+                    <span>{component.component.name || component.component.iri}</span>
+                </Link >
+            </th>
             <td><span className="font-sans-3xs" style={{ textTransform: 'capitalize' }}>{(component.componentType) === 'template' ? `statement ${component.componentType}` : `${component.componentType}`}</span></td>
-            <td><span className="font-sans-3xs">{component.component.parentProfile.name}</span></td>
+            <td><span className="font-sans-3xs">{(component.component.parentProfile && component.component.parentProfile.name) || 'unknown'}</span></td>
         </tr>
     );
-}
-
-function getURL(component) {
-    return "/";
 }

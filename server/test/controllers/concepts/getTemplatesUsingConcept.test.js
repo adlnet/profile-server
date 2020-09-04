@@ -45,6 +45,7 @@ describe('Getting statement templates from a given profile version that use a gi
         let profile;
         let profileVersion;
         let concept;
+        let concept2;
         let templateWithConcept1;
         let templateWithConcept2;
         let templateWithoutConcept;
@@ -52,27 +53,37 @@ describe('Getting statement templates from a given profile version that use a gi
         beforeEach(async () => {
             org = new organizationModel({ name: 'test' });
             await org.save();
-            profileVersion = new profileVersionModel({ name: 'test_version', organization: org, description: 'test version desc' });
-            templateWithConcept1 = new templateModel({ name: 'test_template_1', iri: '1', parentProfile: profileVersion });
-            templateWithConcept2 = new templateModel({ name: 'test_template_2', iri: '2', parentProfile: profileVersion });
+            profileVersion = new profileVersionModel({ iri: 'pv_id', name: 'test_version', organization: org, description: 'test version desc' });
+            templateWithConcept1 = new templateModel({ iri: 't1_id', name: 'test_template_1', parentProfile: profileVersion });
+            templateWithConcept2 = new templateModel({ iri: 't2_id', name: 'test_template_2', parentProfile: profileVersion });
 
-            templateWithoutConcept = new templateModel({ name: 'test_template_not', iri: '3' });
+            templateWithoutConcept = new templateModel({ iri: 't3_id', name: 'test_template_not' });
             await templateWithoutConcept.save();
             profileVersion.templates.push(templateWithoutConcept);
 
-            concept = new conceptModel({ name: 'test_concept' });
+            concept = new conceptModel({ iri: 'c1_id', name: 'test_concept' });
             await concept.save();
 
-
+            concept2 = new conceptModel({ iri: 'c2_id', name: 'test_concept2' });
+            await concept2.save();
 
             templateWithConcept1.verb = concept;
+            templateWithConcept1.objectActivityType = concept2;
             await templateWithConcept1.save();
             profileVersion.templates.push(templateWithConcept1);
 
-            templateWithConcept2.verb = concept;
+            templateWithConcept2.contextGroupingActivityType = [concept];
             await templateWithConcept2.save();
             profileVersion.templates.push(templateWithConcept2);
             await profileVersion.save();
+        });
+
+        afterEach(async () => {
+            await profileVersion.remove();
+            await templateWithConcept1.remove();
+            await templateWithConcept2.remove();
+            await concept2.remove();
+            await concept.remove();
         });
 
         describe('and a valid profile version uuid', () => {
@@ -88,7 +99,7 @@ describe('Getting statement templates from a given profile version that use a gi
         describe('and no profile version', () => {
             test('it should return all statement templates that use that concept.', async () => {
                 const otherProfileVerision = new profileVersionModel({ name: 'other_test_version', organization: org });
-                const otherTemplate = new templateModel({ name: 'other_test_template', iri: '4', verb: concept, parentProfile: otherProfileVerision });
+                const otherTemplate = new templateModel({ iri: 't3_id', name: 'other_test_template', objectActivityType: concept, parentProfile: otherProfileVerision });
                 await otherTemplate.save();
 
                 templates = await conceptController.getTemplatesUsingConcept(concept.uuid);

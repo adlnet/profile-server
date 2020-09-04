@@ -14,9 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import API from '../api';
-import history from '../history'
-import { CLEAR_TEMPLATE_RESULTS, loadCurrentProfileTemplates } from "./templates";
-import { selectOrganization } from './organizations';
+import { SELECT_ORG, selectOrganization } from './organizations';
 
 export const START_GET_PROFILE = 'START_GET_PROFILE';
 export const START_GET_PROFILES = 'START_GET_PROFILES';
@@ -62,24 +60,13 @@ export const START_RELOAD_PROFILE = 'START_RELOAD_PROFILE';
 export const FINISH_RELOAD_PROFILE = 'FINISH_RELOAD_PROFILE';
 
 export function publishProfileVersion(profileVersion) {
-    return async function (dispatch, getState) {
-        const state = getState();
-        const organizationId = state.application.selectedOrganizationId;
-        const profile = state.application.selectedProfile;
-
+    return async function (dispatch) {
         dispatch({
             type: START_PUBLISH_PROFILE,
         });
 
-        const newProfileVersion = Object.assign({}, profileVersion, { state: 'published' });
-        const newProfile = Object.assign({}, profile, {
-            currentDraftVersion: null,
-            currentPublishedVersion: newProfileVersion,
-        });
-
         try {
-            await API.editProfileVersion(organizationId, profile.uuid, newProfileVersion);
-            await API.editProfile(organizationId, newProfile);
+            await API.publishProfileVersion(profileVersion.uuid);
 
             dispatch(reloadCurrentProfile());
         } catch (err) {
@@ -166,7 +153,7 @@ export function selectProfileVersion(organizationId, profileId, versionId) {
                 type: SELECT_PROFILE_VERSION,
                 profileVersion: profileVersion,
             });
-        } catch(err) {
+        } catch (err) {
             dispatch({
                 type: ERROR_GET_PROFILE_VERSION,
                 errorType: 'profiles',
@@ -191,10 +178,6 @@ export function createProfile(organizationId, profile) {
 
             dispatch(selectOrganization(organizationId));
             dispatch(selectProfile(organizationId, newProfile.uuid));
-
-            // history.push(
-            //     `/organization/${organizationId}/profile/${newProfile.uuid}/version/${newProfile.currentDraftVersion.uuid}`
-            // );
         } catch (err) {
             dispatch({
                 type: ERROR_CREATE_PROFILE,
@@ -243,7 +226,7 @@ export function selectProfile(orgId, profileId) {
 
         try {
             const profile = await API.getProfile(orgId, profileId);
-                
+
             dispatch({
                 type: SELECT_PROFILE,
                 profile: profile,
@@ -260,6 +243,45 @@ export function selectProfile(orgId, profileId) {
             });
         }
     };
+}
+
+/**
+ * Sets the profile and profile version
+ * @param {uuid} profileId The UUID of a profile or profile version
+ */
+export function resolveProfile(profileId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_GET_PROFILE,
+            profileId
+        })
+
+        try {
+            const response = await API.resolveProfile(profileId);
+            dispatch({
+                type: SELECT_PROFILE,
+                profile: response.profile,
+            });
+            dispatch({
+                type: SELECT_PROFILE_VERSION,
+                profileVersion: response.profileVersion,
+            });
+            dispatch({
+                type: SELECT_ORG,
+                organization: response.organization,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_GET_PROFILE,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_GET_PROFILE,
+            });
+        }
+    }
 }
 
 export function reloadCurrentProfile() {

@@ -100,8 +100,8 @@ function RecommendedTermRow({ recommendedTerm, onRemove }) {
 
     return (<>
         <tr>
-            <th scope="row">
-                <span>{recommendedTerm.name}</span>
+            <th scope="row" style={{wordWrap: 'break-word'}}>
+                <span>{recommendedTerm.name || recommendedTerm.iri}</span>
             </th>
             <td>
                 <button style={{marginTop: '0'}} className="usa-button  usa-button--unstyled" type="button" onClick={onRemove}>
@@ -124,13 +124,15 @@ function RemoveRecommendedTermConfirmation(props) {
 
 function RecommendedTermForm({ onAdd }) {
     const dispatch = useDispatch();
-    const searchResults = useSelector(state => state.searchResults.concepts);
+    const conceptSearchResults = useSelector(state => state.searchResults.concepts);
 
     useEffect(() => {
         return () => {
             dispatch(clearConceptResults());
         }
     }, []);
+
+    const searchResults = conceptSearchResults && conceptSearchResults.filter(r => r.parentProfile);
 
     return (<>
         <h2 style={{marginTop: '0'}}>Tag Recommended Terms</h2>

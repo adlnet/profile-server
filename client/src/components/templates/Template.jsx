@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect, useState } from 'react';
-import { useRouteMatch, Switch, Route, useHistory, useParams } from 'react-router-dom';
+import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import TemplateDetail from "./TemplateDetail";
@@ -34,7 +34,7 @@ import ModalBox from '../controls/modalBox';
 import CreateStatementExample from './CreateStatementExample';
 // import { selectProfile } from '../../actions/profiles';
 import Lock from "../../components/users/lock";
-export default function Template() {
+export default function Template({ isMember }) {
 
     const { url, path } = useRouteMatch();
     const { profileId, templateId } = useParams();
@@ -44,13 +44,14 @@ export default function Template() {
     useEffect(() => {
         dispatch(selectTemplate(templateId));
     },
-        []
+        [templateId]
     );
 
     const template = useSelector((state) => state.application.selectedTemplate);
-    
-    const {selectedOrganizationId, selectedProfileId,
-        selectedProfileVersionId} = useSelector((state) => state.application);
+    const selectedProfileVersion = useSelector(state => state.application.selectedProfileVersion);
+
+    const { selectedOrganizationId, selectedProfileId,
+        selectedProfileVersionId } = useSelector((state) => state.application);
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [isEditingExample, setIsEditingExample] = useState(false);
     const [isCreatingExample, setIsCreatingExample] = useState(false);
@@ -59,68 +60,88 @@ export default function Template() {
     if (!template) return 'Template not populated';
 
     function removeDeterminingProperty(propertyType) {
-        let property = {};
-        property[propertyType] = null;
-        dispatch(editTemplate(Object.assign({}, template, property)));
-        dispatch(selectTemplate(templateId));
+        if (isMember) {
+            let property = {};
+            property[propertyType] = null;
+            dispatch(editTemplate(Object.assign({}, template, property)));
+            dispatch(selectTemplate(templateId));
+        }
     }
 
     function onDeterminingPropertyAdd(values) {
-        let propertyValue ={};
-        propertyValue[values.propertyType] = values.properties;
-        dispatch(editTemplate(Object.assign({}, template, propertyValue)));
-        history.push(url);
+        if (isMember) {
+            let propertyValue = {};
+            propertyValue[values.propertyType] = values.properties;
+            dispatch(editTemplate(Object.assign({}, template, propertyValue)));
+            history.push(url);
+        }
     }
 
     function onAddExampleClick() {
-        setIsEditingExample(false);
-        setIsCreatingExample(true);
+        if (isMember) {
+            setIsEditingExample(false);
+            setIsCreatingExample(true);
+        }
     }
 
     function onEditExampleClick() {
-        setIsCreatingExample(false);
-        setIsEditingExample(true);
+        if (isMember) {
+            setIsCreatingExample(false);
+            setIsEditingExample(true);
+        }
     }
 
     function onCancelExampleActionClick() {
-        setIsCreatingExample(false);
-        setIsEditingExample(false);
+        if (isMember) {
+            setIsCreatingExample(false);
+            setIsEditingExample(false);
+        }
     }
 
     function onExampleSubmit(values) {
-        dispatch(editTemplate(Object.assign({}, template, values)));
-        setIsCreatingExample(false);
-        setIsEditingExample(false);
+        if (isMember) {
+            dispatch(editTemplate(Object.assign({}, template, values)));
+            setIsCreatingExample(false);
+            setIsEditingExample(false);
+        }
     }
 
     function onEditDetailsSubmit(values) {
-        dispatch(editTemplate(Object.assign({}, template, values)));
-        setIsEditingDetails(false);
+        if (isMember) {
+            dispatch(editTemplate(Object.assign({}, template, values)));
+            setIsEditingDetails(false);
+        }
     }
 
     return (
         <div>
             <Switch>
                 <Route exact path={`${path}/determining-properties/create`}>
-                    <CreateDeterminingProperty onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
+                    {isMember ?
+                        <CreateDeterminingProperty onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
+                        : <Redirect to={url} />
+                    }
                 </Route>
                 <Route exact path={`${path}/determining-properties/:propertyType/edit`}>
-                    <EditDeterminingProperty
-                        onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
+                    {isMember ?
+                        <EditDeterminingProperty
+                            onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
+                        : <Redirect to={url} />
+                    }
                 </Route>
                 <Route exact path={`${path}/(concepts|determining-properties)/:conceptId`}>
-                    <ConceptDetail />
+                    <ConceptDetail isMember={isMember} />
                 </Route>
                 <Route path={path}>
                     {
-                        (template.parentProfile && template.parentProfile.parentProfile.uuid !== profileId) &&
-                            <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
-                                <div className="usa-alert__body">
-                                    <p className="usa-alert__text">
-                                        This statement template belongs to {template.parentProfile.name}.
+                        (!selectedProfileVersion.templates.includes(template.id)) &&
+                        <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
+                            <div className="usa-alert__body">
+                                <p className="usa-alert__text">
+                                    This statement template belongs to {template.parentProfile.name}.
                                     </p>
-                                </div>
                             </div>
+                        </div>
                     }
                     <div><h2>{template.name}</h2></div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
@@ -135,13 +156,13 @@ export default function Template() {
                         <div id="a1" className="usa-accordion__content">
                             {
                                 isEditingDetails ?
-                                <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
-                                    <EditTemplateDetails
-                                        initialValues={template}
-                                        onSubmit={onEditDetailsSubmit}
-                                        onCancel={() => setIsEditingDetails(false)}
-                                    /> </Lock>:
-                                    <TemplateDetail onEditClick={() => setIsEditingDetails(true)} />
+                                    <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
+                                        <EditTemplateDetails
+                                            initialValues={template}
+                                            onSubmit={onEditDetailsSubmit}
+                                            onCancel={() => setIsEditingDetails(false)}
+                                        /> </Lock> :
+                                    <TemplateDetail onEditClick={() => setIsEditingDetails(true)} isMember={isMember} />
                             }
                         </div>
                     </div>
@@ -158,6 +179,7 @@ export default function Template() {
                             <DeterminingPropertyTable
                                 removeDeterminingProperty={(propType) => removeDeterminingProperty(propType)}
                                 url={`${url}/determining-properties`}
+                                isMember={isMember}
                             />
                         </div>
                     </div>
@@ -171,7 +193,7 @@ export default function Template() {
                     </button>
                         </h2>
                         <div id="a4" className="usa-accordion__content usa-prose">
-                            <RuleTable rules={template.rules} onAddRule={() => setShowRulesModal(true)} />
+                            <RuleTable rules={template.rules} onAddRule={() => setShowRulesModal(true)} isMember={isMember} />
                         </div>
                     </div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
@@ -184,7 +206,7 @@ export default function Template() {
                     </button>
                         </h2>
                         <div id="a2" className="usa-accordion__content usa-prose">
-                            <ConceptTable concepts={template.concepts} url={`${url}/concepts`} />
+                            <ConceptTable concepts={template.concepts} url={`${url}/concepts`} isMember={isMember} />
                         </div>
                     </div>
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
@@ -194,7 +216,7 @@ export default function Template() {
                                 aria-controls="a5"
                             >
                                 Statement Example
-                    </button>
+                            </button>
                         </h2>
                         <div id="a5" className="usa-accordion__content usa-prose">
                             {
@@ -203,19 +225,20 @@ export default function Template() {
                                         statementExample={template.statementExample}
                                         onAddClick={onAddExampleClick}
                                         onEditClick={onEditExampleClick}
+                                        isMember={isMember}
                                     /> :
-                                        isCreatingExample ?
-                                            <CreateStatementExample
-                                                onSubmit={onExampleSubmit}
-                                                onCancelClick={onCancelExampleActionClick} 
-                                            /> :
-                                            <CreateStatementExample
-                                                initialValues={template.statementExample}
-                                                onSubmit={onExampleSubmit}
-                                                onCancelClick={onCancelExampleActionClick}
-                                            />
+                                    isMember && isCreatingExample ?
+                                        <CreateStatementExample
+                                            onSubmit={onExampleSubmit}
+                                            onCancelClick={onCancelExampleActionClick}
+                                        /> :
+                                        <CreateStatementExample
+                                            initialValues={template.statementExample}
+                                            onSubmit={onExampleSubmit}
+                                            onCancelClick={onCancelExampleActionClick}
+                                        />
                             }
-                            
+
                         </div>
                     </div>
 

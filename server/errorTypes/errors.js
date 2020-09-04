@@ -18,5 +18,6 @@ module.exports = {
     authorizationError: require('./authorizationError'),
     conflictError: require('./conflictError'),
     validationError: require('./validationError'),
-    notFoundError: require('./notFoundError '),
+    notFoundError: require('./notFoundError'),
+    notAllowedError: require('./notAllowedError'),
 };

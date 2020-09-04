@@ -15,5 +15,5 @@
 **************************************************************** */
 module.exports = (success, profileMetadata) => ({
     success,
-    profiles: profileMetadata,
+    metadata: profileMetadata,
 });

@@ -13,26 +13,27 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useState, useEffect } from 'react';
-import { useRouteMatch, useParams, Switch, Route, Link, useHistory } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { useRouteMatch, useParams, Switch, Route, Link, useHistory, Redirect } from 'react-router-dom';
 import { editConcept, selectConcept } from "../../actions/concepts";
 import { Detail, Translations, } from '../DetailComponents';
 import { useSelector, useDispatch, } from 'react-redux';
-import API from '../../api';
 import Lock from "../../components/users/lock";
 import ConceptTypeDetailExtension from "./ConceptTypeDetailExtension";
 import EditConcept from './EditConcept';
 
 
-export default function ConceptDetail() {
+export default function ConceptDetail({ isMember }) {
 
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
     const history = useHistory();
     const { organizationId, profileId, versionId, conceptId } = useParams();
 
-    const {selectedOrganizationId, selectedProfileId,
-        selectedProfileVersionId} = useSelector((state) => state.application);
+    const { selectedOrganizationId, selectedProfileId,
+        selectedProfileVersionId } = useSelector((state) => state.application);
+
+    const selectedProfileVersion = useSelector(state => state.application.selectedProfileVersion);
 
     useEffect(() => {
         dispatch(selectConcept(organizationId, profileId, versionId, conceptId));
@@ -47,31 +48,34 @@ export default function ConceptDetail() {
 
     if (!concept) return '';
 
-    const belongsToAnotherProfile = concept.parentProfile.parentProfile.uuid !== profileId;
-    
+    const belongsToAnotherProfile = !(selectedProfileVersion.concepts && selectedProfileVersion.concepts.includes(concept._id));
+
     return (<>
         <Switch>
             <Route path={`${path}/edit`}>
-                <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concept/${concept.uuid}`}>
-                <EditConcept
-                    initialValues={concept}
-                    onCreate={handleEditConcept}
-                    onCancel={() => history.push(url)}
-                />
-                </Lock>
+                {isMember ?
+                    <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concept/${concept.uuid}`}>
+                        <EditConcept
+                            initialValues={concept}
+                            onCreate={handleEditConcept}
+                            onCancel={() => history.push(url)}
+                        />
+                    </Lock>
+                    : <Redirect to={url} />
+                }
             </Route>
 
             <Route exact path={path}>
                 <>
                     {
                         belongsToAnotherProfile &&
-                            <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
-                                <div className="usa-alert__body">
-                                    <p className="usa-alert__text">
-                                        This concept belongs to {concept.parentProfile.name}.
+                        <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
+                            <div className="usa-alert__body">
+                                <p className="usa-alert__text">
+                                    This concept belongs to {concept.parentProfile.name}.
                                     </p>
-                                </div>
                             </div>
+                        </div>
                     }
                     <div className="grid-row">
                         <div className="desktop:grid-col-8">
@@ -100,12 +104,12 @@ export default function ConceptDetail() {
                         </div>
                         <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
                             {
-                                !belongsToAnotherProfile &&
-                                    <Link
-                                            to={`${url}/edit/${concept.conceptType}`}
-                                            className="usa-button padding-x-105 margin-top-2 margin-right-0 "
-                                    >
-                                        <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                                !belongsToAnotherProfile && isMember &&
+                                <Link
+                                    to={`${url}/edit/${concept.conceptType}`}
+                                    className="usa-button padding-x-105 margin-top-2 margin-right-0 "
+                                >
+                                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
                                         Edit Concept
                                     </Link>
                             }

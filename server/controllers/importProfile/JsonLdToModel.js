@@ -23,7 +23,7 @@ exports.JsonLdToModel = function () {
             const languageKey = (enKey.length > 0 && enKey[0]) || Object.keys(prefLabel).sort()[0];
             name = prefLabel[languageKey];
         } else if (isOptional) {
-            name = {};
+            name = '';
         } else {
             throw new validationError('prefLabel cannot be empty or undefined');
         }
@@ -38,7 +38,7 @@ exports.JsonLdToModel = function () {
             const languageKey = (enKey.length > 0 && enKey[0]) || Object.keys(definition).sort()[0];
             description = definition[languageKey];
         } else if (isOptional) {
-            description = {};
+            description = '';
         } else {
             throw new validationError('definition cannot be empty or undefined');
         }
@@ -54,14 +54,14 @@ exports.JsonLdToModel = function () {
         }
         if ((!prefLabel || Object.keys(prefLabel).keys().length < 1)
                 && (isOptional && isOptional.prefLabel)) {
-            prefLabel = {};
+            prefLabel = '';
         } else if ((!prefLabel || Object.keys(prefLabel).keys().length < 1)
                 && !(isOptional && isOptional.prefLabel)) {
             throw new validationError('prefLabel cannot be empty or undefined.');
         }
         if ((!definition || Object.keys(definition).keys().length < 1)
                 && (isOptional && isOptional.definition)) {
-            definition = {};
+            definition = '';
         } else if ((!definition || Object.keys(definition).keys().length < 1)
                 && !(isOptional && isOptional.definition)) {
             throw new validationError('definition cannot be empty or undefined.');

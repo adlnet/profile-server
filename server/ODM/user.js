@@ -16,7 +16,8 @@
 const mongoose = require('mongoose');
 const hashPassword = require('../utils/hashPassword');
 const crypto = require('crypto');
-
+const safeCompare = require('safe-compare');
+const mongoSanitize = require('mongo-sanitize');
 
 const userSchema = mongoose.Schema(
     {
@@ -44,6 +45,7 @@ const userSchema = mongoose.Schema(
         _created: Number,
         type: {
             type: String,
+            enum: ['user', 'admin'],
             default: 'user',
         },
     },
@@ -55,36 +57,36 @@ const userSchema = mongoose.Schema(
 
 
 
-userSchema.methods.checkPassword = function(plaintext) {
+userSchema.methods.checkPassword = function (plaintext) {
     const testhash = hashPassword(this.username, this.salt, plaintext);
 
-    if (this.passwordHash === testhash || this.passwordHash === plaintext) {
+    if (safeCompare(this.passwordHash, testhash) || safeCompare(this.passwordHash, plaintext)) {
         return true;
     }
     return false;
 };
 
 
-userSchema.methods.checkResetKey = function(plaintext, keyFromSession) {
+userSchema.methods.checkResetKey = function (plaintext, keyFromSession) {
     if (keyFromSession) {
         // NOTE. We store the plaintext of the reset key. Should we hash it? If we do, we can't tell the user what it was manually
-        if (keyFromSession === plaintext || plaintext == hashPassword(this.email, this.salt, keyFromSession)) {
+        if (safeCompare(keyFromSession, plaintext) || safeCompare(plaintext, hashPassword(this.email, this.salt, keyFromSession))) {
             return true;
         }
     } else if (this.passwordResetKey) {
-        if (this.passwordResetKey === plaintext || plaintext == hashPassword(this.email, this.salt, this.passwordResetKey)) {
+        if (safeCompare(this.passwordResetKey, plaintext) || safeCompare(plaintext, hashPassword(this.email, this.salt, this.passwordResetKey))) {
             return true;
         }
     }
     return false;
 };
 
-userSchema.methods.forgotPassword = function(plaintext) {
+userSchema.methods.forgotPassword = function (plaintext) {
     this.passwordResetKey = crypto.randomBytes(16).toString('hex');
     return this.save();
 };
 
-userSchema.methods.resetPassword = function(plaintext, ignoreHistory = false) {
+userSchema.methods.resetPassword = function (plaintext, ignoreHistory = false) {
     if (!ignoreHistory) {
         this.oldpasswords.push(this.passwordHash);
     }
@@ -97,7 +99,7 @@ userSchema.methods.resetPassword = function(plaintext, ignoreHistory = false) {
     console.log('from input: ' + plaintext);
     if (!ignoreHistory) {
         for (let i = 0; i < this.oldpasswords.length; i++) {
-            if (this.oldpasswords[i]) if (this.oldpasswords[i] === hashPassword(this.username, this.salt, plaintext)) throw new Error('This password has been used recently. Please choose a new password.');
+            if (this.oldpasswords[i]) if (safeCompare(this.oldpasswords[i], hashPassword(this.username, this.salt, plaintext))) throw new Error('This password has been used recently. Please choose a new password.');
         }
     }
     // NOTE: we reset this to an unguessable number, rather then null or undefined as you might expect
@@ -108,7 +110,7 @@ userSchema.methods.resetPassword = function(plaintext, ignoreHistory = false) {
     return this.save();
 };
 
-userSchema.pre('save', function(next) {
+userSchema.pre('save', function (next) {
     // do stuff
     this._modified = Date.now();
     if (!this._created) this._created = Date.now();

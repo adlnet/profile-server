@@ -17,7 +17,7 @@ const mongoose = require('mongoose');
 const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
-
+const mongoSanitize = require('mongo-sanitize');
 const template = new mongoose.Schema({
     uuid: {
         type: String,
@@ -131,18 +131,14 @@ const template = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
 }, { toJSON: { virtuals: true } });
 
 template.statics.findByUuid = function (uuid, callback) {
-    return this.findOne({ uuid: uuid }, callback);
+    return this.findOne(mongoSanitize({ uuid: uuid }), callback);
 };
 
 template.statics.deleteByUuid = async function (uuid) {
-    await this.findOneAndUpdate({ uuid: uuid }, { isActive: false });
+    await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
 };
 
 template.virtual('concepts').get(function () {
@@ -151,9 +147,10 @@ template.virtual('concepts').get(function () {
         'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType',
     ];
 
-    const concepts = propertyTypes.map(prop => this[prop]).filter(p => p).flat(Infinity);
-    const conceptUuids = [...new Set(concepts.map(c => c.uuid))];
-    return conceptUuids.map(c => concepts.find(d => d.uuid === c));
+    const concepts = [...new Set(propertyTypes.map(prop => this[prop]).filter(p => p).flat(Infinity))];
+    // const conceptIds = [...new Set(concepts.map(c => c._id))];
+    // const foundConcepts = await this.model('concept').find({ _id: { $in: concepts } });
+    return concepts;
 });
 
 template.methods.export = async function (profileVersionIRI) {
@@ -170,7 +167,7 @@ template.methods.export = async function (profileVersionIRI) {
     // can't have both objectActivityType and objectStatementRefTemplate
     if (this.objectActivityType) {
         t.objectActivityType = (await this.populate('objectActivityType', 'iri').execPopulate()).objectActivityType.iri;
-    } else if (this.objectStatementRefTemplate) {
+    } else if (this.objectStatementRefTemplate && this.objectStatementRefTemplate.length) {
         t.objectStatementRefTemplate = (await this.populate('objectStatementRefTemplate', 'iri').execPopulate()).objectStatementRefTemplate.map(v => v.iri);
     }
 

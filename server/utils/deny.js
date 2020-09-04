@@ -13,8 +13,10 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-
-module.exports = function(req, res, next) {
+/**
+ * Middleware to send permission denied error.
+ */
+module.exports = function (req, res, next) {
     if (req.permissionState === 'denied') {
         return res.status(401).send({
             success: false,

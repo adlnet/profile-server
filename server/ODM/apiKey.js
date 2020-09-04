@@ -15,7 +15,7 @@
 **************************************************************** */
 const mongoose = require('mongoose');
 const uuid = require('uuid');
-
+const mongoSanitize = require('mongo-sanitize');
 const apiKey = mongoose.Schema({
     uuid: {
         type: String,
@@ -64,18 +64,10 @@ const apiKey = mongoose.Schema({
         ref: 'user',
         required: true,
     },
-    isActive: {
-        type: Boolean,
-        default: true,
-    },
 });
 
 apiKey.statics.deleteByUuid = async function (uuid) {
-    const toBeDeleted = await this.findOneAndUpdate(
-        { uuid: uuid },
-        { isActive: false, updatedOn: new Date() },
-        { new: true },
-    );
+    const toBeDeleted = await this.findOneAndDelete({ uuid: uuid });
 
     if (!toBeDeleted) throw new Error('Api Key does not exist.');
 };
@@ -104,7 +96,7 @@ apiKey.statics.createNew = async function (scope, scopeObject, user, apiKey) {
 };
 
 apiKey.statics.findByUuid = function (uuid, callback) {
-    return this.findOne({ uuid: uuid, isActive: true }, callback);
+    return this.findOne(mongoSanitize({ uuid: uuid }), callback);
 };
 
 module.exports = apiKey;

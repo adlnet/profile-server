@@ -16,14 +16,12 @@
 const express = require('express');
 const router = express.Router();
 
-const responses = require('../reponseTypes/responses');
 const profileController = require('../controllers/profiles');
-
-const models = require('../ODM/models');
-const createIRI = require('../utils/createIRI');
 const apiKeyController = require('../controllers/apiKeys');
+const responses = require('../reponseTypes/responses');
 const errors = require('../errorTypes/errors');
 
+router.use('/sparql', require('./sparql'));
 router.post(
     '/profile',
     apiKeyController.middleware.validateApiKey('organization'),
@@ -90,37 +88,37 @@ router.get('/profile/:profile',
     profileController.exportProfile);
 
 // published profiles
-router.get('/profile', async (req, res, next) => {
-
-});
+router.get('/profile', profileController.getPublishedProfiles);
 
 // delete draft profile (only draft)
-router.delete('/profile/:profile', async (req, res, next) => {
-
-});
-
-router.post('/profile/:profile/meta', async (req, res, next) => {
-
-});
+router.delete('/profile/:profile',
+    apiKeyController.middleware.validateApiKey('profile'),
+    profileController.middleware.populateProfile,
+    profileController.deleteProfile);
 
 // Get the metadata of the profile, such as versions, status, publish state and group.
-router.get('/profile/:profile/meta', async (req, res, next) => {
+router.get('/profile/:profile/meta',
+    apiKeyController.middleware.validateApiKey('profile'),
+    profileController.middleware.populateProfile,
+    profileController.getMetadata);
 
-});
-
-router.post('/profile/:profile/verify', async (req, res, next) => {
-
-});
+router.post('/profile/:profile/status',
+    apiKeyController.middleware.validateApiKey('profile'),
+    profileController.middleware.populateProfile,
+    profileController.updateStatus);
 
 router.post('/validate', profileController.validateProfile(false));
 
 router.use((err, req, res, next) => {
+    console.log(err);
     if (err instanceof errors.authorizationError) {
         res.status(err.status).send(responses.unauthorized(err.message));
     } else if (err instanceof errors.conflictError) {
         res.status(err.status).send(responses.conflict(err.message));
     } else if (err instanceof errors.validationError) {
         res.status(err.status).send(responses.validation(false, err.message));
+    } else if (err instanceof errors.notAllowedError) {
+        res.status(err.status).send(responses.notAllowed(false, err.message));
     } else {
         res.status(err.status || 500).send({
             success: false,

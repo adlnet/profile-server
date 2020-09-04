@@ -22,19 +22,26 @@ const ConceptLayerFactory = require('./ConceptLayerFactory').ConceptLayerFactory
 const TemplateLayer = require('./TemplateLayer').TemplateLayer;
 const PatternLayer = require('./PatternLayer').PatternLayer;
 const { conflictError } = require('../../errorTypes/errors');
+const hasNoDuplicates = require('../../utils/hasNoDuplicates');
+const validationError = require('../../errorTypes/validationError');
+const getWasRevisionOfModels = require('./getWasRevisionOfModels');
 
 exports.VersionLayer = function (profileLayer) {
     const jsonLdToModel = new JsonLdToModel();
     const versionDocument = profileLayer.versionDocument;
+    const currentVersion = versionDocument.versions[0];
     const model = new ProfileVersionModel({
         organization: profileLayer.profileModel.organization,
         parentProfile: profileLayer.profileModel,
-        iri: versionDocument.versions[0].id,
+        iri: currentVersion.id,
         name: jsonLdToModel.toName(versionDocument.prefLabel),
         description: jsonLdToModel.toDescription(versionDocument.definition),
-        translations: jsonLdToModel.toTranslations(versionDocument.prefLabel, versionDocument.definition),
+        translations: jsonLdToModel.toTranslations(
+            versionDocument.prefLabel, versionDocument.definition,
+        ),
         moreInformation: versionDocument.seeAlso,
-        state: 'published',
+        state: profileLayer.published ? 'published' : 'draft',
+        version: profileLayer.previousVersionModels.length + 1,
     });
     const conceptDocuments = versionDocument.concepts || [];
     const templateDocuments = versionDocument.templates || [];
@@ -42,22 +49,52 @@ exports.VersionLayer = function (profileLayer) {
 
     return {
         scanVersionLayer: async function () {
-            const exists = await ProfileVersionModel.findOne({ iri: versionDocument.versions[0].id });
+            const exists = await ProfileVersionModel.findOne(
+                { iri: currentVersion.id },
+            );
             if (exists) {
-                throw new conflictError(`Profile version ${versionDocument.versions[0].id} already exists.`);
+                throw new conflictError(
+                    `Profile version ${currentVersion.id} already exists.`,
+                );
             }
+            [
+                { documents: conceptDocuments.map(c => c.id), type: 'concepts' },
+                { documents: templateDocuments.map(c => c.id), type: 'templates' },
+                { documents: patternDocuments.map(c => c.id), type: 'patterns' },
+            ].forEach(d => {
+                if (!hasNoDuplicates(d.documents)) {
+                    throw new validationError(
+                        `Profile version ${currentVersion.id} has duplicate ${d.type}`,
+                    );
+                }
+            });
+
+            let wasRevisionOf;
+            if (currentVersion.wasRevisionOf) {
+                wasRevisionOf = await getWasRevisionOfModels(
+                    profileLayer.previousVersionModels, currentVersion.wasRevisionOf,
+                );
+            }
+            model.wasRevisionOf = wasRevisionOf;
 
             const conceptLayers = conceptDocuments.map(
-                c => ConceptLayerFactory({ parentProfile: model, conceptDocument: c }),
+                c => ConceptLayerFactory({
+                    parentProfile: model, conceptDocument: c, versionStatus: profileLayer.versionStatus,
+                }),
             );
             const templateLayers = templateDocuments.map(
-                t => new TemplateLayer({ parentProfile: model, templateDocument: t }),
+                t => new TemplateLayer({
+                    parentProfile: model, templateDocument: t, versionStatus: profileLayer.versionStatus,
+                }),
             );
             const patternLayers = patternDocuments.map(
-                p => new PatternLayer({ parentProfile: model, patternDocument: p }),
+                p => new PatternLayer({
+                    parentProfile: model, patternDocument: p, versionStatus: profileLayer.versionStatus,
+                }),
             );
 
             return new ProfileComponentLayer({
+                versionStatus: profileLayer.versionStatus,
                 conceptLayers: conceptLayers,
                 templateLayers: templateLayers,
                 patternLayers: patternLayers,

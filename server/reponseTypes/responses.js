@@ -16,6 +16,8 @@
 module.exports = {
     conflict: require('./conflictResponse'),
     metadata: require('./metadataResponse'),
+    status: require('./statusResponse'),
+    notAllowed: require('./notAllowed'),
     notFound: require('./notFoundResponse'),
     profile: require('./profileResponse'),
     profileImport: require('./profileImportResponse'),

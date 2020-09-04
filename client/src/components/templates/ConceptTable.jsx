@@ -14,11 +14,10 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { useSelector } from 'react-redux';
 
 import ConceptTableRow from "./ConceptTableRow";
 
-export default function ConceptTable({ concepts, url }) {
+export default function ConceptTable({ concepts, url, isMember }) {
     return (
         <>
             <div className="grid-row">
@@ -33,8 +32,8 @@ export default function ConceptTable({ concepts, url }) {
                     </thead>
                     <tbody style={{ lineHeight: 3 }}>
                         {(concepts && concepts.length > 0)
-                            ? concepts.map((concept, i) => <ConceptTableRow key={i} {...concept} site_url={url} />)
-                            : <tr key={1}><td className="font-sans-xs" colSpan="6" style={{paddingLeft: '0px'}}><p>There are no concepts in this profile. Concepts created in this profile or added through import or statement templates will appear here.</p></td></tr>}
+                            ? concepts.map((concept, i) => <ConceptTableRow key={i} {...concept} site_url={url} isMember={isMember} />)
+                            : <tr key={1}><td className="font-sans-xs" colSpan="6" style={{ paddingLeft: '0px' }}><p>There are no concepts in this profile. Concepts created in this profile or added through import or statement templates will appear here.</p></td></tr>}
                     </tbody>
                 </table>
             </div>

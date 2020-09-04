@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { Route, Switch, useRouteMatch, useParams, Link } from 'react-router-dom';
+import { Route, Switch, useRouteMatch, Link, Redirect } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 
 import { deletePattern, loadProfilePatterns } from './../../actions/patterns';
@@ -22,7 +22,6 @@ import AddPattern from './AddPattern';
 import CreatePattern from './CreatePattern';
 import PatternDetail from './PatternDetail';
 import { useSelector } from 'react-redux';
-// import EditPattern from './EditPattern';
 import SortingTable from '../SortingTable';
 import ErrorBoundary from '../errors/ErrorBoundary';
 
@@ -30,15 +29,15 @@ import ErrorBoundary from '../errors/ErrorBoundary';
 export default function Patterns(props) {
     const dispatch = useDispatch();
     const { path, url } = useRouteMatch();
-    const { versionId } = useParams();
+    const { selectedProfileVersionId } = useSelector(state => state.application);
     const patterns = useSelector((state) => state.patterns);
 
     useEffect(() => {
-        dispatch(loadProfilePatterns(versionId));
-    }, [dispatch])
+        dispatch(loadProfilePatterns(selectedProfileVersionId));
+    }, [selectedProfileVersionId])
 
-    let data = React.useMemo(() => patterns);
-    let columns = React.useMemo(() => getColumns(dispatch));
+    let data = React.useMemo(() => patterns, [patterns]);
+    let columns = React.useMemo(() => getColumns(dispatch, props.isMember), [props.isMember]);
 
     return (<>
         <ErrorBoundary errorType="patterns" />
@@ -56,17 +55,25 @@ export default function Patterns(props) {
                         data={data}
                         emptyMessage="There are no patterns associated with this profile. Add a pattern to define relationships between your xAPI statements." />
                 </div>
-                <div className="grid-row padding-top-2">
-                    <div className="desktop:grid-col-3">
-                        <Link to={`${url}/add`} className="usa-button">Add Pattern</Link>
+                {props.isMember &&
+                    <div className="grid-row padding-top-2">
+                        <div className="desktop:grid-col-3">
+                            <Link to={`${url}/add`} className="usa-button">Add Pattern</Link>
+                        </div>
                     </div>
-                </div>
+                }
             </Route>
             <Route exact path={`${path}/add`}>
-                <AddPattern root_url={url}/>
+                {props.isMember ?
+                    <AddPattern root_url={url} />
+                    : <Redirect to={url} />
+                }
             </Route>
             <Route path={`${path}/create`}>
-                <CreatePattern {...props} root_url={url} />
+                {props.isMember ?
+                    <CreatePattern {...props} root_url={url} />
+                    : <Redirect to={url} />
+                }
             </Route>
             <Route path={`${path}/:patternId`}>
                 <PatternDetail {...props} />
@@ -76,8 +83,8 @@ export default function Patterns(props) {
     </>);
 }
 
-function getColumns(dispatch) {
-    return [
+function getColumns(dispatch, isMember) {
+    const cols = [
         {
             Header: 'Name',
             id: 'name',
@@ -88,8 +95,8 @@ function getColumns(dispatch) {
             ) {
                 return (
                     <Link
-                            to={`patterns/${uuid}`}
-                            className="usa-link button-link"
+                        to={`patterns/${uuid}`}
+                        className="usa-link button-link"
                     >
                         <span>{value}</span>
                     </Link >
@@ -131,14 +138,18 @@ function getColumns(dispatch) {
             style: {
                 width: '15%'
             }
-        },
-        {
+        }
+    ]
+    if (isMember) {
+        cols.push({
             Header: ' ',
             id: 'remove',
             disableSortBy: true,
             accessor: function removeItem(rowdata) {
                 return <button className="usa-button  usa-button--unstyled" onClick={() => dispatch(deletePattern(rowdata))}><span className="text-bold">Remove</span></button>
             }
-        },
-    ]
+        });
+    }
+
+    return cols;
 }

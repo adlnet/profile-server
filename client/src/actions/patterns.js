@@ -97,20 +97,34 @@ export function createPattern(pattern) {
             type: START_CREATE_PATTERN,
         });
 
-        let profileVersionId = state.application.selectedProfileVersionId;
+        const selectedProfileVersion = state.application.selectedProfileVersion;
+        let profileVersionId = selectedProfileVersion.uuid;
         try {
             if (state.application.selectedProfileVersion.state === 'published') {
+                let newVersion = {
+                    tags: selectedProfileVersion.tags,
+                    concepts: selectedProfileVersion.concepts,
+                    externalConcepts: selectedProfileVersion.externalConcepts,
+                    templates: selectedProfileVersion.templates,
+                    translations: selectedProfileVersion.translations,
+                    patterns: selectedProfileVersion.patterns,
+                    name: selectedProfileVersion.name,
+                    description: selectedProfileVersion.description,
+                    moreInformation: selectedProfileVersion.moreInformation,
+                    version: selectedProfileVersion.version
+                };
                 const newProfileVersion = await API.createProfileVersion(
                     state.application.selectedOrganizationId, state.application.selectedProfileId,
-                    Object.assign({}, state.application.selectedProfileVersion))
+                    newVersion);
                 profileVersionId = newProfileVersion.uuid;
             }
             const newPattern = await API.createPattern(organizationId, profileId, profileVersionId, pattern);
-            
+
             dispatch(selectPattern(newPattern.uuid));
+            dispatch(selectProfile(organizationId, profileId));
             dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
             dispatch(loadProfilePatterns(profileVersionId));
-            
+
             history.push(`../${newPattern.uuid}`)
         } catch (err) {
             dispatch({
@@ -198,7 +212,7 @@ export function editPattern(pattern) {
 
         try {
             const newPattern = await API.editPattern(organizationId, profileId, profileVersionId, pattern);
-            
+
             dispatch(selectPattern(newPattern.uuid));
         } catch (err) {
             dispatch({

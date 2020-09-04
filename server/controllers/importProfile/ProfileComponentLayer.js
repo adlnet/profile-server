@@ -26,21 +26,27 @@ exports.ProfileComponentLayer = function (versionLayer) {
                 async p => p.scanProfileComponentLayer(),
             ));
 
-            const conceptModels = await Promise.all(versionLayer.conceptLayers.map(
-                async c => c.scanSubcomponentLayer(conceptPartialModels),
-            ));
-            const templateModels = await Promise.all(versionLayer.templateLayers.map(
-                async t => t.scanSubcomponentLayer(conceptPartialModels, templatePartialModels),
-            ));
-            const patternModels = await Promise.all(versionLayer.patternLayers.map(
-                async p => p.scanSubcomponentLayer(templatePartialModels, patternsPartialModels),
-            ));
+            const conceptModels = [];
+            for (const layer of versionLayer.conceptLayers) {
+                const model = await layer.scanSubcomponentLayer(conceptPartialModels);
+                conceptModels.push(model);
+            }
+
+            const templateModels = [];
+            for (const layer of versionLayer.templateLayers) {
+                const model = await layer.scanSubcomponentLayer(conceptPartialModels, templatePartialModels);
+                templateModels.push(model);
+            }
+
+            for (const layer of versionLayer.patternLayers) {
+                await layer.scanSubcomponentLayer(templatePartialModels, patternsPartialModels);
+            }
 
             return {
                 save: async function () {
                     const concepts = await Promise.all(conceptModels.map(async c => c.save()));
                     const templates = await Promise.all(templateModels.map(async t => t.save()));
-                    const patterns = await Promise.all(patternModels.map(async p => p.save()));
+                    const patterns = await Promise.all(versionLayer.patternLayers.map(async p => p.save()));
                     const profileModel = await versionLayer.save(concepts, templates, patterns);
                     return profileModel;
                 },

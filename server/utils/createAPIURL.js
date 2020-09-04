@@ -13,21 +13,15 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-const mongoose = require('mongoose');
-const request = require('supertest');
-const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
+const settings = require('../settings');
 
-const app = require('../../../../../app');
-const createIRI = require('../../../../utils/createIRI');
-
-describe('Request Verification', () => {
-    // const mongoServer = new MongoMemoryServer();
-
-    // beforeAll(async () => {
-    //     const dburi = await mongoServer.getUri();
-    //     await mongoose.connect(dburi, { useNewUrlParser: true, useUnifiedTopology: true });
-    // });
-
-    it.todo('test verification request endpoint');
-});
-
+/**
+ * Create the profile's API URL
+ *
+ * @param {string} uuid The uuid of the profile
+ * @returns {string} The profile API URL
+ */
+exports.profile = function profile(uuid) {
+    if (!uuid) throw Error('must include the uuid of the profile');
+    return [settings.profileAPIRootURL, 'profile', uuid].join('/');
+};

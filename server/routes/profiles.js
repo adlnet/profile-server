@@ -40,7 +40,7 @@ const orgPermissionStack = [
     getResource(Org, 'org', 'uuid'),
     permissions(),
     deny,
-]
+];
 
 const usage = require('../controllers/metrics').serveProfileSparkline();
 
@@ -48,7 +48,10 @@ const getProfile = getResource(Profile, 'profile');
 // Protected by parent router
 profiles.post('/', ...orgPermissionStack, controller.createProfile);
 
+profiles.post('/:profile/publish', controller.publishProfile);
+
 profiles.get('/:profile', controller.getProfile);
+profiles.get('/resolve/:profile', controller.resolveProfile);
 
 profiles.get('/:profile/lock', ...permissionStack, lock());
 profiles.get('/:profile/usage', usage);

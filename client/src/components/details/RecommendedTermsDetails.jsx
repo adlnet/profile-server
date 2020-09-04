@@ -39,9 +39,9 @@ export default function RecommendedTermsDetails({ recommendedTerms, linkable }) 
                                         className="usa-link button-link"
                                         // onClick={() => onConceptClick(recommendedTerm)}
                                     >
-                                        {recommendedTerm.name}
+                                        {recommendedTerm.name || recommendedTerm.iri}
                                     </span> :
-                                    <span>{recommendedTerm.name}</span>
+                                    <span>{recommendedTerm.name || recommendedTerm.iri}</span>
                             }
                         </div>
                 )
