@@ -10,9 +10,9 @@ Root Project folder/
 ## Dependencies
 Development environment dependencies to run the profile server. Download and install.
 
-- node: https://nodejs.org/en/download/
-- yarn: https://yarnpkg.com/
-- mongo: https://www.mongodb.com/download-center/community
+- node (v. 12.16.2): https://nodejs.org/en/download/
+- yarn (v. 1.21.1): https://yarnpkg.com/
+- mongo (v. 4.0.1): https://www.mongodb.com/download-center/community
 
 ## Client
 A React Single Page App created using `yarn create react-app client`. Follow the [Readme](./client/README.md) for development and builds. You will need to `$:client yarn` to install node_modules.
@@ -25,7 +25,10 @@ Express server configured to serve a React SPA. It also has the API designed for
 1. Extract the project
 1. In a new terminal navigate inside the project folder and enter the command `yarn` to install node modules
 1. Verify there is an `.env` file at the root of the project. If not,
-    1. Create the missing `.env` file and add `connectionString=mongodb://localhost:27017/profileServer`
+    1. Create the missing `.env` file,
+        1. add `connectionString=mongodb://localhost:27017/profileServer`
+        1. add `profileRootIRI=https://profiles.adlnet.gov/xapi`
+        1. add `QUERY_RESULT_LIMIT=10`
 1. Type `yarn start` to start the profile server
 1. Open another terminal and navigate to `<project_folder>/client`
 1. Type `yarn` to install the profile client modules
@@ -33,6 +36,8 @@ Express server configured to serve a React SPA. It also has the API designed for
 
 ## Test
 Server-side unit tests are located at `/test`. They can be run by using the comment `yarn test` at the command line. Results will be printed in the terminal.
+
+The profileValidator module has tests that use the profiles found in ADL's `https://github.com/adlnet/xapi-authored-profiles` project. Download or clone the project into the `/server/profileValidator` folder before running these tests.
 
 ## Run
 A browser tab should open and show the index page of the app after executing the `yarn start` command in the client folder. _If it didn't automatically open, you can navigate to http://localhost:3000_
