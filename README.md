@@ -12,7 +12,11 @@ Development environment dependencies to run the profile server. Download and ins
 
 - node (v. 12.16.2): https://nodejs.org/en/download/
 - yarn (v. 1.21.1): https://yarnpkg.com/
-- mongo (v. 4.0.1): https://www.mongodb.com/download-center/community
+- mongo (v. 4.0.1): https://www.mongodb.com/download-center/
+
+A full list of library dependencies can be found in: 
+- package.json
+- client/package.json
 
 ## Client
 A React Single Page App created using `yarn create react-app client`. Follow the [Readme](./client/README.md) for development and builds. You will need to `$:client yarn` to install node_modules.
