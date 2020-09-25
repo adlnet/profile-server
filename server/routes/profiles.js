@@ -42,19 +42,27 @@ const orgPermissionStack = [
     deny,
 ];
 
-const usage = require('../controllers/metrics').serveProfileSparkline();
+function countUIViewProfile(req, res, next) {
+    const metrics = require('../controllers/metrics');
+    metrics.count(req.params.profile, 'profileUIView');
+    next();
+}
+const metrics = require('../controllers/metrics');
 
 const getProfile = getResource(Profile, 'profile');
 // Protected by parent router
 profiles.post('/', ...orgPermissionStack, controller.createProfile);
+profiles.get('/', controller.getProfiles);
+profiles.get('/published', controller.getPublishedProfilesPage);
 
 profiles.post('/:profile/publish', controller.publishProfile);
 
-profiles.get('/:profile', controller.getProfile);
+profiles.get('/:profile', countUIViewProfile, controller.getProfile);
 profiles.get('/resolve/:profile', controller.resolveProfile);
 
 profiles.get('/:profile/lock', ...permissionStack, lock());
-profiles.get('/:profile/usage', usage);
+profiles.get('/:profile/usage', metrics.serveProfileSparkline());
+profiles.get('/:profile/usage/populate', metrics.populateDemoData);
 profiles.get('/:profile/unlock', ...permissionStack, unlock());
 
 

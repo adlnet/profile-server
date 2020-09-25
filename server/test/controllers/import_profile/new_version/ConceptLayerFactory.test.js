@@ -18,6 +18,7 @@ const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
 const ConceptModel = require('../../../../ODM/models').concept;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const UserModel = require('../../../../ODM/models').user;
 const ConceptLayerFactory = require('../../../../controllers/importProfile/ConceptLayerFactory')
     .ConceptLayerFactory;
 
@@ -38,7 +39,15 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
     let versionLayer;
     let conceptDocument;
     let parentProfile;
+    let user;
+    let otherUser;
     beforeEach(async () => {
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
+        otherUser = new UserModel({ email: 'another@email.com' });
+        await otherUser.save();
+
         conceptDocument = {
             id: 'concept1_id',
             inScheme: 'parent_profile_id',
@@ -54,12 +63,16 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
             iri: 'parent_profile_id',
             name: 'profile_name',
             description: 'profile_description',
+            createdBy: user,
+            updatedBy: otherUser,
         });
         await parentProfile.save();
     });
 
     afterEach(async () => {
         await parentProfile.remove();
+        await user.remove();
+        await otherUser.remove();
     });
 
     describe('when versionLayer#versionStatus is `new`', () => {
@@ -73,6 +86,8 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
                     type: 'Verb',
                     conceptType: 'Verb',
                     parentProfile: parentProfile,
+                    createdBy: user,
+                    updatedBy: user,
                 });
                 await existingConcept.save();
             });
@@ -96,6 +111,8 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
                     expect(conceptModel.name).toEqual(conceptDocument.prefLabel.en);
                     expect(conceptModel.description).toEqual(conceptDocument.definition.en);
                     expect(conceptModel.type).toEqual(conceptDocument.type);
+                    expect(conceptModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                    expect(conceptModel.createdBy._id.toString()).toEqual(user._id.toString());
                 });
             });
 

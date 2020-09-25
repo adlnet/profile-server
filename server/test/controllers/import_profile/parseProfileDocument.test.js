@@ -53,45 +53,104 @@ describe('Parsing profile only', () => {
     //     profileDocument = JSON.parse(fs.readFileSync(path.join(testDirPath, justProfile1)));
     // });
 
-    test('should return a parsed object with just that profile in it.', async () => {
-        // const con1 = new ConceptModel({
-        //     iri: 'http://example.org/profiles/sports/verbs/placed',
-        //     type: 'Verb',
-        //     conceptType: 'Verb',
-        //     name: 'placed',
-        //     description: "Indicates a person finished the event in a ranked order.  Use with the 'placement' extension.",
+    describe('should return a parsed object with just that profile in it.', async () => {
+        let con1;
+        let con2;
+        let conDoc;
+        let find1;
+        beforeEach(async () => {
+            conDoc = {
+                iri: 'http://example.org/profiles/sports/verbs/placed',
+                type: 'Verb',
+                conceptType: 'Verb',
+                name: 'placed',
+                description: "Indicates a person finished the event in a ranked order.  Use with the 'placement' extension.",
+            };
+            con1 = new ConceptModel(conDoc);
+            con2 = new ConceptModel(conDoc);
+        });
+
+        afterEach(async () => {
+            if (con1) await con1.remove();
+            if (con1) await con2.remove();
+        });
+
+        // test('things1', async () => {
+        //     expect(false).toBeFalsy();
         // });
 
-        // await con1.save();
-        const con1 = {
-            id: 'http://example.org/profiles/sports/verbs/placed',
-            type: 'Verb',
-            inScheme: 'http://example.org/profiles/sports/v2',
-            prefLabel: {
-                en: 'placed',
-            },
-            definition: {
-                en: "Indicates a person finished the event in a ranked order.  Use with the 'placement' extension.",
-            },
-            broadMatch: ['stuff', 'stuff_thing'],
-        };
+        test('things2', async () => {
+            await con1.save();
+            find1 = await ConceptModel.findOne({ iri: conDoc.iri });
+            expect(find1).toBeTruthy();
+            // con1.iri = undefined;
+            // delete conDoc.iri;
+            let error;
+            try {
+                await con2.validate();
+            } catch (err) {
+                error = err;
+            }
+            // try {
+            // error = con1.validateSync();
+            // } catch (err) {
+            //     error = err.messege;
+            // }
 
-        const con2 = {
-            id: 'http://example.org/profiles/sports/verbs/placed',
-            type: 'Verb',
-            inScheme: 'http://example.org/profiles/sports/v2',
-            prefLabel: {
-                en: 'place',
-                es: 'esplaco',
-            },
-            definition: {
-                en: "Indicates a person finished the event in a ranked order.  Use with the 'placement' extension.",
-                es: 'Indicato esplaco.',
-            },
-            broadMatch: ['stuff', 'more_Sstuff'],
-        };
+            expect(error).toBeTruthy();
+        });
 
-        const testArr = [5, 4, 8, 2, 100].sort(undefined);
+        // test('things3', async () => {
+        //     await con1.save();
+        //     try {
+        //         await session.withTransation(async () => {
+        //             await con1.remove();
+        //         });
+        //     } catch (err) {}
+        //     find1 = await ConceptModel.findOne({ iri: conDoc.iri });
+        //     expect(find1).toBeFalsy();
+        // });
+
+        // test('things4', async () => {
+        //     try {
+        //         await session.withTransation(async () => {
+        //             await con1.save();
+        //         });
+        //     } catch (err) {}
+        //     find1 = await ConceptModel.findOne({ iri: conDoc.iri });
+        //     expect(find1).toBeTruthy();
+        // });
+
+
+        // const con1 = {
+        //     id: 'http://example.org/profiles/sports/verbs/placed',
+        //     type: 'Verb',
+        //     inScheme: 'http://example.org/profiles/sports/v2',
+        //     prefLabel: {
+        //         en: 'placed',
+        //     },
+        //     definition: {
+        //         en: "Indicates a person finished the event in a ranked order.  Use with the 'placement' extension.",
+        //     },
+        //     broadMatch: ['stuff', 'stuff_thing'],
+        // };
+
+        // const con2 = {
+        //     id: 'http://example.org/profiles/sports/verbs/placed',
+        //     type: 'Verb',
+        //     inScheme: 'http://example.org/profiles/sports/v2',
+        //     prefLabel: {
+        //         en: 'place',
+        //         es: 'esplaco',
+        //     },
+        //     definition: {
+        //         en: "Indicates a person finished the event in a ranked order.  Use with the 'placement' extension.",
+        //         es: 'Indicato esplaco.',
+        //     },
+        //     broadMatch: ['stuff', 'more_Sstuff'],
+        // };
+
+        // const testArr = [5, 4, 8, 2, 100].sort(undefined);
 
         // const exported = await con1.export('http://example.org/profiles/sports/v2');
         // const diff = jsonDiff.diff(exported, con2);

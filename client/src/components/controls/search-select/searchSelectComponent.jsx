@@ -18,21 +18,21 @@ import React, { useState, useEffect } from 'react';
 import { SearchSelectView } from './searchSelectView';
 
 export default function SearchSelectComponent({
-        searchFunction,
-        clearSearchFunction,
-        searchMessage,
-        searchResults,
-        selectResultFunction,
-        removeSelectedResultFunction,
-        clearSelectedResultsFunction,
-        selectedResults,
-        isOneSelectionOnly,
-        oneSelectionOnlyMessage,
-        selectionMessage,
-        resultView
+    searchFunction,
+    clearSearchFunction,
+    searchMessage,
+    searchResults,
+    selectResultFunction,
+    removeSelectedResultFunction,
+    clearSelectedResultsFunction,
+    selectedResults,
+    isOneSelectionOnly,
+    oneSelectionOnlyMessage,
+    selectionMessage,
+    resultView,
+    placeholderText,
+    filterOptions
 }) {
-
-    const [keywords, setKeywords] = useState();
 
     useEffect(() => {
         return function cleanUp() {
@@ -40,21 +40,15 @@ export default function SearchSelectComponent({
             clearSelectedResultsFunction();
         }
     }, []);
-    
-    function onSearchSubmit(searchValues) {
-        setKeywords(searchValues);
-        searchFunction(searchValues);
-    }
 
-    function isSelected (result) {
+    function isSelected(result) {
         if (!selectedResults) return false;
         return selectedResults.findIndex(s => s.uuid === result.uuid) === -1 ? false : true;
     }
 
     return (
         <SearchSelectView
-            onSearchSubmit={(searchValues) => onSearchSubmit(searchValues)}
-            keywords={keywords}
+            onSearchSubmit={searchFunction}
             searchMessage={searchMessage}
             searchResults={searchResults}
             selectedResults={selectedResults}
@@ -65,6 +59,8 @@ export default function SearchSelectComponent({
             select={(result) => selectResultFunction(result)}
             remove={(selectedResult) => removeSelectedResultFunction(selectedResult)}
             resultView={resultView}
+            placeholderText={placeholderText}
+            filterOptions={filterOptions}
         />
     );
 }

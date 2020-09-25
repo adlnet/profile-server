@@ -14,20 +14,26 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
+import { Link } from 'react-router-dom';
 
 export default function RuleTableRow(props) {
     return (
         <tr>
-            <th scope="row">
-                {props.location}
+            <th scope="row" width="90%">
+                <Link className="usa-link button-link display-block margin-y-1" to={{ pathname: `${props.url}/view`, state: { rule: props.rule } }}>
+                    {props.rule.location}
+                </Link>
             </th>
-            <td><span className="font-sans-3xs">{props.presence}</span></td>
-            <td><span className="font-sans-3xs">{props.value}</span></td>
-            {props.isMember &&
-                <>
-                    <td><button className="usa-button  usa-button--unstyled"><span className="text-bold">Edit</span></button></td>
-                    <td><button className="usa-button  usa-button--unstyled"><span className="text-bold">Remove</span></button> </td>
-                </>}
+            {props.isMember && props.isCurrentVersion && !props.belongsToAnotherProfile &&
+                <td>
+                    <Link className="usa-link button-link display-block margin-y-1" to={{ pathname: `${props.url}/edit`, state: { rule: props.rule } }}>
+                        <span className="text-bold">Edit</span>
+                    </Link>
+                </td>
+            }
+            {props.isMember && props.isCurrentVersion && !props.isPublished && !props.belongsToAnotherProfile &&
+                <td><button className="usa-button  usa-button--unstyled" onClick={() => props.removeRule(props.rule)}><span className="text-bold">Remove</span></button> </td>
+            }
         </tr>
     );
 }

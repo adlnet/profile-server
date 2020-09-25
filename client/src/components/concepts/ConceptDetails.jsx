@@ -15,20 +15,24 @@
 **************************************************************** */
 import React, { useEffect } from 'react';
 import { useRouteMatch, useParams, Switch, Route, Link, useHistory, Redirect } from 'react-router-dom';
-import { editConcept, selectConcept } from "../../actions/concepts";
+import { editConcept, loadProfileConcepts, selectConcept, removeConceptLink } from "../../actions/concepts";
 import { Detail, Translations, } from '../DetailComponents';
 import { useSelector, useDispatch, } from 'react-redux';
 import Lock from "../../components/users/lock";
 import ConceptTypeDetailExtension from "./ConceptTypeDetailExtension";
 import EditConcept from './EditConcept';
+import { useState } from 'react';
+import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
+import { reloadCurrentProfile } from '../../actions/profiles';
 
 
-export default function ConceptDetail({ isMember }) {
+export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs }) {
 
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
     const history = useHistory();
     const { organizationId, profileId, versionId, conceptId } = useParams();
+    const [showModal, setShowModal] = useState(false);
 
     const { selectedOrganizationId, selectedProfileId,
         selectedProfileVersionId } = useSelector((state) => state.application);
@@ -48,17 +52,63 @@ export default function ConceptDetail({ isMember }) {
 
     if (!concept) return '';
 
+    const renderBreadcrumbs = () => {
+        if (breadcrumbs) {
+            return breadcrumbs.map((b, i) => (
+                <span key={i}><Link to={b.to}><span className="details-label">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
+            ))
+        }
+        return <><Link to={`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`}><span className="details-label">concepts</span></Link> <i className="fa fa-angle-right"></i></>;
+    }
+
+
+    const removeLink = async () => {
+        await dispatch(removeConceptLink(organizationId, profileId, versionId, conceptId))
+
+        await dispatch(loadProfileConcepts(selectedProfileVersionId));
+
+        await dispatch(reloadCurrentProfile());
+
+        setShowModal(false);
+        if (breadcrumbs) {
+            history.push(breadcrumbs[breadcrumbs.length - 1].to);
+        }
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`);
+    }
+
     const belongsToAnotherProfile = !(selectedProfileVersion.concepts && selectedProfileVersion.concepts.includes(concept._id));
+    const isEditable = isMember && isCurrentVersion;
+    const isPublished = concept.parentProfile.state !== 'draft';
 
     return (<>
+        <div className="grid-row border-bottom-2px border-base-lighter display-flex flex-row " style={{ marginTop: '2em' }}>
+
+            <div className="grid-col padding-bottom-2">
+                {renderBreadcrumbs()}
+                <h2 style={{ marginBottom: 0, marginTop: '.5em', textTransform: "capitalize" }}><span style={{ fontWeight: 'lighter' }}>{concept.conceptType}:</span> <span className="text-primary-dark">{concept.name}</span></h2>
+            </div>
+            <div className="grid-col display-flex flex-column flex-align-end">
+                {
+                    !belongsToAnotherProfile && isEditable &&
+                    <Link
+                        to={`${url}/edit/${concept.conceptType}`}
+                        className="usa-button padding-x-105 margin-top-2 margin-right-0 "
+                    >
+                        <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                                        Edit Concept
+                                    </Link>
+                }
+            </div>
+        </div>
         <Switch>
             <Route path={`${path}/edit`}>
-                {isMember ?
+                {(!belongsToAnotherProfile && isEditable) ?
                     <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concept/${concept.uuid}`}>
                         <EditConcept
                             initialValues={concept}
                             onCreate={handleEditConcept}
                             onCancel={() => history.push(url)}
+                            isPublished={isPublished}
                         />
                     </Lock>
                     : <Redirect to={url} />
@@ -69,27 +119,26 @@ export default function ConceptDetail({ isMember }) {
                 <>
                     {
                         belongsToAnotherProfile &&
-                        <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
+                        <div className="usa-alert usa-alert--info usa-alert--slim margin-top-2" >
                             <div className="usa-alert__body">
                                 <p className="usa-alert__text">
-                                    This concept belongs to {concept.parentProfile.name}.
-                                    </p>
+                                    <span style={{ fontWeight: "bold" }}>Linked Concept.</span> This concept is defined by another profile, {concept.parentProfile.name}. {!breadcrumbs && <button style={{ fontWeight: "bold" }} onClick={() => setShowModal(true)} className="usa-button usa-button--unstyled">Remove Link</button>}
+                                </p>
                             </div>
                         </div>
                     }
-                    <div className="grid-row">
+                    <div className="grid-row margin-top-2">
                         <div className="desktop:grid-col-8">
-                            <h2>{concept.name}</h2>
-                            <Detail title="iri">
+                            <Detail title="iri" subtitle="The IRI used to identify this in an xAPI statement.">
                                 {concept.iri}
-                            </Detail>
-                            <Detail title="concept name">
-                                {concept.name}
                             </Detail>
                             <Detail title="concept type">
                                 {concept.conceptType}
                             </Detail>
-                            <Detail title="description">
+                            <Detail title="concept name" subtitle="English (en)">
+                                {concept.name}
+                            </Detail>
+                            <Detail title="description" subtitle="English (en)">
                                 {concept.description}
                             </Detail>
                             <Detail title="translations">
@@ -103,25 +152,19 @@ export default function ConceptDetail({ isMember }) {
                             />
                         </div>
                         <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
-                            {
-                                !belongsToAnotherProfile && isMember &&
-                                <Link
-                                    to={`${url}/edit/${concept.conceptType}`}
-                                    className="usa-button padding-x-105 margin-top-2 margin-right-0 "
-                                >
-                                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
-                                        Edit Concept
-                                    </Link>
-                            }
+
                             <div className="details-metadata-box margin-top-2 width-full">
                                 <Detail title="updated">
                                     {(concept.updatedOn) ? (new Date(concept.updatedOn)).toLocaleDateString() : "Unknown"}
                                 </Detail>
-                                <Detail title="parent profile">
-                                    {concept.parentProfile.name}
+                                <Detail title="profile">
+                                    {belongsToAnotherProfile ?
+                                        <Link to={`/profile/${concept.parentProfile.uuid}`}>{concept.parentProfile.name}</Link>
+                                        : concept.parentProfile.name
+                                    }
                                 </Detail>
                                 <Detail title="author">
-                                    {concept.parentProfile.organization.name}
+                                    <Link to={`/organization/${concept.parentProfile.organization.uuid}`}>{concept.parentProfile.organization.name}</Link>
                                 </Detail>
                             </div>
                         </div>
@@ -129,5 +172,26 @@ export default function ConceptDetail({ isMember }) {
                 </>
             </Route>
         </Switch>
+
+        <ModalBoxWithoutClose show={showModal}>
+            <div className="grid-row">
+                <div className="grid-col">
+                    <h3>Remove Link</h3>
+                </div>
+            </div>
+            <div className="grid-row">
+                <div className="grid-col">
+                    <span>Are you sure you want to remove <strong>{concept.name}</strong> from the <strong>{selectedProfileVersion.name}</strong>?</span>
+                </div>
+            </div>
+            <div className="grid-row">
+                <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                    <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={removeLink}>Remove Now</button>
+                </div>
+                <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                    <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} style={{ margin: "2.3em 1.5em" }}><b>Cancel</b></button>
+                </div>
+            </div>
+        </ModalBoxWithoutClose>
     </>);
 }

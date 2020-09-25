@@ -39,7 +39,7 @@ export default function SimilarTerms(props) {
 
         setShowModal(false);
     }
-    
+
     function onRemove(key) {
         if (!props.field.value) return;
 
@@ -75,33 +75,37 @@ export default function SimilarTerms(props) {
     }
 
     return (<>
-        {(props.field && props.field.value.length > 0) && 
+        {(props.field && props.field.value.length > 0) &&
             <div className="grid-row">
-                <table style={{margin: '0', tableLayout: 'fixed'}} className="usa-table usa-table--borderless" width="100%">
+                <table style={{ margin: '0', tableLayout: 'fixed' }} className="usa-table usa-table--borderless" width="100%">
                     <thead>
                         <tr>
-                            <th width="45%" scope="col" style={{padding: '4px'}}></th>
-                            <th width="45%" scope="col" style={{padding: '4px'}}></th>
-                            <th width="10%" scope="col" style={{padding: '4px'}}></th>
+                            <th width="45%" scope="col" style={{ padding: '4px' }}></th>
+                            <th width="45%" scope="col" style={{ padding: '4px' }}></th>
+                            <th width="10%" scope="col" style={{ padding: '4px' }}></th>
                         </tr>
                     </thead>
-                    <tbody> 
+                    <tbody>
                         {props.field.value.map((similarTerm, key) => (
-                                <SimilarTermRow
-                                    key={key}
-                                    similarTerm={similarTerm}
-                                    onRelationTypeChange={onRelationTypeChange(key)}
-                                    onRemove={() => onRemove(key)}
-                                />
-                            )
-                        )}    
+                            <SimilarTermRow
+                                key={key}
+                                similarTerm={similarTerm}
+                                onRelationTypeChange={onRelationTypeChange(key)}
+                                onRemove={() => onRemove(key)}
+                                isPublished={props.isPublished}
+                            />
+                        )
+                        )}
                     </tbody>
                 </table>
             </div>
         }
-        <button className="usa-button usa-button--outline" type='button' onClick={() => setShowModal(true)} style={{marginTop: '8px'}}>
-            Add Similar Term
+        {
+            !props.isPublished &&
+            <button className="usa-button usa-button--outline" type='button' onClick={() => setShowModal(true)} style={{ marginTop: '8px' }}>
+                Add Similar Term
         </button>
+        }
 
         <ModalBoxWithoutClose show={showRemoveSimilarTermsModal}>
             <RemoveSimilarTermConfirmation onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
@@ -111,39 +115,48 @@ export default function SimilarTerms(props) {
             <SimilarTermForm
                 onAdd={onAdd}
             />
-        </ModalBox>  
+        </ModalBox>
     </>);
 }
 
-function SimilarTermRow({ similarTerm, onRemove, onRelationTypeChange }) {
-    const [ field, meta, helpers ] = useField('similarTerms');
+function SimilarTermRow({ similarTerm, onRemove, onRelationTypeChange, isPublished }) {
+    const [field, meta, helpers] = useField('similarTerms');
 
     return (<>
         <tr>
-            <th scope="row" style={{wordWrap: 'break-word'}}>
+            <th scope="row" style={{ wordWrap: 'break-word' }}>
                 <span>{similarTerm.concept.name || similarTerm.concept.iri}</span>
             </th>
             <td>
-                <select
-                        name="relationType"
-                        value={similarTerm.relationType} rows="3"
-                        onChange={e => onRelationTypeChange(e.target.value)}
-                        className={`usa-select ${ meta.error && meta.touched && !similarTerm.relationType ? "usa-input--error" : ""}`}
-                        id="type" aria-required="true"  style={{marginTop: '0'}}
-                >
-                    <option value="" disabled defaultValue></option>
-                    <option value="related">Related</option>
-                    <option value="relatedMatch">Related Match</option>
-                    <option value="broader">Broader</option>
-                    <option value="broadMatch">Broad Match</option>
-                    <option value="narrower">Narrower</option>
-                    <option value="narrowMatch">Narrow Match</option>
-                    <option value="exactMatch">Exact Match</option>
-                </select>
+                {
+                    !isPublished ?
+                        <select
+                            name="relationType"
+                            value={similarTerm.relationType} rows="3"
+                            onChange={e => onRelationTypeChange(e.target.value)}
+                            className={`usa-select ${meta.error && meta.touched && !similarTerm.relationType ? "usa-input--error" : ""}`}
+                            id="type" aria-required="true" style={{ marginTop: '0' }}
+                        >
+                            <option value="" disabled defaultValue></option>
+                            <option value="related">Related</option>
+                            <option value="relatedMatch">Related Match</option>
+                            <option value="broader">Broader</option>
+                            <option value="broadMatch">Broad Match</option>
+                            <option value="narrower">Narrower</option>
+                            <option value="narrowMatch">Narrow Match</option>
+                            <option value="exactMatch">Exact Match</option>
+                        </select>
+                        : similarTerm.relationType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
+                }
             </td>
-            <td><button style={{marginTop: '0'}} className="usa-button  usa-button--unstyled" type="button" onClick={onRemove}>
-                <span className="text-bold">Remove</span>
-            </button> </td>
+            <td>
+                {
+                    !isPublished &&
+                    <button style={{ marginTop: '0' }} className="usa-button  usa-button--unstyled" type="button" onClick={onRemove}>
+                        <span className="text-bold">Remove</span>
+                    </button>
+                }
+            </td>
         </tr>
     </>);
 }
@@ -171,7 +184,7 @@ function SimilarTermForm({ onAdd }) {
     const searchResults = conceptSearchResults && conceptSearchResults.filter(r => r.parentProfile);
 
     return (<>
-        <h2 style={{marginTop: '0'}}>Tag Similar Terms</h2>
+        <h2 style={{ marginTop: '0' }}>Tag Similar Terms</h2>
         <div className="margin-y-1">Search for existing terms</div>
         <Formik
             initialValues={{ search: '', }}
@@ -191,58 +204,58 @@ function SimilarTermForm({ onAdd }) {
                 handleBlur,
                 handleSubmit
             }) => (
-                <div className="usa-form similar-terms-form">
-                    <div className="grid-row">
-                        <div className="grid-col-10">
-                            <div className="usa-search">
-                                <div role="search" className={`usa-form-group ${errors.search && touched.search ? "usa-form-group--error" : ""}`} style={{marginTop: '0'}}>
-                                    {
-                                        errors.search && touched.search && (
-                                            <span className="usa-error-message padding-right-1" role="alert">{errors.search}</span>
-                                        )
-                                    }
-                                    <label className="usa-sr-only" htmlFor="search-field">Search</label>
-                                    <input className={`usa-input ${errors.search && touched.search ? "usa-input--error" : ""}`} id="search-field" type="search" name="search"
-                                        onChange={handleChange}
-                                        onBlur={handleBlur}
-                                        value={values.search}
-                                    />
-                                    <button className="usa-button" type="submit" onClick={handleSubmit} style={{ marginTop: 0 }}>
-                                        <span className="usa-search__submit-text">Search</span>
-                                    </button>
+                    <div className="usa-form similar-terms-form">
+                        <div className="grid-row">
+                            <div className="grid-col-10">
+                                <div className="usa-search">
+                                    <div role="search" className={`usa-form-group ${errors.search && touched.search ? "usa-form-group--error" : ""}`} style={{ marginTop: '0' }}>
+                                        {
+                                            errors.search && touched.search && (
+                                                <span className="usa-error-message padding-right-1" role="alert">{errors.search}</span>
+                                            )
+                                        }
+                                        <label className="usa-sr-only" htmlFor="search-field">Search</label>
+                                        <input className={`usa-input ${errors.search && touched.search ? "usa-input--error" : ""}`} id="search-field" type="search" name="search"
+                                            onChange={handleChange}
+                                            onBlur={handleBlur}
+                                            value={values.search}
+                                        />
+                                        <button className="usa-button" type="submit" onClick={handleSubmit} style={{ marginTop: 0 }}>
+                                            <span className="usa-search__submit-text">Search</span>
+                                        </button>
+                                    </div>
                                 </div>
                             </div>
                         </div>
+                        <div className="similar-terms-results-panel">
+                            {
+                                (searchResults && searchResults.length > 0) && <>
+                                    <div className="grid-row">
+                                        <span className="margin-y-2">{`${searchResults.length} results`}</span>
+                                    </div>
+                                    <div className="similar-terms-results overflow-auto">
+                                        <table className="usa-table usa-table--borderless margin-0" width="100%">
+                                            <thead>
+                                                <tr>
+                                                    <th width="55%" scope="col" style={{ padding: '0' }} />
+                                                    <th width="25%" scope="col" style={{ padding: '0' }} />
+                                                    <th width="20%" scope="col" style={{ padding: '0' }} />
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {
+                                                    searchResults.map((result, key) => (
+                                                        <SimilarTermResult key={key} result={result} onAdd={() => onAdd(result)} />
+                                                    ))
+                                                }
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </>
+                            }
+                        </div>
                     </div>
-                    <div className="similar-terms-results-panel">
-                        {
-                            (searchResults && searchResults.length > 0) && <>
-                                <div className="grid-row">
-                                    <span className="margin-y-2">{`${searchResults.length} results`}</span>
-                                </div>
-                                <div className="similar-terms-results overflow-auto">
-                                    <table className="usa-table usa-table--borderless margin-0" width="100%">
-                                        <thead>
-                                            <tr>
-                                                <th width="55%" scope="col" style={{padding: '0'}} />
-                                                <th width="25%" scope="col" style={{padding: '0'}} />
-                                                <th width="20%" scope="col" style={{padding: '0'}} />
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                            {
-                                                searchResults.map((result, key) => (
-                                                    <SimilarTermResult key={key} result={result} onAdd={() => onAdd(result)}/>
-                                                ))
-                                            }
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </>
-                        }
-                    </div>
-                </div>
-            )}
+                )}
         </Formik>
     </>);
 }

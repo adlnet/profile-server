@@ -21,6 +21,7 @@ const profileModel = require('../ODM/models').profile;
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
+const memoizee = require('memoizee');
 
 async function getVersionConcepts(versionUuid) {
     let concepts;
@@ -65,10 +66,10 @@ async function getAllConcepts() {
     let concepts;
     try {
         concepts = await conceptModel
-            .find({}, 'uuid iri name description conceptType updatedOn')
+            .find({ parentProfile: { $ne: null } }, 'uuid iri name description conceptType updatedOn')
             .populate({
                 path: 'parentProfile',
-                select: 'uuid iri name',
+                select: 'uuid iri name state',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             });
     } catch (err) {
@@ -81,14 +82,38 @@ async function getAllConcepts() {
 
 exports.getAllConcepts = getAllConcepts;
 
-async function searchConcepts(search) {
-    const query = queryBuilder.buildSearchQuery(search);
-    const results = await conceptModel.find(query)
-        .populate({
-            path: 'parentProfile',
-            select: 'uuid iri name',
-            populate: { path: 'organization', select: 'uuid name' },
-        })
+/**
+ * Find concepts
+ *
+ * @param {*} search what to search for in name, desc, and iri
+ * @param {*} limit how many to return
+ * @param {*} page what page of results
+ * @param {*} sort asc or desc
+ * @param {*} filter currently just a parentProfile uuid or nothing
+ */
+async function searchConcepts(search, limit, page, sort, filter) {
+    const searchFilter = (filter) ? JSON.parse(mongoSanitize(filter)) : filter;
+    const query = queryBuilder.buildSearchQuery(mongoSanitize(search));
+    if (searchFilter.parentProfile) {
+        const profileVersion = await profileVersionModel.findByUuid(searchFilter.parentProfile);
+        query.parentProfile = profileVersion._id;
+    }
+    let results = conceptModel.find(query);
+    if (!results) return [];
+    if (limit) {
+        const offset = limit * (page - 1 || 0);
+        results = results.limit(Number(limit)).skip(offset);
+    }
+    if (sort) {
+        const sorting = (sort === 'desc') ? '-createdOn' : 'createdOn';
+        results = results.sort(sorting);
+    }
+
+    results = results.populate({
+        path: 'parentProfile',
+        select: 'uuid iri name',
+        populate: { path: 'organization', select: 'uuid name' },
+    })
         .populate({ path: 'similarTerms.concept', select: 'uuid name iri' })
         .populate({ path: 'recommendedTerms', select: 'uuid name iri' });
 
@@ -97,20 +122,33 @@ async function searchConcepts(search) {
 
 exports.searchConcepts = searchConcepts;
 
+const mem_getProfileVersionModel = memoizee(async (profileVersionId) => await profileVersionModel
+    .findByUuid(profileVersionId)
+    .populate({
+        path: 'templates',
+    }).exec(), {
+    promise: true,
+    maxAge: 100,
+
+});
+
+
+const mem_getAllTemplates = memoizee(async () => { console.prodLog('really qeurying all'); return await templateModel.find().exec(); }, {
+    promise: true,
+    maxAge: 100,
+
+});
+
 exports.getTemplatesUsingConcept = async function (conceptId, profileVersionId) {
     let templates;
     let concept;
     try {
-        concept = await conceptModel.findByUuid(conceptId);
+        if (conceptId instanceof conceptModel) { concept = conceptId; } else { concept = await conceptModel.findByUuid(conceptId); }
         if (!concept) {
             throw new Error('Invalid concept id.');
         }
         if (profileVersionId) {
-            const profileVersion = await profileVersionModel
-                .findByUuid(profileVersionId)
-                .populate({
-                    path: 'templates',
-                });
+            const profileVersion = await mem_getProfileVersionModel(profileVersionId);
 
             if (!profileVersion) {
                 throw new Error('Invalid profile version id.');
@@ -118,7 +156,7 @@ exports.getTemplatesUsingConcept = async function (conceptId, profileVersionId) 
 
             templates = profileVersion.templates;
         } else {
-            templates = await templateModel.find();
+            templates = await mem_getAllTemplates();
         }
     } catch (err) {
         console.error(err);
@@ -127,6 +165,12 @@ exports.getTemplatesUsingConcept = async function (conceptId, profileVersionId) 
     return templates.filter(t => t.concepts.map(c => c._id.toString()).includes(concept._id.toString()));
 };
 
+const mem_getTemplatesUsingConcept = memoizee(async (c, pid) => await exports.getTemplatesUsingConcept(c, pid), {
+    promise: true,
+    maxAge: 100,
+
+});
+
 exports.getConcepts = async function (req, res) {
     let concepts;
     let profileVersionId = null;
@@ -134,18 +178,19 @@ exports.getConcepts = async function (req, res) {
         if (req.params.version) {
             profileVersionId = req.params.version;
             concepts = await getVersionConcepts(req.params.version);
-        } else if (req.query.search) {
-            concepts = await searchConcepts(req.query.search);
+        } else if (req.query.search !== undefined) {
+            // search = 'string to search'
+            // limit = # of results
+            // sort = asc (oldest) | desc (newest)
+            concepts = await searchConcepts(req.query.search, req.query.limit, req.query.page, req.query.sort, req.query.filter);
         } else {
             concepts = await getAllConcepts();
         }
-
-        concepts = await Promise.all(concepts.map(async concept => {
-            const c = concept.toObject();
-            c.templates = await exports.getTemplatesUsingConcept(concept.uuid, profileVersionId);
-            console.log(concept.templates);
-            return c;
-        }));
+        // for (const i in concepts) {
+        //     const c = concepts[i].toObject();
+        //     c.templates = await mem_getTemplatesUsingConcept(concepts[i], profileVersionId);
+        //     concepts[i] = c;
+        // }
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -166,7 +211,7 @@ exports.getConcept = async function (req, res) {
         concept = await conceptModel.findByUuid(req.params.concept)
             .populate({
                 path: 'parentProfile',
-                select: 'uuid iri name',
+                select: 'uuid iri name state',
                 populate: [
                     { path: 'organization', select: 'uuid name' },
                     { path: 'parentProfile', select: 'uuid iri name' },
@@ -279,4 +324,34 @@ exports.deleteConcept = async function (req, res) {
     res.send({
         success: true,
     });
+};
+
+exports.unlinkConcept = async function (req, res) {
+    try {
+        const concept = req.resource;
+        const profileVersion = await profileVersionModel.findByUuid(req.params.version);
+        if (!profileVersion) {
+            res.status(404).send({
+                status: false,
+                message: 'Unknown profile version',
+            });
+        }
+
+        // only unlink external concepts (aka different parent profile version)
+        if (concept.parentProfile.uuid !== profileVersion.uuid) {
+            if (profileVersion.externalConcepts && profileVersion.externalConcepts.length) {
+                profileVersion.externalConcepts = profileVersion.externalConcepts.filter(c => c._id.toString() !== concept._id.toString());
+                await profileVersion.save();
+            }
+        }
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
 };

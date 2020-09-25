@@ -15,21 +15,37 @@
 **************************************************************** */
 import React, { useState } from 'react';
 import { Formik } from 'formik';
-import { useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 
 import ChoosePropertyType from './ChoosePropertyType';
 import AddProperty from './AddProperty';
 
-export default function CreateDeterminingProperty({ onDeterminingPropertyAdd }) {
+export default function CreateDeterminingProperty({ onDeterminingPropertyAdd, breadcrumbs }) {
 
     const [step, setStep] = useState(1);
     const [propertyType, setPropertyType] = useState();
     const history = useHistory();
 
+    const renderBreadcrumbs = () => {
+        if (breadcrumbs) {
+            return breadcrumbs.map((b, i) => (
+                <span key={i}><Link to={b.to}><span className="details-label">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
+            ))
+        }
+        return <></>;
+    }
+
     // const oneOrMoreConcepts = ['contextCategoryActivityType', 'contextGroupingActivityType', 'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType'];
     const oneConceptOnly = ['verb', 'objectActivityType'];
 
     return (<>
+        <div className="grid-row">
+            <div className="grid-col">
+                <div className="margin-top-4">
+                    {renderBreadcrumbs()}
+                </div>
+            </div>
+        </div>
         <Formik
             initialValues={{ propertyType: '', properties: '' }}
             onSubmit={values => {
@@ -37,24 +53,24 @@ export default function CreateDeterminingProperty({ onDeterminingPropertyAdd }) 
             }}
         >
             {({ handleSubmit }) => (
-            <form>
-                <div className={ step !== 1 ? "display-none" : "" }>
-                    <ChoosePropertyType
-                        propertyType={propertyType}
-                        onPropertyChange={propertyType => setPropertyType(propertyType)} 
-                        setNextStep={() => setStep(2)}
-                        onCancel={() => history.goBack()}
-                    />
-                </div>
-                <div className={ step !== 2 ? "display-none" : "" }>
-                    <AddProperty
-                        propertyType={propertyType}
-                        setPreviousStep={() => setStep(1)}
-                        isOneConceptOnly={oneConceptOnly.includes(propertyType)}
-                        handleSubmit={handleSubmit}
-                    />
-                </div>
-            </form>
+                <form className="usa-form" style={{ maxWidth: "none" }}>
+                    <div className={step !== 1 ? "display-none" : ""}>
+                        <ChoosePropertyType
+                            propertyType={propertyType}
+                            onPropertyChange={propertyType => setPropertyType(propertyType)}
+                            setNextStep={() => setStep(2)}
+                            onCancel={() => history.goBack()}
+                        />
+                    </div>
+                    <div className={step !== 2 ? "display-none" : ""}>
+                        <AddProperty
+                            propertyType={propertyType}
+                            setPreviousStep={() => setStep(1)}
+                            isOneConceptOnly={oneConceptOnly.includes(propertyType)}
+                            handleSubmit={handleSubmit}
+                        />
+                    </div>
+                </form>
             )}
         </Formik>
     </>);

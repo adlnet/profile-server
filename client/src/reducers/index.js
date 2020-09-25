@@ -20,6 +20,7 @@ import * as concept_actions from "../actions/concepts";
 import * as pattern_actions from "../actions/patterns";
 import * as user_actions from "../actions/user";
 import * as apiKey_actions from "../actions/apiKeys";
+import * as webhook_actions from "../actions/webhooks"
 
 const { produce } = require('immer');
 
@@ -30,6 +31,14 @@ function organizations(orgs, action) {
         return orgs;
     }
     return orgs;
+}
+
+function webHooks(webHooks, action) {
+    if (action.type === webhook_actions.FINISH_GET_WEBHOOKS) {
+        webHooks = action.webHooks;
+        return webHooks;
+    }
+    return webHooks;
 }
 
 function apiKeys(apiKeys, action) {
@@ -65,6 +74,11 @@ function application(application, action) {
     if (action.type == apiKey_actions.SELECT_APIKEY) {
         application.selectedApiKeyId = action.apiKeyId;
         application.selectedApiKey = action.apiKey;
+    }
+
+    if (action.type == webhook_actions.SELECT_WEBHOOK) {
+        application.selectedWebHookId = action.webHookId;
+        application.selectedWebHook = action.webHook;
     }
 
     if (action.type === profile_actions.SELECT_PROFILE) {
@@ -113,20 +127,24 @@ function application(application, action) {
         application.members = action.members;
     }
 
+    if (action.type === profile_actions.SELECT_LOAD_PROFILE_ROOT_IRI) {
+        application.profileRootIRI = action.iri;
+    }
+
     if (action.type.indexOf("START") === 0) {
         application.loading++;
     }
     if (action.type.indexOf("FINISH") === 0) {
-        if(application.loading > 0)
+        if (application.loading > 0)
             application.loading--;
     }
     if (action.type === "GLOBAL_ERROR") {
         application.loading = 0;
     }
 
-    
 
-    
+
+
     return application;
 }
 
@@ -176,28 +194,24 @@ function errors(errors, action) {
 }
 
 function globalErrors(globalErrors, action) {
-    if(action.type === "GLOBAL_ERROR")
-    {
+    if (action.type === "GLOBAL_ERROR") {
         let error = {
-            uuid:require('uuid').v4(),
+            uuid: require('uuid').v4(),
             ...action
         }
         globalErrors.push(error)
     }
 
-    if(action.type === "CLEAR_GLOBAL_ERROR")
-    {
+    if (action.type === "CLEAR_GLOBAL_ERROR") {
         let idx = -1;
-        for(let i =0; i < globalErrors.length; i++)
-        {
-            if(globalErrors[i].uuid === action.error.uuid)
-            {
+        for (let i = 0; i < globalErrors.length; i++) {
+            if (globalErrors[i].uuid === action.error.uuid) {
                 idx = i;
             }
         }
-       
-       if(idx !== -1)
-        globalErrors.splice(idx,1);
+
+        if (idx !== -1)
+            globalErrors.splice(idx, 1);
     }
     return globalErrors;
 }
@@ -205,6 +219,10 @@ function globalErrors(globalErrors, action) {
 function searchResults(searchResults, action) {
     if (action.type == org_actions.FINISH_SEARCH_ORGS) {
         searchResults.organizations = action.organizations;
+    }
+
+    if (action.type == org_actions.CLEAR_SEARCH_ORGS) {
+        searchResults.organizations = undefined;
     }
 
     if (action.type == template_actions.FINISH_SEARCH_TEMPLATES) {
@@ -301,7 +319,7 @@ function searchResults(searchResults, action) {
         searchResults.selectedUsers.push(action.user)
     }
     if (action.type === org_actions.CLEAR_USER_RESULTS) {
-        
+
         searchResults.selectedUsers = []
         searchResults.users = [];
     }
@@ -311,8 +329,8 @@ function searchResults(searchResults, action) {
         searchResults.selectedUsers = searchResults.selectedUsers.filter(c => c.uuid !== action.user.uuid);
     }
 
-    
-    
+
+
 
     return searchResults;
 }
@@ -355,22 +373,22 @@ export default function (state = {
     patterns: [],
     searchResults: {},
     errors: [],
-    globalErrors:[],
-    userData:{
-        user:null,
-        loginFeedback:null
+    globalErrors: [],
+    userData: {
+        user: null,
+        loginFeedback: null
     },
     application: {
         selectedOrg: null,
-        members:[],
+        members: [],
         selectedProfile: null,
-        loading: 0
+        loading: 0,
+        profileRootIRI: null,
     },
 }, action) {
 
     return produce(state, (state) => {
-        if(action.type == "permissionError")
-        {
+        if (action.type == "permissionError") {
             //Do better here;
             window.alert("Something went wrong: Permission Denied")
         }
@@ -379,6 +397,7 @@ export default function (state = {
         state.account = account(state.account, action);
         state.organizations = organizations(state.organizations, action);
         state.apiKeys = apiKeys(state.apiKeys, action);
+        state.webHooks = webHooks(state.webHooks, action);
         state.profiles = profiles(state.profiles, action);
         state.concepts = concepts(state.concepts, action);
         state.templates = templates(state.templates, action);
@@ -386,7 +405,7 @@ export default function (state = {
         state.searchResults = searchResults(state.searchResults, action);
         state.errors = errors(state.errors, action);
         state.userData = userData(state.userData, action);
-        state.globalErrors = globalErrors(state.globalErrors,action)
+        state.globalErrors = globalErrors(state.globalErrors, action)
         return state;
 
     })

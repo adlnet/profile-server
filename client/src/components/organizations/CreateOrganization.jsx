@@ -18,32 +18,34 @@ import { useDispatch } from 'react-redux';
 
 import CreateOrgForm from './CreateOrgForm';
 import { createOrganization } from '../../actions/organizations';
+import { Link } from 'react-router-dom';
 
 export default function CreateOrganization() {
-  const dispatch = useDispatch();
+    const dispatch = useDispatch();
 
-  function handleSubmit(values) {
-    dispatch(createOrganization(values));
-  }
+    function handleSubmit(values) {
+        dispatch(createOrganization(values));
+    }
 
-  return (
-    <>
-      <main className="usa-layout-docs usa-section main-content" id="main-content">
-        <div className="grid-container">
-          <div className="usa-layout-docs__main desktop:grid-col-9 usa-prose">
-            <header>
-              <h1 className="site-page-title">Create Working Group</h1>
-            </header>
-            <span>
-              Description or instructions for creating a working group…
-            </span>
-            <p>
-              <em>Once the working group is created, you will be able to add members and create profiles.</em>
-            </p>
-            <CreateOrgForm onSubmit={handleSubmit} />
-          </div>
-        </div>
-      </main>
-    </>
-  );
+    return (
+        <>
+            <main className="usa-layout-docs usa-section main-content" id="main-content">
+                <div className="grid-container">
+                    <div className="usa-layout-docs__main desktop:grid-col-9 usa-prose margin-top-4">
+                        <header>
+                            <Link to={'/organization'}><span className="details-label">working groups</span></Link> <i className="fa fa-angle-right"></i>
+                            <h1 className="site-page-title margin-top-0">Create Working Group</h1>
+                        </header>
+                        <span>
+                            Description or instructions for creating a working group…
+                        </span>
+                        <p>
+                            <em>Once the working group is created, you will be able to add members and create profiles.</em>
+                        </p>
+                        <CreateOrgForm onSubmit={handleSubmit} />
+                    </div>
+                </div>
+            </main>
+        </>
+    );
 }

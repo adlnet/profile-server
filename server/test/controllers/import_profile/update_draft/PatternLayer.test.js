@@ -21,6 +21,7 @@ const TemplateModel = require('../../../../ODM/models').template;
 const PatternModel = require('../../../../ODM/models').pattern;
 const PatternComponentModel = require('../../../../ODM/models').patternComponent;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const UserModel = require('../../../../ODM/models').user;
 const PatternLayer = require('../../../../controllers/importProfile/PatternLayer')
     .PatternLayer;
 
@@ -57,7 +58,15 @@ describe('PatternLayer#scanProfileComponentLayer', () => {
     let patternModel;
     let patternLayer;
     let parentProfile;
+    let user;
+    let otherUser;
     beforeEach(async () => {
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
+        otherUser = new UserModel({ email: 'another@email.com' });
+        await otherUser.save();
+
         patternDocument = {
             id: 'pattern1_id',
             type: 'Pattern',
@@ -70,12 +79,16 @@ describe('PatternLayer#scanProfileComponentLayer', () => {
             iri: 'parent_profile_id',
             name: 'profile_name',
             description: 'profile_description',
+            createdBy: user,
+            updatedBy: otherUser,
         });
         await parentProfile.save();
     });
 
     afterEach(async () => {
         await parentProfile.remove();
+        await user.remove();
+        await otherUser.remove();
     });
 
     describe('when versionLayer#versionStatus is `draft`', () => {
@@ -105,6 +118,8 @@ describe('PatternLayer#scanProfileComponentLayer', () => {
                     type: 'oneOrMore',
                     oneOrMore: patternComp,
                     parentProfile: parentProfile,
+                    createdBy: user,
+                    updatedBy: user,
                 });
                 await existingPattern.save();
             });
@@ -124,6 +139,8 @@ describe('PatternLayer#scanProfileComponentLayer', () => {
                     expect(patternModel.name).toEqual(existingPattern.name);
                     expect(patternModel.description).toEqual(existingPattern.description);
                     expect(patternModel.type).toEqual(existingPattern.type);
+                    expect(patternModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                    expect(patternModel.createdBy._id.toString()).toEqual(user._id.toString());
                 });
             });
 

@@ -55,7 +55,7 @@ async function getAllPatterns() {
     let patterns;
     try {
         patterns = await patternModel
-            .find({}, 'uuid iri name primary type updatedOn')
+            .find({ parentProfile: { $ne: null } }, 'uuid iri name primary type updatedOn')
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name',
@@ -71,14 +71,24 @@ async function getAllPatterns() {
 
 exports.getAllPatterns = getAllPatterns;
 
-async function searchPatterns(search) {
-    const query = queryBuilder.buildSearchQuery(search);
-    const results = await patternModel.find(mongoSanitize(query))
-        .populate({
-            path: 'parentProfile',
-            select: 'uuid name iri',
-            populate: { path: 'organization', select: 'uuid name' },
-        })
+async function searchPatterns(search, limit, page, sort) {
+    const query = queryBuilder.buildSearchQuery(mongoSanitize(search));
+    let results = patternModel.find(query);
+    if (!results) return [];
+    if (limit) {
+        const offset = limit * (page - 1 || 0);
+        results = results.limit(Number(limit)).skip(offset);
+    }
+    if (sort) {
+        const sorting = (sort === 'desc') ? '-createdOn' : 'createdOn';
+        results = results.sort(sorting);
+    }
+
+    results = results.populate({
+        path: 'parentProfile',
+        select: 'uuid name iri',
+        populate: { path: 'organization', select: 'uuid name' },
+    })
         .populate({
             path: 'sequence',
             populate: {
@@ -126,7 +136,7 @@ exports.getPatterns = async function (req, res) {
         if (req.params.version) {
             patterns = await getVersionPatterns(req.params.version);
         } else if (req.query.search) {
-            patterns = await searchPatterns(req.query.search);
+            patterns = await searchPatterns(req.query.search, req.query.limit, req.query.page, req.query.sort);
         } else {
             patterns = await getAllPatterns();
         }
@@ -210,7 +220,7 @@ exports.getPattern = async function (req, res) {
         pattern = await patternModel.findByUuid(req.params.pattern)
             .populate({
                 path: 'parentProfile',
-                select: 'uuid iri name',
+                select: 'uuid iri name state',
                 populate: [
                     { path: 'organization', select: 'uuid name' },
                     { path: 'parentProfile', select: 'uuid iri name' },

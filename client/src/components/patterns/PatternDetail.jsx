@@ -20,14 +20,17 @@ import { useSelector, useDispatch } from 'react-redux';
 import { Detail, Tags, Translations } from '../DetailComponents';
 import { selectPattern, editPattern } from '../../actions/patterns';
 import EditPattern from './EditPattern';
+import Lock from '../users/lock';
 
 
-export default function PatternDetail({ isMember }) {
+export default function PatternDetail({ isMember, isCurrentVersion }) {
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
     const history = useHistory();
     let { patternId } = useParams();
     const profileVersion = useSelector(state => state.application.selectedProfileVersion);
+    const { selectedOrganizationId, selectedProfileId,
+        selectedProfileVersionId } = useSelector((state) => state.application);
 
     useEffect(() => {
         dispatch(selectPattern(patternId));
@@ -44,17 +47,22 @@ export default function PatternDetail({ isMember }) {
 
     // is the current pattern in the list of profile patterns
     const belongsToAnotherProfile = !profileVersion.patterns.includes(pattern.id);
+    const isEditable = isMember && isCurrentVersion;
+    const isPublished = pattern.parentProfile.state !== 'draft';
 
     return (<>
         <Switch>
             <Route path={`${path}/edit`}>
-                {isMember ?
-                    <EditPattern
-                        pattern={pattern}
-                        onEdit={handleEditPattern}
-                        onCancel={() => history.push(url)}
-                        root_url={url}
-                    />
+                {!belongsToAnotherProfile && isEditable ?
+                    <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/pattern/${pattern.uuid}`}>
+                        <EditPattern
+                            pattern={pattern}
+                            onEdit={handleEditPattern}
+                            onCancel={() => history.push(url)}
+                            root_url={url}
+                            isPublished={isPublished}
+                        />
+                    </Lock>
                     : <Redirect to={url} />
                 }
             </Route>
@@ -104,7 +112,7 @@ export default function PatternDetail({ isMember }) {
                         </div>
                         <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
                             {
-                                !belongsToAnotherProfile && isMember &&
+                                !belongsToAnotherProfile && isEditable &&
                                 <Link
                                     to={`${url}/edit/`}
                                     className="usa-button padding-x-105 margin-top-2 margin-right-0 "

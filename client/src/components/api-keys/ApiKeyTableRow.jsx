@@ -16,7 +16,7 @@
 import React from 'react'
 import { Link } from 'react-router-dom';
 
-export default function ApiKeyTableRow({ url, apiKey, onRemove, isMember }) {
+export default function ApiKeyTableRow({ url, apiKey, isMember }) {
     function permissions() {
         return [
             apiKey.readPermission ? 'Read' : '',
@@ -27,7 +27,7 @@ export default function ApiKeyTableRow({ url, apiKey, onRemove, isMember }) {
     return (
         <tr>
             <th width="20%" scope="row">
-                { apiKey.description }
+                {apiKey.description}
             </th>
             <td><span className="font-sans-3xs">{apiKey.uuid}</span></td>
             <td><span className="font-sans-3xs">{permissions()}</span></td>
@@ -35,19 +35,13 @@ export default function ApiKeyTableRow({ url, apiKey, onRemove, isMember }) {
             { isMember ? <>
                 <td>
                     <Link
-                            to={`${url}/${apiKey.uuid}/edit`}
-                            className="usa-button  usa-button--unstyled">
+                        to={`${url}/${apiKey.uuid}/edit`}
+                        className="usa-button  usa-button--unstyled">
                         <span className="text-bold">Edit</span>
                     </Link>
                 </td>
-                <td>
-                    <button
-                            onClick={() => onRemove(apiKey.uuid)}
-                            className="usa-button  usa-button--unstyled">
-                        <span className="text-bold">Remove</span>
-                    </button>
-                </td>
-            </> : <><td></td><td></td></>}
+
+            </> : <><td></td></>}
         </tr>
     )
 }

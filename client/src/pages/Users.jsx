@@ -17,8 +17,12 @@ import React, { useEffect, useState } from 'react';
 import { Switch, Route, NavLink, matchPath, useRouteMatch } from 'react-router-dom';
 import Login from "../components/users/Login";
 import Create from "../components/users/Create";
-
+import AccountDetails from "../components/users/AccountDetails";
 import NotLoggedInRoute from "../components/users/NotLoggedInRoute";
+import PrivateRoute from "../components/users/PrivateRoute";
+import RequestPasswordReset from '../components/users/RequestPasswordReset';
+import ResetPassword from '../components/users/ResetPassword';
+
 export default function Users(props) {
     const match = useRouteMatch();
 
@@ -29,6 +33,15 @@ export default function Users(props) {
             </NotLoggedInRoute>
             <NotLoggedInRoute path={`${match.path}/create`} {...props}>
                 <Create></Create>
+            </NotLoggedInRoute>
+            <PrivateRoute path={`${match.path}/account`} {...props}>
+                <AccountDetails></AccountDetails>
+            </PrivateRoute>
+            <NotLoggedInRoute path={`${match.path}/forgotpassword`} {...props}>
+                <RequestPasswordReset></RequestPasswordReset>
+            </NotLoggedInRoute>
+            <NotLoggedInRoute path={`${match.path}/resetpassword`} {...props}>
+                <ResetPassword></ResetPassword>
             </NotLoggedInRoute>
         </Switch>
     </main>

@@ -29,13 +29,23 @@ Express server configured to serve a React SPA. It also has the API designed for
         1. add `connectionString=mongodb://localhost:27017/profileServer`
         1. add `profileRootIRI=https://profiles.adlnet.gov/xapi`
         1. add `QUERY_RESULT_LIMIT=10`
+        1. add email_user="<your email address>"
+        1. add email_pass="<your email password>"
+        1. add email_server="<your email server>"
+        1. add system_email_from="<your email address>"
+        1. add clientURL=http://localhost:3000
+        1. add debug=true
+        1. add MONGOMS_SYSTEM_BINARY=C:\Program Files\MongoDB\Server\4.2\bin\mongod.exe
 1. Type `yarn start` to start the profile server
 1. Open another terminal and navigate to `<project_folder>/client`
 1. Type `yarn` to install the profile client modules
 1. Then type `yarn start` to start the client app.
+    1. The initial start of the client development server takes significant time to start-up. This is due to dependency mapping it needs to run to figure out where required files exist in the project. Subsequent starts of the development server are much faster.
 
 ## Test
 Server-side unit tests are located at `/test`. They can be run by using the comment `yarn test` at the command line. Results will be printed in the terminal.
+
+> NOTE: There are parallel tests in /server/test/routes/publicAPI/profile/metadata.test.js that will occasionally fail when running the full test suite. You can individually run those metadata tests by running the command `yarn test metadata`. 
 
 The profileValidator module has tests that use the profiles found in ADL's `https://github.com/adlnet/xapi-authored-profiles` project. Download or clone the project into the `/server/profileValidator` folder before running these tests.
 

@@ -32,15 +32,15 @@ export default function ApiKeyTable({ apiKeys, onRemove }) {
                     <tr>
                         <th width="30%" scope="col">Name</th>
                         <th width="40%" scope="col">Key</th>
-                        <th width="15%" scope="col">Permissions</th>
+                        <th width="20%" scope="col">Permissions</th>
                         <th width="10%" scope="col">Status</th>
-                        <th width="5%" scope="col"></th>
+
                     </tr>
                 </thead>
                 <tbody style={{ lineHeight: 3 }}>
                     {(apiKeys && apiKeys.length > 0)
-                        ? apiKeys.map((apiKey) => <ApiKeyTableRow url={url} apiKey={apiKey} key={apiKey.uuid} isMember={isMember} onRemove={onRemove}/>)
-                        : <tr key={1}><td className="font-sans-xs" colSpan="6" style={{paddingLeft: '0px'}}><p>There are no API keys in this organization.</p></td></tr>}
+                        ? apiKeys.map((apiKey) => <ApiKeyTableRow url={url} apiKey={apiKey} key={apiKey.uuid} isMember={isMember} onRemove={onRemove} />)
+                        : <tr key={1}><td className="font-sans-xs" colSpan="6" style={{ paddingLeft: '0px' }}><p>There are no API keys in this organization.</p></td></tr>}
                 </tbody>
             </table>
         </div>

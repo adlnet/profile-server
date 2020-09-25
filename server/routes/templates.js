@@ -37,11 +37,13 @@ const permissionStack = [
 templates.get('/', controller.getTemplates);
 templates.post('/', controller.createTemplate);
 
+templates.delete('/link/:template', ...permissionStack, lock(true), controller.unlinkTemplate);
+
 templates.get('/:template/lock', ...permissionStack, lock());
 templates.get('/:template/unlock', ...permissionStack, unlock());
 
 
-templates.get('/:template', ...permissionStack, controller.getTemplate);
+templates.get('/:template', controller.getTemplate);
 templates.put('/:template', ...permissionStack, unlock(true), controller.updateTemplate);
 templates.delete('/:template', ...permissionStack, lock(true), controller.deleteTemplate);
 

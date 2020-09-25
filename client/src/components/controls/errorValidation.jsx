@@ -16,11 +16,11 @@
 import React from 'react';
 import { useField } from 'formik';
 
-export default function ErrorValidation({ name, type, children }) {
+export default function ErrorValidation({ name, type, children, style }) {
     const [field, meta, helpers] = useField(name);
 
     function decorateLabel(child, key) {
-        const props = { ...child.props,  className: `${child.props.className} ${meta.error && meta.touched ? "usa-label--error" : ""}`};
+        const props = { ...child.props, className: `${child.props.className} ${meta.error && meta.touched ? "usa-label--error" : ""}` };
         return (
             <React.Fragment key={`${key}-label`}>
                 {React.cloneElement(child, props)}
@@ -35,14 +35,14 @@ export default function ErrorValidation({ name, type, children }) {
 
     function decorateField(child) {
         const errorClass = `usa-${type}--error`;
-        const className = `${child.props.className} ${meta.error && meta.touched  ? errorClass : ""}`;
+        const className = `${child.props.className} ${meta.error && meta.touched ? errorClass : ""}`;
         return React.cloneElement(child, { ...child.props, className: className });
     }
 
     return (<>
-        <div className={`usa-form-group ${meta.error && meta.touched ? "usa-form-group--error" : ""}`} >
+        <div className={`usa-form-group ${meta.error && meta.touched ? "usa-form-group--error" : ""}`} style={style} >
             {React.Children.toArray(children).map((child, key) => {
-                if (child.type === 'label') 
+                if (child.type === 'label')
                     return decorateLabel(child, `${key}-label`);
                 else
                     return decorateField(child);

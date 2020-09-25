@@ -17,23 +17,30 @@ import React from 'react';
 
 import { SearchSelectResultView } from '../controls/search-select/searchSelectView';
 
-export default function ConceptResultView({ children, result, onViewDetailsClick }) {
+export default function ConceptResultView({ children, result, onViewDetailsClick, currentProfileVersionId }) {
 
     return (
         <SearchSelectResultView
-                result={result}
-                resultName='name'
-                resultDescription='description'
-                subdescriptionView={<ConceptResultSubdescriptionView />}
-                onViewDetailsClick={onViewDetailsClick}
+            result={result}
+            resultName='name'
+            resultDescription='description'
+            subdescriptionView={<ConceptResultSubdescriptionView currentProfileVersionId={currentProfileVersionId} />}
+            onViewDetailsClick={onViewDetailsClick}
+            currentProfileVersionId={currentProfileVersionId}
         >
             {children}
         </SearchSelectResultView>
     );
 }
 
-function ConceptResultSubdescriptionView ({ result }) {
+function ConceptResultSubdescriptionView({ result, currentProfileVersionId }) {
+    function profileInfo() {
+        if (currentProfileVersionId && result && result.parentProfile && result.parentProfile.uuid === currentProfileVersionId) {
+            return <span className="text-bold">This Profile</span>
+        }
+        return result && result.parentProfile ? <><span className="text-bold">Profile: </span> {result.parentProfile.name}</> : ''
+    }
     return (<>
-        {`${result && result.conceptType} | ${result && result.parentProfile && result.parentProfile.name}`}
+        {result && result.conceptType} | {profileInfo()}
     </>);
 }

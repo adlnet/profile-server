@@ -28,6 +28,8 @@ const conceptModel = require('../../../ODM/models').concept;
 const mongoServer = new MongoMemoryServer();
 jest.setTimeout(10000);
 
+console.prodLog = console.log;
+
 beforeEach(async () => {
     const cnnStr = await mongoServer.getUri();
     await mongoose.connect(cnnStr, { useNewUrlParser: true, useUnifiedTopology: true });
@@ -79,9 +81,11 @@ describe('Getting statement templates from a given profile version that use a gi
         });
 
         afterEach(async () => {
+            await org.remove();
             await profileVersion.remove();
             await templateWithConcept1.remove();
             await templateWithConcept2.remove();
+            await templateWithoutConcept.remove();
             await concept2.remove();
             await concept.remove();
         });
@@ -99,7 +103,7 @@ describe('Getting statement templates from a given profile version that use a gi
         describe('and no profile version', () => {
             test('it should return all statement templates that use that concept.', async () => {
                 const otherProfileVerision = new profileVersionModel({ name: 'other_test_version', organization: org });
-                const otherTemplate = new templateModel({ iri: 't3_id', name: 'other_test_template', objectActivityType: concept, parentProfile: otherProfileVerision });
+                const otherTemplate = new templateModel({ iri: 't4_id', name: 'other_test_template', objectActivityType: concept, parentProfile: otherProfileVerision });
                 await otherTemplate.save();
 
                 templates = await conceptController.getTemplatesUsingConcept(concept.uuid);

@@ -38,15 +38,17 @@ function commonConceptProperties(conceptDocument, parentProfile) {
     };
 }
 
-async function testModel(conceptDocument, conceptModel, versionStatus, parentProfileId) {
+async function testModel(conceptDocument, conceptModel, versionStatus, parentProfile) {
     let thisModel;
     let testedModel;
 
     const exists = await conceptExists(conceptDocument.id);
     if (exists) {
         if (exists.parentProfile) {
-            if (versionStatus === 'new') {
-                const existingJsonLd = await exists.export(parentProfileId);
+            if (versionStatus === 'new'
+                || (versionStatus === 'draft' && exists.parentProfile._id.toString() !== parentProfile._id.toString())
+            ) {
+                const existingJsonLd = await exists.export(parentProfile.iri);
                 jsonLdDiff(existingJsonLd, conceptDocument, (path, action, value) => {
                     const splitPath = path.split('.');
                     if (!(
@@ -77,6 +79,9 @@ async function testModel(conceptDocument, conceptModel, versionStatus, parentPro
 
         thisModel = conceptModel.toObject();
         delete thisModel._id;
+        delete thisModel.createdOn;
+        delete thisModel.uuid;
+        delete thisModel.createdBy;
         exists.set(thisModel);
         testedModel = exists;
     } else {
@@ -91,11 +96,13 @@ function SemanticallyRelatableConceptLayer (versionLayer) {
     let model = new ConceptModel({
         ...commonConceptProperties(conceptDocument, versionLayer.parentProfile),
         conceptType: conceptDocument.type,
+        createdBy: versionLayer.parentProfile.updatedBy,
+        updatedBy: versionLayer.parentProfile.updatedBy,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile);
 
             return model;
         },
@@ -148,6 +155,7 @@ function SemanticallyRelatableConceptLayer (versionLayer) {
                 model.similarTerms = similarTerms;
             }
 
+            await model.validate();
             return model;
         },
     };
@@ -162,15 +170,18 @@ function DocumentConceptLayer (versionLayer) {
         conceptType: 'Document',
         mediaType: conceptDocument.contentType,
         ...jsonLdToModel.toSchema(conceptDocument.inlineSchema, conceptDocument.schema),
+        createdBy: versionLayer.parentProfile.updatedBy,
+        updatedBy: versionLayer.parentProfile.updatedBy,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile);
 
             return model;
         },
-        scanSubcomponentLayer: function () {
+        scanSubcomponentLayer: async function () {
+            await model.validate();
             return model;
         },
     };
@@ -184,11 +195,13 @@ function ExtensionConceptLayer (versionLayer) {
         contextIri: conceptDocument.context,
         conceptType: 'Extension',
         ...jsonLdToModel.toSchema(conceptDocument.inlineSchema, conceptDocument.schema),
+        createdBy: versionLayer.parentProfile.updatedBy,
+        updatedBy: versionLayer.parentProfile.updatedBy,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile);
 
             return model;
         },
@@ -254,8 +267,9 @@ function ExtensionConceptLayer (versionLayer) {
                     recommendedTerms.push(recommendedVerb);
                 }));
             }
-
             model.recommendedTerms = recommendedTerms;
+
+            await model.validate();
             return model;
         },
     };
@@ -270,15 +284,18 @@ function ActivityConceptLayer (versionLayer) {
         type: conceptDocument.type,
         parentProfile: versionLayer.parentProfile,
         ...jsonLdToModel.toActivityDefinition(conceptDocument.activityDefinition),
+        createdBy: versionLayer.parentProfile.updatedBy,
+        updatedBy: versionLayer.parentProfile.updatedBy,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
+            model = await testModel(conceptDocument, model, versionLayer.versionStatus, versionLayer.parentProfile);
 
             return model;
         },
-        scanSubcomponentLayer: function () {
+        scanSubcomponentLayer: async function () {
+            await model.validate();
             return model;
         },
     };

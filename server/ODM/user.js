@@ -14,6 +14,8 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
+const uuid = require('uuid');
 const hashPassword = require('../utils/hashPassword');
 const crypto = require('crypto');
 const safeCompare = require('safe-compare');
@@ -21,7 +23,8 @@ const mongoSanitize = require('mongo-sanitize');
 
 const userSchema = mongoose.Schema(
     {
-        username: String,
+        firstname: String,
+        lastname: String,
         passwordHash: String,
         email: {
             type: String,
@@ -39,6 +42,7 @@ const userSchema = mongoose.Schema(
         lastLoginIp: String,
         uuid: {
             type: String,
+            default: uuid.v4,
             unique: true,
         },
         _modified: Number,
@@ -51,14 +55,18 @@ const userSchema = mongoose.Schema(
     },
     {
         usePushEach: true,
+        toJSON: { virtuals: true },
     },
 );
 
+userSchema.plugin(uniqueValidator);
 
-
+userSchema.virtual('fullname').get(function () {
+    return `${this.firstname} ${this.lastname}`;
+});
 
 userSchema.methods.checkPassword = function (plaintext) {
-    const testhash = hashPassword(this.username, this.salt, plaintext);
+    const testhash = hashPassword(this.email, this.salt, plaintext);
 
     if (safeCompare(this.passwordHash, testhash) || safeCompare(this.passwordHash, plaintext)) {
         return true;
@@ -94,12 +102,12 @@ userSchema.methods.resetPassword = function (plaintext, ignoreHistory = false) {
     if (!ignoreHistory && this.oldpasswords.length > 5) {
         this.oldpasswords = this.oldpasswords.slice(this.oldpasswords.length - 5);
     }
-    this.passwordHash = hashPassword(this.username, this.salt, plaintext);
+    this.passwordHash = hashPassword(this.email, this.salt, plaintext);
     console.log('newHash: ' + this.passwordHash);
     console.log('from input: ' + plaintext);
     if (!ignoreHistory) {
         for (let i = 0; i < this.oldpasswords.length; i++) {
-            if (this.oldpasswords[i]) if (safeCompare(this.oldpasswords[i], hashPassword(this.username, this.salt, plaintext))) throw new Error('This password has been used recently. Please choose a new password.');
+            if (this.oldpasswords[i]) if (safeCompare(this.oldpasswords[i], hashPassword(this.email, this.salt, plaintext))) throw new Error('This password has been used recently. Please choose a new password.');
         }
     }
     // NOTE: we reset this to an unguessable number, rather then null or undefined as you might expect

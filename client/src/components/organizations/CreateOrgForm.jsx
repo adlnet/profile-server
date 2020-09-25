@@ -36,20 +36,20 @@ export default function CreateOrgForm({ initialValues, onSubmit }) {
         onSubmit(values);
       }}
     >
-      {(props) =>(<>
+      {(props) => (<>
         <div className="grid-container border-1px border-base-lighter padding-bottom-4 padding-left-4 margin-bottom-2">
           <div className="grid-row">
-              <h2 className="grid-col-5">Working Group Details</h2>
-              <div className="grid-col">
-                  <div className="margin-top-3">
-                      <span className="text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
-                  </div>
+            <h2 className="grid-col-5 margin-bottom-0">Working Group Details</h2>
+            <div className="grid-col">
+              <div className="margin-top-3">
+                <span className="text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
               </div>
+            </div>
           </div>
           <form className="usa-form">
             <fieldset className="usa-fieldset">
               <ErrorValidation name="name" type="input">
-                <label className="usa-label" htmlFor="name"><span className="text-secondary">*</span> <span className="details-label">Name</span></label>
+                <label className="usa-label" htmlFor="name"><span className="text-secondary">*</span> <span className="details-label">Working group Name</span></label>
                 <Field name="name" type="text" className="usa-input" id="input-name" aria-required="true" />
               </ErrorValidation>
 
@@ -67,7 +67,7 @@ export default function CreateOrgForm({ initialValues, onSubmit }) {
             </fieldset>
           </form>
         </div>
-        <button className="usa-button submit-button" type="button" onClick={props.handleSubmit}>{initialValues ? 'Save Changes' : 'Create Working Group'}</button> 
+        <button className="usa-button submit-button" type="button" onClick={props.handleSubmit}>{initialValues ? 'Save Changes' : 'Create Working Group'}</button>
         <button className="usa-button usa-button--unstyled text-bold" type="reset" onClick={() => history.goBack()}>Cancel</button>
       </>)}
     </Formik>

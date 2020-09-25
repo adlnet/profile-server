@@ -14,35 +14,31 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { Link, useParams, useRouteMatch } from 'react-router-dom';
-import { useDispatch } from 'react-redux';
+import { Link, useRouteMatch } from 'react-router-dom';
 
-import { deleteProfile } from '../../actions/profiles';
 import ProfileTable from './ProfileTable';
 
 export default function Profiles({ profiles, isMember }) {
-    const dispatch = useDispatch();
-    const { organizationId } = useParams();
-    const { url } = useRouteMatch(); 
 
-    function handleProfileRemove(values) {
-        dispatch(deleteProfile(organizationId, values));
-    }
+    const { url } = useRouteMatch();
+
     return (<>
         <div className="grid-row">
             <div className="grid-col">
                 <h2>Profiles</h2>
             </div>
             <div className="grid-col display-flex flex-column flex-align-end">
-                <Link
+                {isMember &&
+                    <Link
                         to={`${url}/profile/create`}
-                >
-                    <button className="usa-button margin-top-2 margin-right-0">
-                    <i className="fa fa-plus margin-right-05"></i>
+                    >
+                        <button className="usa-button margin-top-2 margin-right-0">
+                            <i className="fa fa-plus margin-right-05"></i>
                     Create Profile</button>
-                </Link>
+                    </Link>
+                }
             </div>
         </div>
-        <ProfileTable profiles={profiles} siteUrl={url} handleProfileRemove={handleProfileRemove}/>
+        <ProfileTable profiles={profiles} siteUrl={url} isMember={isMember} />
     </>);
 }

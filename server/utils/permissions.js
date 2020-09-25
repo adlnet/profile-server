@@ -32,6 +32,13 @@ module.exports = function enforcePermissions(resourceSelector = 'resource', requ
                 message: 'Could not determine user in permissions enforcement.',
             });
         }
+
+        if (req.user.type === 'admin') {
+            req.permissionState = 'allowed';
+            req.permissionLevel = 'admin';
+            return next();
+        }
+
         while (parent.parentProfile) {
             await parent.populate([{ path: 'parentProfile' }]).execPopulate();
             parent = parent.parentProfile;

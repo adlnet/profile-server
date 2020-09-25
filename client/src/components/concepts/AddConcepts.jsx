@@ -37,7 +37,7 @@ export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
     const conceptResults = useSelector((state) => state.searchResults.concepts)
     const selectedResults = useSelector((state) => state.searchResults.selectedConcepts)
     const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
-    const profileConcepts = useSelector((state) =>state.concepts);
+    const profileConcepts = useSelector((state) => state.concepts);
     const [showConceptInfopanel, setShowConceptInfopanel] = useState(false);
     const [infoPanelConcept, setInfoPanelConcept] = useState();
 
@@ -46,12 +46,12 @@ export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
         setShowConceptInfopanel(true);
     }
 
-    function handleAddToProfileClick() {
+    async function handleAddToProfileClick() {
         if (selectedResults) {
             const newProfileVersion = Object.assign({}, profileVersion);
             newProfileVersion.externalConcepts = [...newProfileVersion.externalConcepts, ...selectedResults];
-            dispatch(editProfileVersion(newProfileVersion));
-            dispatch(loadProfileConcepts(versionId));
+            await dispatch(editProfileVersion(newProfileVersion));
+            await dispatch(loadProfileConcepts(versionId));
             history.push(rootUrl);
         }
     }
@@ -61,52 +61,53 @@ export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
     }
 
     return (<>
-            <div className="grid-row margin-top-3 margin-bottom-3">
-                <div className="grid-col">
-                    <h2>Add Concept</h2>
-                </div>
-                <div className="grid-col">
+        <div className="grid-row margin-top-3 margin-bottom-3">
+            <div className="grid-col">
+                <Link to={rootUrl}><span className="details-label">concepts</span></Link> <i className="fa fa-angle-right"></i>
+                <h2 className="margin-y-05">Add Concepts</h2>
+            </div>
+        </div>
+
+        <SearchSelectComponent
+            searchFunction={(searchValues) => dispatch(searchConcepts(searchValues))}
+            clearSearchFunction={() => dispatch(clearConceptResults())}
+            searchMessage="Search the server for an existing concept to link to this profile before creating a new one."
+            searchResults={conceptResults && conceptResults.filter(c => conceptResultsFilter(c))}
+            selectResultFunction={(concept) => dispatch(selectConceptResult(concept))}
+            removeSelectedResultFunction={(concept) => dispatch(deselectConceptResult(concept))}
+            clearSelectedResultsFunction={() => dispatch(clearConceptResults())}
+            selectedResults={selectedResults}
+            isOneSelectionOnly={isOneConceptOnly}
+            oneSelectionOnlyMessage={`Only one concept may be selected for this ${addToName}.`}
+            selectionMessage={`Selected Concept${isOneConceptOnly ? '' : 's'}`}
+            resultView={<ConceptResultView onViewDetailsClick={onViewDetailsClick} />}
+        />
+
+        <div className="grid-row">
+            <div className="grid-col">
+                <button className="usa-button usa-button--unstyled text-bold" style={{ paddingTop: ".8em" }}>Cancel</button>
+            </div>
+            <div className="grid-col">
+                <div className="pin-right">
                     <Link
-                            to={`${rootUrl}/create`}><button
-                            className="usa-button pin-right bottom-2"
-                    >
-                        <i className="fa fa-plus"></i> Create New</button>
+                        to={`${rootUrl}/create`}><button
+                            className="usa-button"
+                        >
+                            <i className="fa fa-plus"></i> Create New</button>
                     </Link>
+                    <button onClick={handleAddToProfileClick} className="usa-button margin-right-0">Add Selected to Profile</button>
                 </div>
             </div>
+        </div>
 
-            <SearchSelectComponent
-                searchFunction={(searchValues) => dispatch(searchConcepts(searchValues))}
-                clearSearchFunction={() => dispatch(clearConceptResults())}
-                searchMessage="Search for existing concepts"
-                searchResults={conceptResults && conceptResults.filter(c => conceptResultsFilter(c))}
-                selectResultFunction={(concept) => dispatch(selectConceptResult(concept))}
-                removeSelectedResultFunction={(concept) => dispatch(deselectConceptResult(concept))}
-                clearSelectedResultsFunction={() => dispatch(clearConceptResults())}
-                selectedResults={selectedResults}
-                isOneSelectionOnly={isOneConceptOnly}
-                oneSelectionOnlyMessage={`Only one concept may be selected for this ${addToName}.`}
-                selectionMessage={`Selected Concept${isOneConceptOnly ? '' : 's'}`}
-                resultView={<ConceptResultView onViewDetailsClick={onViewDetailsClick}/>}
-            />
-
-            <div className="grid-row">
-                <div className="grid-col">
-                    <button className="usa-button usa-button--unstyled text-bold">Cancel</button>
-                </div>
-                <div className="grid-col">
-                    <button onClick={handleAddToProfileClick} className="usa-button pin-right">Add to {addToName}</button>
-                </div>
-            </div>
-
-            <Flyout
-                    show={showConceptInfopanel}
-                    onClose={() => setShowConceptInfopanel(false)}
-             >
-                { 
-                    (showConceptInfopanel && infoPanelConcept)  &&
-                        <ConceptInfoPanel infoPanelConcept={infoPanelConcept} />
-                }
-            </Flyout>
+        <Flyout
+            show={showConceptInfopanel}
+            onClose={() => setShowConceptInfopanel(false)}
+        >
+            {
+                (showConceptInfopanel && infoPanelConcept) &&
+                <ConceptInfoPanel infoPanelConcept={infoPanelConcept} />
+            }
+        </Flyout>
     </>);
 }

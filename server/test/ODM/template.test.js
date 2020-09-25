@@ -810,6 +810,9 @@ describe('test objectStatementRefTemplate of template export', () => {
     beforeAll(async () => {
         const dburi = await mongoServer.getUri();
         await mongoose.connect(dburi, { useNewUrlParser: true, useUnifiedTopology: true });
+    });
+
+    beforeEach(async () => {
         const data = await populateDb();
         org = data.org;
         profile = data.profile;
@@ -837,7 +840,7 @@ describe('test objectStatementRefTemplate of template export', () => {
         );
 
         objtemplate = await createTemplate(version, {
-            name: templateName,
+            name: templateName + '1',
             description: templateDescription,
             verb: verbconcept1._id,
         });
@@ -851,6 +854,17 @@ describe('test objectStatementRefTemplate of template export', () => {
             ],
         });
         exported = await template.export(version.iri);
+    });
+
+    afterEach(async () => {
+        await org.remove();
+        await profile.remove();
+        await version.remove();
+        await verbconcept1.remove();
+        await acttypeconcept.remove();
+        await verbconcept2.remove();
+        await objtemplate.remove();
+        await template.remove();
     });
 
     afterAll(async () => {
@@ -915,7 +929,7 @@ describe('test contextStatementRefTemplate of template export', () => {
         );
 
         ctxtemplate = await createTemplate(version, {
-            name: templateName,
+            name: templateName + '1',
             description: templateDescription,
             verb: verbconcept1._id,
         });

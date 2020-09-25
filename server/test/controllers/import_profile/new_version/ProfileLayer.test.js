@@ -23,14 +23,15 @@ const PatternComponentModel = require('../../../../ODM/models').patternComponent
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
 const ProfileModel = require('../../../../ODM/models').profile;
 const OraganizationModel = require('../../../../ODM/models').organization;
+const UserModel = require('../../../../ODM/models').user;
 const ProfileLayer = require('../../../../controllers/importProfile/ProfileLayer')
     .ProfileLayer;
 
 const mongoServer = new MongoMemoryServer();
 jest.setTimeout(10000);
 
-const testPublishedSuccess = async (workGroup, profileDocument) => {
-    const profileLayer = new ProfileLayer(workGroup, profileDocument, true);
+const testPublishedSuccess = async (workGroup, user, profileDocument) => {
+    const profileLayer = new ProfileLayer(workGroup, user, profileDocument, true);
     const profileModel = await (await (await (await
     profileLayer
         .scanProfileLayer())
@@ -41,8 +42,8 @@ const testPublishedSuccess = async (workGroup, profileDocument) => {
     return profileModel;
 };
 
-const testDraftSuccess = async (workGroup, profileDocument) => {
-    const profileLayer = new ProfileLayer(workGroup, profileDocument, false);
+const testDraftSuccess = async (workGroup, user, profileDocument) => {
+    const profileLayer = new ProfileLayer(workGroup, user, profileDocument, false);
     const profileModel = await (await (await (await
     profileLayer
         .scanProfileLayer())
@@ -53,8 +54,8 @@ const testDraftSuccess = async (workGroup, profileDocument) => {
     return profileModel;
 };
 
-const testError = async (workGroup, profileDocument) => {
-    const profileLayer = new ProfileLayer(workGroup, profileDocument, true);
+const testError = async (workGroup, user, profileDocument) => {
+    const profileLayer = new ProfileLayer(workGroup, user, profileDocument, true);
 
     let error;
     try {
@@ -86,6 +87,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
     let currentPublishedVersion;
     let currentDraftVersion;
     let versions;
+    let user;
     beforeEach(async () => {
         profileDocument = {
             id: 'profile1_id',
@@ -113,10 +115,14 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
         orgModel = new OraganizationModel({ name: 'org_1' });
         await orgModel.save();
+
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
     });
 
     afterEach(async () => {
         await orgModel.remove();
+        await user.remove();
         await ProfileVersionModel.findOneAndRemove({ iri: VERSION2 });
         if (currentPublishedVersion) await currentPublishedVersion.remove();
         if (currentDraftVersion) await currentDraftVersion.remove();
@@ -131,6 +137,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
             existingProfile = new ProfileModel({
                 iri: 'profile1_id',
                 organization: orgModel,
+                createdBy: user,
+                updatedBy: user,
             });
             await existingProfile.save();
         });
@@ -151,6 +159,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                         state: 'published',
                         parentProfile: existingProfile,
                         organization: orgModel,
+                        createdBy: user,
+                        updatedBy: user,
                     });
                     await existingPublishedVersion.save();
 
@@ -174,7 +184,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                         describe('and there are no changes between versions except the versions array', () => {
                             describe('and published? is true', () => {
                                 beforeEach(async () => {
-                                    profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                    profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                     await profileModel
                                         .populate('currentPublishedVersion')
                                         .populate('currentDraftVersion')
@@ -215,7 +225,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                             describe('and published? is false', () => {
                                 beforeEach(async () => {
-                                    profileModel = await testDraftSuccess(orgModel, profileDocument);
+                                    profileModel = await testDraftSuccess(orgModel, user, profileDocument);
                                     await profileModel
                                         .populate('currentPublishedVersion')
                                         .populate('currentDraftVersion')
@@ -261,7 +271,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                     test('it should return the existing profile with the correct changes.', async () => {
                                         profileDocument.prefLabel.new_lang = 'new_label';
 
-                                        profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                        profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                         await profileModel
                                             .populate('currentPublishedVersion')
                                             .execPopulate();
@@ -277,7 +287,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                     test('it should return the existing profile with the correct changes.', async () => {
                                         profileDocument.definition.new_lang = 'new definition';
 
-                                        profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                        profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                         await profileModel
                                             .populate('currentPublishedVersion')
                                             .execPopulate();
@@ -294,7 +304,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                         test('it should return the existing profile with the correct changes.', async () => {
                                             profileDocument.seeAlso = 'this is the see also';
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate('currentPublishedVersion')
                                                 .execPopulate();
@@ -312,7 +322,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                                             profileDocument.seeAlso = 'this is the changed seeAlso';
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate('currentPublishedVersion')
                                                 .execPopulate();
@@ -328,7 +338,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             existingPublishedVersion.moreInformation = 'this is the seeAlso';
                                             await existingPublishedVersion.save();
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate('currentPublishedVersion')
                                                 .execPopulate();
@@ -356,6 +366,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             conceptType: 'Verb',
                                             parentProfile: existingPublishedVersion,
                                             inScheme: VERSION1,
+                                            createdBy: user,
+                                            updatedBy: user,
                                         });
                                         await someConcept.save();
 
@@ -391,7 +403,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             someConceptDocument.inScheme = VERSION2;
                                             profileDocument.concepts = [someConceptDocument, someOtherConceptDocument];
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate({ path: 'currentPublishedVersion', populate: { path: 'concepts' } })
                                                 .execPopulate();
@@ -418,6 +430,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                                 conceptType: 'Verb',
                                                 parentProfile: existingPublishedVersion,
                                                 inScheme: VERSION1,
+                                                createdBy: user,
+                                                updatedBy: user,
                                             });
                                             await someOtherConcept.save();
 
@@ -426,7 +440,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                                             profileDocument.concepts = [someConceptDocument];
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate({ path: 'currentPublishedVersion', populate: { path: 'concepts' } })
                                                 .execPopulate();
@@ -452,6 +466,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             name: 'template1',
                                             description: 'template1 desc',
                                             parentProfile: existingPublishedVersion,
+                                            createdBy: user,
+                                            updatedBy: user,
                                         });
                                         await someTemplate.save();
 
@@ -487,7 +503,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             someTemplateDocument.inScheme = VERSION2;
                                             profileDocument.templates = [someTemplateDocument, someOtherTemplateDocument];
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate({ path: 'currentPublishedVersion', populate: { path: 'templates' } })
                                                 .execPopulate();
@@ -511,6 +527,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                                 name: 'template2',
                                                 description: 'template2 desc',
                                                 parentProfile: existingPublishedVersion,
+                                                createdBy: user,
+                                                updatedBy: user,
                                             });
                                             await someOtherTemplate.save();
 
@@ -519,7 +537,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                                             profileDocument.templates = [someTemplateDocument];
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate({ path: 'currentPublishedVersion', populate: { path: 'templates' } })
                                                 .execPopulate();
@@ -548,6 +566,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             name: 'template1',
                                             description: 'template1 desc',
                                             parentProfile: existingPublishedVersion,
+                                            createdBy: user,
+                                            updatedBy: user,
                                         });
                                         await someTemplate.save();
 
@@ -564,6 +584,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             parentProfile: existingPublishedVersion,
                                             type: 'oneOrMore',
                                             oneOrMore: patternComp,
+                                            createdBy: user,
+                                            updatedBy: user,
                                         });
                                         await somePattern.save();
 
@@ -603,7 +625,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                             somePatternDocument.inScheme = VERSION2;
                                             profileDocument.patterns = [somePatternDocument, someOtherPatternDocument];
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate({ path: 'currentPublishedVersion', populate: { path: 'patterns' } })
                                                 .execPopulate();
@@ -629,6 +651,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                                 parentProfile: existingPublishedVersion,
                                                 type: 'oneOrMore',
                                                 oneOrMore: patternComp,
+                                                createdBy: user,
+                                                updatedBy: user,
                                             });
                                             await someOtherPattern.save();
 
@@ -637,7 +661,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                                             profileDocument.patterns = [somePatternDocument];
 
-                                            profileModel = await testPublishedSuccess(orgModel, profileDocument);
+                                            profileModel = await testPublishedSuccess(orgModel, user, profileDocument);
                                             await profileModel
                                                 .populate({ path: 'currentPublishedVersion', populate: { path: 'patterns' } })
                                                 .execPopulate();
@@ -656,7 +680,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                     test('it should throw an error', async () => {
                                         profileDocument.prefLabel.en = 'changed_prefLabel';
 
-                                        error = await testError(orgModel, profileDocument);
+                                        error = await testError(orgModel, user, profileDocument);
 
                                         expect(error).toMatch(/prefLabel.en cannot be updated on published profile profile1_id/);
                                     });
@@ -666,7 +690,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                                     test('it should throw an error', async () => {
                                         profileDocument.definition.en = 'changed definition';
 
-                                        error = await testError(orgModel, profileDocument);
+                                        error = await testError(orgModel, user, profileDocument);
 
                                         expect(error).toMatch(/definition.en cannot be updated on published profile profile1_id/);
                                     });
@@ -679,7 +703,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                         test('it should throw an error', async () => {
                             profileDocument.versions[0].wasRevisionOf = ['not_version1_id'];
 
-                            error = await testError(orgModel, profileDocument);
+                            error = await testError(orgModel, user, profileDocument);
 
                             expect(error).toMatch(/A new version of profile1_id cannot be created because the current published version id is not in the submitted document's current version's wasRevisionOf array/);
                         });
@@ -687,7 +711,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                     describe("and the profile's versions[0] has no wasRevisionOf property", () => {
                         test('it should throw an error', async () => {
-                            error = await testError(orgModel, profileDocument);
+                            error = await testError(orgModel, user, profileDocument);
 
                             expect(error).toMatch(/A new version of profile1_id cannot be created because the current published version id is not in the submitted document's current version's wasRevisionOf array/);
                         });
@@ -701,7 +725,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                             generatedAtTime: new Date(),
                         });
 
-                        error = await testError(orgModel, profileDocument);
+                        error = await testError(orgModel, user, profileDocument);
 
                         expect(error).toMatch(/A new version of profile profile1_id cannot be created because the current published version id does not match the submitted document's previous version id/);
                     });
@@ -709,7 +733,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
                 describe('and there is no versions[1] in the profile', () => {
                     test('it should throw an error', async () => {
-                        error = await testError(orgModel, profileDocument);
+                        error = await testError(orgModel, user, profileDocument);
 
                         expect(error).toMatch(/A new version of profile profile1_id cannot be created because the current published version id does not match the submitted document's previous version id/);
                     });
@@ -718,7 +742,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
 
             describe('and a published version of the profile does not exist', () => {
                 test('it should throw an error', async () => {
-                    error = await testError(orgModel, profileDocument);
+                    error = await testError(orgModel, user, profileDocument);
 
                     expect(error).toMatch(/A new version of profile profile1_id cannot be created because it has not yet been published/);
                 });
@@ -732,6 +756,8 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
                     name: 'profile1',
                     description: 'profile description',
                     state: 'draft',
+                    createdBy: user,
+                    updatedBy: user,
                 });
                 await existingDraftVersion.save();
 
@@ -740,7 +766,7 @@ describe('ProfileLayer: determining if this is an update to a new version or a b
             });
 
             test('it should throw an error', async () => {
-                error = await testError(orgModel, profileDocument);
+                error = await testError(orgModel, user, profileDocument);
 
                 expect(error).toMatch(/A new version of profile profile1_id cannot be created because there is already a draft version/);
             });

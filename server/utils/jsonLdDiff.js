@@ -78,9 +78,13 @@ function* readDiffProperty(key, val, objSortKeys) {
             yield* readDiffObject(prop, val, objSortKeys);
         }
     } else if (action === 'added') {
-        yield [prop, 'add', val];
+        if (!(Array.isArray(val) && val.length < 1)) {
+            yield [prop, 'add', val];
+        }
     } else if (action === 'deleted') {
-        yield [prop, 'delete', val];
+        if (!(Array.isArray(val) && val.length < 1)) {
+            yield [prop, 'delete', val];
+        }
     }
 }
 
@@ -147,6 +151,9 @@ function sortObjArrays(obj, objSortKeys) {
     for (const [key, val] of Object.entries(obj)) {
         // is val an array? then we need to sort it
         if (Array.isArray(val)) {
+            // is this array empty?  We need to dump it so that the diff doesn't consider
+            // key populated.
+            if (val.length < 1) delete obj[key];
             // are the values objects? then we need to use the compare
             if (val.every(v => typeof v === 'object')) {
                 if (val.every(v => Array.isArray(v))) {

@@ -59,6 +59,39 @@ export const ERROR_PUBLISH_PROFILE = 'ERROR_PUBLISH_PROFILE';
 export const START_RELOAD_PROFILE = 'START_RELOAD_PROFILE';
 export const FINISH_RELOAD_PROFILE = 'FINISH_RELOAD_PROFILE';
 
+export const START_LOAD_PROFILE_ROOT_IRI = 'START_LOAD_PROFILE_ROOT_IRI';
+export const SELECT_LOAD_PROFILE_ROOT_IRI = 'SELECT_LOAD_PROFILE_ROOT_IRI';
+export const ERROR_LOAD_PROFILE_ROOT_IRI = 'ERROR_LOAD_PROFILE_ROOT_IRI';
+export const FINISH_LOAD_PROFILE_ROOT_IRI = 'FINISH_LOAD_PROFILE_ROOT_IRI';
+
+export function loadProfileRootIRI() {
+    return async function (dispatch) {
+        dispatch({
+            type: START_LOAD_PROFILE_ROOT_IRI,
+        });
+
+        try {
+            const iri = await API.loadProfileRootIRI();
+
+            dispatch({
+                type: SELECT_LOAD_PROFILE_ROOT_IRI,
+                iri: iri,
+            });
+
+        } catch (err) {
+            dispatch({
+                type: ERROR_LOAD_PROFILE_ROOT_IRI,
+                errorType: 'profiles',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_LOAD_PROFILE_ROOT_IRI,
+            });
+        }
+    }
+}
+
 export function publishProfileVersion(profileVersion) {
     return async function (dispatch) {
         dispatch({
@@ -300,6 +333,24 @@ export function reloadCurrentProfile() {
 
         dispatch({
             type: FINISH_RELOAD_PROFILE,
+        });
+    };
+}
+
+
+// published, draft, all, org
+export function getProfiles(organizationId, published, draft, limit) {
+    return async function (dispatch) {
+
+        dispatch({
+            type: START_GET_PROFILES,
+        });
+
+        const profiles = await API.getProfiles(organizationId, published, draft, limit);
+
+        dispatch({
+            type: FINISH_GET_PROFILES,
+            profiles
         });
     };
 }

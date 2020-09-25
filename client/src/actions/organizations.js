@@ -30,6 +30,7 @@ export const FINISH_GET_ORGS = 'FINISH_GET_ORGS';
 export const FINISH_UPDATE_ORG = 'FINISH_UPDATE_ORG';
 export const FINISH_DELETE_ORG = 'FINISH_DELETE_ORG';
 export const FINISH_SEARCH_ORGS = 'FINISH_SEARCH_ORGS';
+export const CLEAR_SEARCH_ORGS = 'CLEAR_SEARCH_ORGS';
 export const FINISH_GET_MEMBERS = 'FINISH_GET_MEMBERS';
 
 export const ERROR_CREATE_ORG = 'ERROR_CREATE_ORG';
@@ -37,8 +38,24 @@ export const ERROR_GET_ORG = 'ERROR_GET_ORG';
 export const ERROR_GET_ORGS = 'ERROR_GET_ORGS';
 export const ERROR_UPDATE_ORG = 'ERROR_UPDATE_ORG';
 export const ERROR_DELETE_ORG = 'ERROR_DELETE_ORG';
-export const CLEAR_ERROR_ORG = 'CLEAR_ERROR_ORG'; 
+export const CLEAR_ERROR_ORG = 'CLEAR_ERROR_ORG';
 export const ERROR_GET_MEMBERS = 'ERROR_GET_MEMBERS';
+export const START_JOIN_ORG = 'START_JOIN_ORG';
+export const ERROR_JOIN_ORG = 'ERROR_JOIN_ORG';
+export const FINISH_JOIN_ORG = 'FINISH_JOIN_ORG';
+
+export const START_DENY_MEMBER_REQUEST = 'START_DENY_MEMBER_REQUEST'
+export const ERROR_DENY_MEMBER_REQUEST = 'ERROR_DENY_MEMBER_REQUEST'
+export const FINISH_DENY_MEMBER_REQUEST = 'FINISH_DENY_MEMBER_REQUEST'
+
+export const START_REVOKE_MEMBER_REQUEST = 'START_REVOKE_MEMBER_REQUEST';
+export const ERROR_REVOKE_MEMBER_REQUEST = 'ERROR_REVOKE_MEMBER_REQUEST';
+export const FINISH_REVOKE_MEMBER_REQUEST = 'FINISH_REVOKE_MEMBER_REQUEST';
+
+
+export const START_APPROVE_MEMBER = 'START_APPROVE_MEMBER';
+export const ERROR_APPROVE_MEMBER = 'ERROR_APPROVE_MEMBER';
+export const FINISH_APPROVE_MEMBER = 'FINISH_APPROVE_MEMBER';
 
 export const SELECT_ORG = 'SELECT_ORG';
 
@@ -49,9 +66,17 @@ export const SELECT_USER_RESULT = "SELECT_USER_RESULT";
 export const DESELECT_USER_RESULT = "DESELECT_USER_RESULT";
 
 export function clearOrganizationError() {
-    return function(dispatch) {
+    return function (dispatch) {
         dispatch({
             type: CLEAR_ERROR_ORG
+        });
+    }
+}
+
+export function clearOrganizationSearchResults() {
+    return function (dispatch) {
+        dispatch({
+            type: CLEAR_SEARCH_ORGS
         });
     }
 }
@@ -117,11 +142,11 @@ export function editOrganization(organization) {
         let editedOrganization;
         try {
             editedOrganization = await API.editOrganization(organization);
-            
+
             dispatch(selectOrganization(editedOrganization.uuid));
         } catch (err) {
             dispatch({
-                type:ERROR_UPDATE_ORG,
+                type: ERROR_UPDATE_ORG,
                 errorType: 'organizations',
                 error: err.message,
             });
@@ -138,7 +163,7 @@ export function selectOrganization(orgId) {
         dispatch({
             type: START_GET_ORG,
         });
-        
+
         let org;
         try {
             org = await API.getOrganization(orgId);
@@ -147,13 +172,13 @@ export function selectOrganization(orgId) {
                 type: SELECT_ORG,
                 organization: org,
             });
-        } catch(err) {
+        } catch (err) {
             dispatch({
                 type: ERROR_GET_ORG,
                 errorType: 'organizations',
                 error: err.message,
             });
-            
+
         } finally {
             dispatch({
                 type: FINISH_GET_ORG,
@@ -190,7 +215,7 @@ export function getMembers() {
     return async function (dispatch, getState) {
         const state = getState();
         const organizationId = state.application.selectedOrganizationId;
-    
+
         dispatch({
             type: START_GET_MEMBERS,
         });
@@ -213,18 +238,67 @@ export function getMembers() {
     };
 }
 
-export function removeMember(memberId) {
+/** to be called when an admin denies a request someone made to join the org */
+export function denyMemberRequest(userId) {
     return async function (dispatch, getState) {
         const state = getState();
         const organizationId = state.application.selectedOrganizationId;
-      
+
+        dispatch({
+            type: START_DENY_MEMBER_REQUEST,
+        });
+
+        try {
+            await API.denyMemberRequest(organizationId, userId);
+        } catch (err) {
+            dispatch({
+                type: ERROR_DENY_MEMBER_REQUEST,
+                errorType: 'organizations',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_DENY_MEMBER_REQUEST,
+            });
+        }
+    };
+}
+
+/** to be called when the user who requested to join an org cancels that request */
+export function revokeMemberRequest(userId, orguuid) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_REVOKE_MEMBER_REQUEST,
+        });
+
+        try {
+            await API.revokeMemberRequest(orguuid, userId);
+        } catch (err) {
+            dispatch({
+                type: ERROR_REVOKE_MEMBER_REQUEST,
+                errorType: 'organizations',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_REVOKE_MEMBER_REQUEST,
+            });
+        }
+    };
+}
+
+export function removeMember(memberId, orgId) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = orgId || state.application.selectedOrganizationId;
+
         dispatch({
             type: START_GET_MEMBERS,
         });
 
         let members;
         try {
-            members = await API.removeMember(organizationId,memberId);
+            members = await API.removeMember(organizationId, memberId);
         } catch (err) {
             dispatch({
                 type: ERROR_GET_MEMBERS,
@@ -239,18 +313,21 @@ export function removeMember(memberId) {
         }
     };
 }
-export function updateMember(member) {
+export function updateMember(member, role) {
     return async function (dispatch, getState) {
         const state = getState();
         const organizationId = state.application.selectedOrganizationId;
-    
+
         dispatch({
             type: START_GET_MEMBERS,
         });
 
         let members;
         try {
-            members = await API.editMember(organizationId,member);
+            members = await API.editMember(organizationId, {
+                user: { id: member._id },
+                level: role
+            });
         } catch (err) {
             dispatch({
                 type: ERROR_GET_MEMBERS,
@@ -265,33 +342,32 @@ export function updateMember(member) {
         }
     };
 }
-export function addMember(member) {
-    if(!Array.isArray(member)){
+export function addMember(member, role) {
+    if (!Array.isArray(member)) {
         member = [member]
     }
     return async function (dispatch, getState) {
         const state = getState();
-        const organizationId = state.application.selectedOrganizationId;   
-            for(let i in member)
-            {
-                dispatch({
-                    type: START_GET_MEMBERS,
+        const organizationId = state.application.selectedOrganizationId;
+        for (let i in member) {
+            dispatch({
+                type: START_GET_MEMBERS,
+            });
+
+            let members;
+            try {
+                members = await API.addMember(organizationId, {
+                    user: { id: member[i]._id },
+                    level: role,
                 });
-                
-                let members;
-                try {
-                    members = await API.addMember(organizationId,{
-                        user:{id:member[i]._id},
-                        level:"member"
-                    });
-                } catch (err) {
-                    dispatch({
-                        type: ERROR_GET_MEMBERS,
-                        errorType: 'organizations',
-                        error: err.message,
-                    })
-                } finally {
-                    dispatch({
+            } catch (err) {
+                dispatch({
+                    type: ERROR_GET_MEMBERS,
+                    errorType: 'organizations',
+                    error: err.message,
+                })
+            } finally {
+                dispatch({
                     type: FINISH_GET_MEMBERS,
                     members: members,
                 });
@@ -300,14 +376,67 @@ export function addMember(member) {
     };
 }
 
-export function searchOrganizations(search) {
-    return async function (dispatch)  {
+export function approveMember(member, role) {
+    return async function (dispatch, getState) {
+        const state = getState();
+        const organizationId = state.application.selectedOrganizationId;
+        dispatch({
+            type: START_APPROVE_MEMBER,
+        });
+
+        let members;
+        try {
+            members = await API.approveMember(organizationId, {
+                user: { id: member._id },
+                level: role,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_APPROVE_MEMBER,
+                errorType: 'organizations',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_APPROVE_MEMBER,
+                members: members,
+            });
+        }
+    };
+}
+
+export function requestJoinOrganization(organizationUUID, user) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_JOIN_ORG,
+        })
+
+        let organization;
+        try {
+            organization = await API.requestJoinOrganization(organizationUUID, user);
+        } catch (err) {
+            dispatch({
+                type: ERROR_JOIN_ORG,
+                errorType: 'organizations',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_JOIN_ORG,
+                organization: organization,
+            });
+        }
+    }
+}
+
+export function searchOrganizations(search, limit, page, sort) {
+    return async function (dispatch) {
 
         dispatch({
             type: START_SEARCH_ORGS,
         });
 
-        const orgs = await API.searchOrganizations(search);
+        const orgs = await API.searchOrganizations(search, limit, page, sort);
 
         dispatch({
             type: FINISH_SEARCH_ORGS,

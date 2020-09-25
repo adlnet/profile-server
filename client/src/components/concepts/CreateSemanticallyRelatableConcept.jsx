@@ -17,32 +17,42 @@ import React from 'react'
 import { useParams } from 'react-router-dom';
 import { Formik, Field } from 'formik';
 import * as Yup from 'yup';
+import { useSelector } from 'react-redux';
 
 import BaseConceptFields from './BaseConceptFields';
 import SimilarTerms from '../fields/SimilarTerms';
 
-export default function SemanticallyRelatableConcept({ initialValues, onCreate, onCancel }) {
+export default function SemanticallyRelatableConcept({ initialValues, onCreate, onCancel, isPublished }) {
     const { conceptType } = useParams();
+    const currentProfileVersion = useSelector(state => state.application.selectedProfile);
+
+    const generatedIRIBase = `${currentProfileVersion.iri}/${conceptType.toLowerCase()}/`;
+
+    let startingValues;
+    if (initialValues) {
+        // it's possible that the iri was external and still match, but this is what 
+        // the system will use to generate the base of the concept iri, so we'll call it 
+        // generated
+        startingValues = { ...initialValues };
+        startingValues.iriType = initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
+        startingValues.iri = initialValues.iri.replace(generatedIRIBase, "");
+    }
 
     return (
         <Formik
             enableReinitialize
-            initialValues={ initialValues || {
+            initialValues={startingValues || {
                 conceptType: conceptType,
                 type: conceptType,
                 iri: '',
-                hasIRI: false,
+                iriType: "external-iri",
                 name: '',
                 description: '',
                 similarTerms: [],
             }}
             validationSchema={Yup.object({
                 iri: Yup.string()
-                    .when('hasIRI', {
-                        is: true,
-                        then: Yup.string()
-                            .required('Required'),
-                    }),
+                    .required('Required'),
                 name: Yup.string()
                     .required('Required'),
                 description: Yup.string()
@@ -54,32 +64,34 @@ export default function SemanticallyRelatableConcept({ initialValues, onCreate, 
                             .of(Yup.object({
                                 relationType: Yup.string()
                                     .required('Required'),
-                        })),
+                            })),
                     }),
             })}
             onSubmit={values => {
+                if (values.iriType === 'generated-iri')
+                    values.iri = `${generatedIRIBase}${values.iri}`;
                 onCreate(values);
             }}
         >
             {(props) => (<>
                 <div className="grid-container border-1px border-base-lighter padding-bottom-4 padding-left-4 margin-bottom-2">
                     <div className="grid-row">
-                        <h3 className="grid-col-5">Define <span style={{ textTransform: 'capitalize' }}>{conceptType}</span> Details</h3>
+                        <h2 className="grid-col-5">Define <span style={{ textTransform: 'capitalize' }}>{conceptType}</span> Details</h2>
                         <div className="grid-col">
                             <div className="margin-top-3">
                                 <span className="text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
                             </div>
                         </div>
                     </div>
-                    <form className="usa-form">
-                        <BaseConceptFields {...props} />
+                    <form className="usa-form" style={{ maxWidth: "none" }}>
+                        <BaseConceptFields {...props} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
 
                         <label className="usa-label" htmlFor="similarTerms"><span className="details-label">tag similar terms</span></label>
-                        <Field name="similarTerms" component={SimilarTerms} id="similarTerms"></Field>
+                        <Field name="similarTerms" component={SimilarTerms} id="similarTerms" isPublished={isPublished}></Field>
                     </form>
                 </div>
                 <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
-                    { initialValues ? 'Save Changes' : 'Add to Profile' }
+                    {initialValues ? 'Save Changes' : 'Add to Profile'}
                 </button>
                 <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
             </>)}

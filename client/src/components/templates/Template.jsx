@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect, useState } from 'react';
-import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect } from 'react-router-dom';
+import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect, useLocation, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import TemplateDetail from "./TemplateDetail";
@@ -24,19 +24,28 @@ import ConceptDetail from '../concepts/ConceptDetails';
 import StatementExample from './StatementExample';
 import { selectTemplate, editTemplate } from "../../actions/templates";
 import RuleTable from '../rules/RuleTable';
+import Rule from '../rules/Rule';
 import DeterminingPropertyTable from '../determining-properties/DeterminingPropertyTable';
 import CreateDeterminingProperty from '../determining-properties/CreateDeterminingProperty';
 import EditDeterminingProperty from '../determining-properties/EditDeterminingProperty';
+import RelatedStatementTemplatesTable from '../related-statement-templates/RelatedStatementTemplatesTable';
+import AddRelatedStatementTemplate from '../related-statement-templates/AddRelatedStatementTemplate';
 // import Flyout from '../controls/flyout';
 // import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
-import AddRulesForm from '../rules/AddRuleForm';
-import ModalBox from '../controls/modalBox';
+import CreateRule from '../rules/CreateRule';
 import CreateStatementExample from './CreateStatementExample';
 // import { selectProfile } from '../../actions/profiles';
 import Lock from "../../components/users/lock";
-export default function Template({ isMember }) {
+import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
+
+import { loadProfileTemplates, removeTemplateLink } from "../../actions/templates";
+import { reloadCurrentProfile } from '../../actions/profiles';
+
+export default function Template({ isMember, isCurrentVersion }) {
 
     const { url, path } = useRouteMatch();
+    const templatesListURL = url.split('/').slice(0, -1).join('/');
+    const location = useLocation();
     const { profileId, templateId } = useParams();
     const history = useHistory();
     const dispatch = useDispatch();
@@ -49,18 +58,27 @@ export default function Template({ isMember }) {
 
     const template = useSelector((state) => state.application.selectedTemplate);
     const selectedProfileVersion = useSelector(state => state.application.selectedProfileVersion);
+    const selectedProfile = useSelector(state => state.application.selectedProfile);
+    const determiningProperties = useSelector(state => state.application.selectedDeterminingProperties);
 
     const { selectedOrganizationId, selectedProfileId,
         selectedProfileVersionId } = useSelector((state) => state.application);
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [isEditingExample, setIsEditingExample] = useState(false);
     const [isCreatingExample, setIsCreatingExample] = useState(false);
-    const [showRulesModal, setShowRulesModal] = useState(false);
+    const [showModal, setShowModal] = useState(false);
 
     if (!template) return 'Template not populated';
 
+    const belongsToAnotherProfile = !template.parentProfile || template.parentProfile.uuid !== selectedProfileVersion.uuid;
+    const isLinkedFromExternalProfile = !template.parentProfile || template.parentProfile.parentProfile.uuid !== selectedProfile.uuid
+
+    const isEditable = isMember && isCurrentVersion;
+    const isPublished = template.parentProfile.state !== 'draft';
+    const fromTemplateRef = location.state && location.state.templateRef;
+
     function removeDeterminingProperty(propertyType) {
-        if (isMember) {
+        if (isEditable) {
             let property = {};
             property[propertyType] = null;
             dispatch(editTemplate(Object.assign({}, template, property)));
@@ -69,7 +87,7 @@ export default function Template({ isMember }) {
     }
 
     function onDeterminingPropertyAdd(values) {
-        if (isMember) {
+        if (isEditable) {
             let propertyValue = {};
             propertyValue[values.propertyType] = values.properties;
             dispatch(editTemplate(Object.assign({}, template, propertyValue)));
@@ -77,29 +95,41 @@ export default function Template({ isMember }) {
         }
     }
 
+    function removeRule(rule) {
+        if (isEditable) {
+            let updatedTemplate = Object.assign({}, template);
+
+            if (updatedTemplate.rules && updatedTemplate.rules.length) {
+                updatedTemplate.rules = updatedTemplate.rules.filter(r => r._id !== rule._id)
+            }
+            dispatch(editTemplate(updatedTemplate));
+            dispatch(selectTemplate(templateId));
+        }
+    }
+
     function onAddExampleClick() {
-        if (isMember) {
+        if (isEditable) {
             setIsEditingExample(false);
             setIsCreatingExample(true);
         }
     }
 
     function onEditExampleClick() {
-        if (isMember) {
+        if (isEditable) {
             setIsCreatingExample(false);
             setIsEditingExample(true);
         }
     }
 
     function onCancelExampleActionClick() {
-        if (isMember) {
+        if (isEditable) {
             setIsCreatingExample(false);
             setIsEditingExample(false);
         }
     }
 
     function onExampleSubmit(values) {
-        if (isMember) {
+        if (isEditable) {
             dispatch(editTemplate(Object.assign({}, template, values)));
             setIsCreatingExample(false);
             setIsEditingExample(false);
@@ -107,47 +137,128 @@ export default function Template({ isMember }) {
     }
 
     function onEditDetailsSubmit(values) {
-        if (isMember) {
+        if (isEditable) {
             dispatch(editTemplate(Object.assign({}, template, values)));
             setIsEditingDetails(false);
         }
+    }
+
+    async function onRemoveTemplateRef(templatereftype) {
+        if (isEditable) {
+            let propertyValue = {};
+
+            if (templatereftype === 'object')
+                propertyValue['objectStatementRefTemplate'] = []
+            else
+                propertyValue['contextStatementRefTemplate'] = []
+
+            await dispatch(editTemplate(Object.assign({}, template, propertyValue)));
+            await dispatch(reloadCurrentProfile());
+            await dispatch(loadProfileTemplates(selectedProfileVersionId));
+        }
+    }
+
+    const removeLink = async () => {
+        await dispatch(removeTemplateLink(selectedOrganizationId, profileId, selectedProfileVersionId, templateId))
+
+        await dispatch(reloadCurrentProfile());
+
+        await dispatch(loadProfileTemplates(selectedProfileVersionId));
+
+        setShowModal(false);
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/templates`);
     }
 
     return (
         <div>
             <Switch>
                 <Route exact path={`${path}/determining-properties/create`}>
-                    {isMember ?
-                        <CreateDeterminingProperty onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
+                    {(isEditable) ?
+                        <CreateDeterminingProperty
+                            onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)}
+                            breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: selectedProfileVersion.name }]}
+                        />
                         : <Redirect to={url} />
                     }
                 </Route>
                 <Route exact path={`${path}/determining-properties/:propertyType/edit`}>
-                    {isMember ?
+                    {(isEditable) ?
                         <EditDeterminingProperty
                             onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
                         : <Redirect to={url} />
                     }
                 </Route>
                 <Route exact path={`${path}/(concepts|determining-properties)/:conceptId`}>
-                    <ConceptDetail isMember={isMember} />
+                    <ConceptDetail
+                        isMember={isMember}
+                        isCurrentVersion={isCurrentVersion}
+                        isPublished={isPublished}
+                        breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: selectedProfileVersion.name }]}
+                    />
+                </Route>
+                <Route exact path={`${path}/rule/create`}>
+                    {(isEditable) ?
+                        <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
+                            <CreateRule templateName={template.name}></CreateRule>
+                        </Lock>
+                        : <Redirect to={url} />
+                    }
+                </Route>
+                <Route exact path={`${path}/rule/edit`}>
+                    {(isEditable && !belongsToAnotherProfile) ?
+                        <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
+                            <CreateRule templateName={template.name} isEditable={isEditable} isPublished={isPublished}></CreateRule>
+                        </Lock>
+                        : <Redirect to={url} />
+                    }
+                </Route>
+                <Route exact path={`${path}/rule/view`}>
+                    <Rule templateName={template.name} url={`${url}/rule`} belongsToAnotherProfile={belongsToAnotherProfile}></Rule>
+                </Route>
+                <Route exact path={`${path}/related-statement-templates/:templatereftype/create`}>
+                    {(isEditable) ?
+                        <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
+                            <AddRelatedStatementTemplate
+                                breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: selectedProfileVersion.name }]}
+                            />
+                        </Lock>
+                        : <Redirect to={url} />
+                    }
+                </Route>
+                <Route exact path={`${path}/related-statement-templates/:templatereftype/edit`}>
+                    {(isEditable) ?
+                        <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
+                            <AddRelatedStatementTemplate
+                                breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: selectedProfileVersion.name }]}
+                                isEditing={true}
+                            />
+                        </Lock>
+                        : <Redirect to={url} />
+                    }
                 </Route>
                 <Route path={path}>
                     {
-                        (!selectedProfileVersion.templates.includes(template.id)) &&
-                        <div className="usa-alert usa-alert--info padding-2 margin-top-2" >
+                        isLinkedFromExternalProfile &&
+                        <div className="usa-alert usa-alert--info usa-alert--slim padding-2 margin-top-2" >
                             <div className="usa-alert__body">
                                 <p className="usa-alert__text">
-                                    This statement template belongs to {template.parentProfile.name}.
-                                    </p>
+                                    <span style={{ fontWeight: "bold" }}>Linked Statement Template.</span> This statement template is defined by another profile, {template.parentProfile.name}. {!fromTemplateRef && <button style={{ fontWeight: "bold" }} onClick={() => setShowModal(true)} className="usa-button usa-button--unstyled">Remove Link</button>}
+                                </p>
                             </div>
                         </div>
                     }
-                    <div><h2>{template.name}</h2></div>
+
+                    <div className="grid-row">
+                        <div className="grid-col margin-top-3">
+                            <Link to={templatesListURL}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right"></i>
+                            <h2 style={{ margin: ".5em 0" }}>{template.name}</h2>
+                        </div>
+                    </div>
+
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
                         <h2 className="usa-accordion__heading">
                             <button className="usa-accordion__button"
-                                aria-expanded="false"
+                                aria-expanded="true"
                                 aria-controls="a1"
                             >
                                 Statement Template Details
@@ -161,64 +272,26 @@ export default function Template({ isMember }) {
                                             initialValues={template}
                                             onSubmit={onEditDetailsSubmit}
                                             onCancel={() => setIsEditingDetails(false)}
+                                            isPublished={isPublished}
                                         /> </Lock> :
-                                    <TemplateDetail onEditClick={() => setIsEditingDetails(true)} isMember={isMember} />
+                                    <TemplateDetail
+                                        onEditClick={() => setIsEditingDetails(true)}
+                                        isMember={isMember}
+                                        isCurrentVersion={isCurrentVersion}
+                                        belongsToAnotherProfile={belongsToAnotherProfile}
+                                    />
                             }
                         </div>
-                    </div>
-                    <div className="usa-accordion usa-accordion--bordered margin-top-2">
-                        <h2 className="usa-accordion__heading">
-                            <button className="usa-accordion__button"
-                                aria-expanded="false"
-                                aria-controls="a3"
-                            >
-                                Determining Properties
-                    </button>
-                        </h2>
-                        <div id="a3" className="usa-accordion__content usa-prose">
-                            <DeterminingPropertyTable
-                                removeDeterminingProperty={(propType) => removeDeterminingProperty(propType)}
-                                url={`${url}/determining-properties`}
-                                isMember={isMember}
-                            />
-                        </div>
-                    </div>
-                    <div className="usa-accordion usa-accordion--bordered margin-top-2">
-                        <h2 className="usa-accordion__heading">
-                            <button className="usa-accordion__button"
-                                aria-expanded="false"
-                                aria-controls="a4"
-                            >
-                                Rules (0)
-                    </button>
-                        </h2>
-                        <div id="a4" className="usa-accordion__content usa-prose">
-                            <RuleTable rules={template.rules} onAddRule={() => setShowRulesModal(true)} isMember={isMember} />
-                        </div>
-                    </div>
-                    <div className="usa-accordion usa-accordion--bordered margin-top-2">
-                        <h2 className="usa-accordion__heading">
-                            <button className="usa-accordion__button"
-                                aria-expanded="false"
-                                aria-controls="a2"
-                            >
-                                Concepts ({template.concepts.length})
-                    </button>
-                        </h2>
-                        <div id="a2" className="usa-accordion__content usa-prose">
-                            <ConceptTable concepts={template.concepts} url={`${url}/concepts`} isMember={isMember} />
-                        </div>
-                    </div>
-                    <div className="usa-accordion usa-accordion--bordered margin-top-2">
+
                         <h2 className="usa-accordion__heading">
                             <button className="usa-accordion__button"
                                 aria-expanded="false"
                                 aria-controls="a5"
                             >
-                                Statement Example
+                                Example Statement
                             </button>
                         </h2>
-                        <div id="a5" className="usa-accordion__content usa-prose">
+                        <div id="a5" className="usa-accordion__content usa-prose" hidden>
                             {
                                 (!isEditingExample && !isCreatingExample) ?
                                     <StatementExample
@@ -226,8 +299,10 @@ export default function Template({ isMember }) {
                                         onAddClick={onAddExampleClick}
                                         onEditClick={onEditExampleClick}
                                         isMember={isMember}
+                                        isCurrentVersion={isCurrentVersion}
+                                        belongsToAnotherProfile={belongsToAnotherProfile}
                                     /> :
-                                    isMember && isCreatingExample ?
+                                    isEditable && isCreatingExample ?
                                         <CreateStatementExample
                                             onSubmit={onExampleSubmit}
                                             onCancelClick={onCancelExampleActionClick}
@@ -240,16 +315,103 @@ export default function Template({ isMember }) {
                             }
 
                         </div>
-                    </div>
 
-                    <ModalBox
-                        show={showRulesModal}
-                        onClose={() => setShowRulesModal(false)}
-                    >
-                        <AddRulesForm />
-                    </ModalBox>
+                        <h2 className="usa-accordion__heading">
+                            <button className="usa-accordion__button"
+                                aria-expanded="false"
+                                aria-controls="a3"
+                            >
+                                Determining Properties ({determiningProperties ? determiningProperties.length : 0})
+                            </button>
+                        </h2>
+                        <div id="a3" className="usa-accordion__content usa-prose" hidden>
+                            <DeterminingPropertyTable
+                                removeDeterminingProperty={(propType) => removeDeterminingProperty(propType)}
+                                url={`${url}/determining-properties`}
+                                isMember={isMember}
+                                isCurrentVersion={isCurrentVersion}
+                                isPublished={isPublished}
+                            />
+                        </div>
+
+                        <h2 className="usa-accordion__heading">
+                            <button className="usa-accordion__button"
+                                aria-expanded="false"
+                                aria-controls="a4"
+                            >
+                                Statement Rules ({template.rules.length})
+                            </button>
+                        </h2>
+                        <div id="a4" className="usa-accordion__content usa-prose" hidden>
+                            <RuleTable
+                                rules={template.rules}
+                                onAddRule={() => history.push(`${url}/rule/create`)}
+                                url={`${url}/rule`}
+                                removeRule={removeRule}
+                                isMember={isMember}
+                                isCurrentVersion={isCurrentVersion}
+                                isPublished={isPublished}
+                                belongsToAnotherProfile={belongsToAnotherProfile}
+                            />
+                        </div>
+
+                        <h2 className="usa-accordion__heading">
+                            <button className="usa-accordion__button"
+                                aria-expanded="false"
+                                aria-controls="a2"
+                            >
+                                Associated Concepts ({template.concepts.length})
+                            </button>
+                        </h2>
+                        <div id="a2" className="usa-accordion__content usa-prose" hidden>
+                            <ConceptTable concepts={template.concepts} url={`${url}/concepts`} isMember={isMember} isCurrentVersion={isCurrentVersion} />
+                        </div>
+
+                        <h2 className="usa-accordion__heading">
+                            <button className="usa-accordion__button"
+                                aria-expanded="false"
+                                aria-controls="aC1"
+                            >
+                                Related Statement Templates ({template.objectStatementRefTemplate.length + template.contextStatementRefTemplate.length})
+                            </button>
+                        </h2>
+                        <div id="aC1" className="usa-accordion__content usa-prose" hidden>
+                            <RelatedStatementTemplatesTable
+                                objectStatementRefTemplates={template.objectStatementRefTemplate}
+                                contextStatementRefTemplates={template.contextStatementRefTemplate}
+                                url={`${url}/related-statement-templates`}
+                                rootUrl={templatesListURL}
+                                isMember={isMember}
+                                isCurrentVersion={isCurrentVersion}
+                                isPublished={isPublished}
+                                belongsToAnotherProfile={belongsToAnotherProfile}
+                                removeRelatedTemplate={onRemoveTemplateRef}
+                            />
+                        </div>
+
+                    </div>
                 </Route>
             </Switch>
+            <ModalBoxWithoutClose show={showModal}>
+                <div className="grid-row">
+                    <div className="grid-col">
+                        <h3>Remove Link</h3>
+                    </div>
+                </div>
+                <div className="grid-row">
+                    <div className="grid-col">
+                        <span>Are you sure you want to remove <strong>{template.name}</strong> from the <strong>{selectedProfileVersion.name}</strong>?</span>
+                    </div>
+                </div>
+                <div className="grid-row">
+                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                        <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={removeLink}>Remove Now</button>
+                    </div>
+                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                        <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} style={{ margin: "2.3em 1.5em" }}><b>Cancel</b></button>
+                    </div>
+                </div>
+            </ModalBoxWithoutClose>
         </div>
     );
 }

@@ -21,12 +21,23 @@ const validate = require('../utils/validator');
 const createAccount = require('../schema/createAccount');
 const login = require('../schema/login');
 
+
 users.get('/status', controller.status);
 users.get('/salt', controller.salt);
 users.post('/login', validate(login), controller.login);
 users.post('/create', validate(createAccount), controller.createUser);
-
 users.post('/logout', controller.logout);
+
+users.post('/forgot', controller.forgotPassword);
+users.post('/reset', controller.resetPassword);
+users.post('/update', controller.editAccount);
+const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
+const getResource = require('../utils/getResource');
+const hooks = require('./hooks');
+const Hook = require('../ODM/models').hook;
+
+
+users.use('/hooks', mustBeLoggedIn, hooks);
 
 module.exports = users;
 

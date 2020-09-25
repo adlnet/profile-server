@@ -26,6 +26,11 @@ module.exports = {
             minLength: 4,
             maxLength: 64,
         },
+        password2: {
+            type: 'string',
+            minLength: 4,
+            maxLength: 64,
+        },
         disclaimer: {
             type: 'string',
         },
@@ -33,12 +38,15 @@ module.exports = {
         {
             type: 'string',
         },
-        username: {
+        firstname:
+        {
             type: 'string',
-            minLength: 3,
-            maxLength: 64,
+        },
+        lastname:
+        {
+            type: 'string',
         },
     },
     additionalProperties: false,
-    required: ['email', 'password', 'username'],
+    required: ['email', 'password'],
 };

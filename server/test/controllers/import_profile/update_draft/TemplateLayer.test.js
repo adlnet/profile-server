@@ -14,12 +14,11 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
-const template = require('../../../../ODM/template');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
-const ConceptModel = require('../../../../ODM/models').concept;
 const TemplateModel = require('../../../../ODM/models').template;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const UserModel = require('../../../../ODM/models').user;
 const TemplateLayer = require('../../../../controllers/importProfile/TemplateLayer')
     .TemplateLayer;
 
@@ -73,9 +72,16 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
     let templateDocument;
     let templateModel;
-    let templateLayer;
+    let user;
+    let otherUser;
     let parentProfile;
     beforeEach(async () => {
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
+        otherUser = new UserModel({ email: 'another@email.com' });
+        await otherUser.save();
+
         templateDocument = {
             id: 'template1_id',
             type: 'StatementTemplate',
@@ -87,12 +93,17 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
             iri: 'parent_profile_id',
             name: 'profile_name',
             description: 'profile_description',
+            state: 'draft',
+            createdBy: user,
+            updatedBy: otherUser,
         });
         await parentProfile.save();
     });
 
     afterEach(async () => {
         await parentProfile.remove();
+        await user.remove();
+        await otherUser.remove();
     });
 
     describe('when versionLayer#versionStatus is `draft`', () => {
@@ -104,6 +115,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                     name: 'template1',
                     description: 'template description',
                     parentProfile: parentProfile,
+                    createdBy: user,
+                    updatedBy: user,
                 });
                 await existingTemplate.save();
             });
@@ -121,6 +134,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                     expect(templateModel.name).toEqual(existingTemplate.name);
                     expect(templateModel.description).toEqual(existingTemplate.description);
                     expect(templateModel.parentProfile._id.toString()).toEqual(existingTemplate.parentProfile._id.toString());
+                    expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                    expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                 });
             });
 
@@ -134,6 +149,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                         expect(templateModel.translations[0].language).toEqual('new_lang');
                         expect(templateModel.translations[0].translationName).toEqual(templateDocument.prefLabel.new_lang);
+                        expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                        expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                     });
                 });
 
@@ -145,6 +162,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                         expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                         expect(templateModel.name).toEqual(templateDocument.prefLabel.en);
+                        expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                        expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                     });
                 });
 
@@ -160,6 +179,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                         expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                         expect(templateModel.translations[0]).toBeFalsy();
+                        expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                        expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                     });
                 });
             });
@@ -172,6 +193,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                 expect(templateModel.iri).toEqual(templateDocument.id);
                 expect(templateModel.name).toEqual(templateDocument.prefLabel.en);
                 expect(templateModel.description).toEqual(templateDocument.definition.en);
+                expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                expect(templateModel.createdBy._id.toString()).toEqual(otherUser._id.toString());
             });
         });
     });

@@ -40,7 +40,7 @@ export default function Sparkline({ url }) {
       setData(_data)
     };
     func();
-  }, [])
+  }, [url])
 
 
   if (!data) return ""
@@ -59,7 +59,6 @@ export default function Sparkline({ url }) {
       fill="none"
       data={data} />
 
-    <HorizontalGridLines />
-    <VerticalGridLines />
+    
   </XYPlot>
 }

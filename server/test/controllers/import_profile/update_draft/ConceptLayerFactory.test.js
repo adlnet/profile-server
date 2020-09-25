@@ -17,6 +17,7 @@ const mongoose = require('mongoose');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
 const ConceptModel = require('../../../../ODM/models').concept;
+const UserModel = require('../../../../ODM/models').user;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
 const ConceptLayerFactory = require('../../../../controllers/importProfile/ConceptLayerFactory')
     .ConceptLayerFactory;
@@ -39,7 +40,15 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
     let parentProfile;
     let conceptLayer;
     let conceptModel;
+    let user;
+    let otherUser;
     beforeEach(async () => {
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
+        otherUser = new UserModel({ email: 'another@email.com' });
+        await otherUser.save();
+
         conceptDocument = {
             id: 'concept1_id',
             inScheme: 'parent_profile_id',
@@ -56,12 +65,16 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
             iri: 'parent_profile_id',
             name: 'profile_name',
             description: 'profile_description',
+            createdBy: user,
+            updatedBy: otherUser,
         });
         await parentProfile.save();
     });
 
     afterEach(async () => {
         await parentProfile.remove();
+        await user.remove();
+        await otherUser.remove();
     });
 
     describe('when versionLayer#versionStatus is `draft`', () => {
@@ -76,6 +89,8 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
                     conceptType: 'Extension',
                     contextIri: 'context_iri',
                     parentProfile: parentProfile,
+                    createdBy: user,
+                    updatedBy: user,
                 });
                 await existingConcept.save();
             });
@@ -102,6 +117,8 @@ describe('ConceptLayerFactory#scanProfileComponentLayer', () => {
                     expect(conceptModel.conceptType).toEqual(existingConcept.conceptType);
                     expect(conceptModel.contextIri).toEqual(existingConcept.contextIri);
                     expect(conceptModel.parentProfile._id.toString()).toEqual(existingConcept.parentProfile._id.toString());
+                    expect(conceptModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                    expect(conceptModel.createdBy._id.toString()).toEqual(user._id.toString());
                 });
             });
 

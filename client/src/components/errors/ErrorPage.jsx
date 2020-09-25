@@ -20,7 +20,7 @@ export default function ErrorPage() {
     const history = useHistory();
 
     return (
-        <div className="grid-container">
+        <div className="grid-container" id="main-content">
             <div className="usa-alert usa-alert--error margin-y-2" role="alert">
                 <div className="usa-alert__body">
                     <h3 className="usa-alert__heading">This page does not exist.</h3>

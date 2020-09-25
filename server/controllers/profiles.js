@@ -21,9 +21,9 @@ const langmaps = require('../utils/langmaps');
 const responses = require('../reponseTypes/responses');
 
 const mongoSanitize = require('mongo-sanitize');
-
+const EventBus = require('../utils/eventBus.js');
 const createVersionObject = require('../utils/createVersionObject');
-const { validationError, notFoundError } = require('../errorTypes/errors');
+const { conflictError, validationError, notFoundError, preconditionFailedError, preconditionRequiredError } = require('../errorTypes/errors');
 const authorizationError = require('../errorTypes/authorizationError');
 const models = require('../ODM/models');
 
@@ -61,6 +61,7 @@ async function addNewProfile(organizationUuid, profile) {
 
         await newProfile.save();
         await profileVersion.save();
+        EventBus.emit('profileCreated', organization._id, newProfile);
     } catch (err) {
         throw new Error(err);
     }
@@ -75,12 +76,14 @@ exports.addNewProfile = addNewProfile;
  * @param {uuid} profileuuid The uuid of the profile
  */
 async function getProfileFromDB(profileuuid) {
-    return profileModel.findByUuid(profileuuid)
+    return profileModel
+        .findByUuid(profileuuid)
         .populate({
             path: 'versions',
-            select: 'uuid iri name version state isShallowVersion',
+            select: 'uuid iri name version state isShallowVersion isVerified',
             populate: { path: 'organization', select: 'uuid name' },
-        }).populate('organization')
+        })
+        .populate('organization')
         .populate('currentPublishedVersion');
 }
 
@@ -116,7 +119,65 @@ exports.getProfile = async function (req, res) {
         profile: profile,
     });
 };
+/**
+ * Returns the latest published or draft profiles
+ * @param {boolean} published boolean value that determines all published profile should be returned
+ * @param {boolean} draft boolean value that determines all published profile should be returned
+ * @param {number} limit number value that limits how many records should be returned
+ */
+exports.getProfiles = async function (req, res) {
+    let profiles;
 
+    try {
+        const { published, draft, limit } = req.query;
+        const query = {};
+
+        if (published === 'true') {
+            query.currentPublishedVersion = { $exists: true };
+        }
+        if (draft === 'true') {
+            query.currentDraftVersion = { $exists: true };
+        }
+
+        // use passed limit or default to all
+        const count = Number(limit) || 0;
+
+        profiles = await profileModel
+            .find(query)
+            .sort('-createdOn')
+            .limit(count)
+            .populate({
+                path: 'organization',
+            })
+            .populate('currentPublishedVersion')
+            .populate('currentDraftVersion');
+    } catch (err) {
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({
+        success: true,
+        profiles,
+    });
+};
+
+
+
+
+exports.getPublishedProfilesPage = async function (req, res) {
+    const profiles = await profileModel.find({ currentPublishedVersion: { $exists: true } });
+    const profileIds = profiles.map(i => i.currentPublishedVersion.toString());
+    const profileVersions = await profileVersionModel.find({ _id: { $in: profileIds } })
+        .populate({ path: 'parentProfile', select: 'uuid' })
+        .populate({ path: 'organization', select: 'uuid name' });
+    res.send({
+        success: true,
+        profiles: profileVersions,
+    });
+};
 /**
  * Used by the UI to retrieve the requested profile version, the root profile
  * and organization from just the uuid. The incoming uuid might be of a
@@ -135,7 +196,8 @@ exports.resolveProfile = async function (req, res) {
         profile = await getProfileFromDB(req.params.profile);
 
         if (!profile) {
-            profileVersion = await profileVersionModel.findByUuid(req.params.profile)
+            profileVersion = await profileVersionModel
+                .findByUuid(req.params.profile)
                 .populate({ path: 'parentProfile', select: 'uuid' })
                 .populate({ path: 'organization', select: 'uuid name' });
 
@@ -143,7 +205,8 @@ exports.resolveProfile = async function (req, res) {
                 profile = await getProfileFromDB(profileVersion.parentProfile.uuid);
             }
         } else {
-            profileVersion = await profileVersionModel.findByUuid(profile.currentPublishedVersion.uuid)
+            profileVersion = await profileVersionModel
+                .findByUuid(profile.currentPublishedVersion.uuid)
                 .populate({ path: 'parentProfile', select: 'uuid' })
                 .populate({ path: 'organization', select: 'uuid name' });
         }
@@ -155,7 +218,9 @@ exports.resolveProfile = async function (req, res) {
             });
         }
 
-        organization = await organizationModel.findByUuid(profile.organization.uuid);
+        organization = await organizationModel.findByUuid(
+            profile.organization.uuid,
+        );
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -186,7 +251,7 @@ exports.getPublishedProfiles = async function (req, res, next) {
     if (!iri) return exports.getAllPublishedProfiles(req, res, next);
 
     let prof = await profileModel.findOne({ iri: iri });
-    if (!prof) prof = await profileVersionModel.findOne({ iri: iri, state: 'published' });
+    if (!prof) { prof = await profileVersionModel.findOne({ iri: iri, state: 'published' }); }
     if (!prof) return next(new notFoundError('Profile not found'));
 
     req.profile = await exports.getProfilePopulated(prof.uuid);
@@ -206,7 +271,10 @@ exports.getAllPublishedProfiles = async function (req, res, next) {
     const settings = require('../settings');
     try {
         const wg = mongoSanitize(req.query.workinggroup);
-        const limit = parseInt(mongoSanitize(req.query.limit) || settings.QUERY_RESULT_LIMIT, 10);
+        const limit = parseInt(
+            mongoSanitize(req.query.limit) || settings.QUERY_RESULT_LIMIT,
+            10,
+        );
         const page = mongoSanitize(req.query.page) || 1;
         const skip = (page - 1) * limit;
         const query = { currentPublishedVersion: { $exists: true } };
@@ -230,7 +298,9 @@ exports.getAllPublishedProfiles = async function (req, res, next) {
             .populate({ path: 'currentPublishedVersion' })
             .exec();
 
-        const profilemeta = await Promise.all(allprofiles.map(async profile => profile.currentPublishedVersion.getMetadata()));
+        const profilemeta = await Promise.all(
+            allprofiles.map(async (profile) => profile.currentPublishedVersion.getMetadata()),
+        );
         // const profilemeta = allprofiles;
         return res.send({
             success: true,
@@ -276,7 +346,11 @@ exports.updateProfile = async function (req, res) {
     let profile;
     try {
         req.body.updatedOn = new Date();
-        profile = await profileModel.findOneAndUpdate(mongoSanitize({ uuid: req.body.uuid }), mongoSanitize(req.body), { new: true });
+        profile = await profileModel.findOneAndUpdate(
+            mongoSanitize({ uuid: req.body.uuid }),
+            mongoSanitize(req.body),
+            { new: true },
+        );
 
         if (!profile) {
             res.status(404).send({
@@ -315,6 +389,10 @@ exports.publishProfile = async function (req, res, next) {
         profile = await profileVersionModel.findByUuid(req.params.profile).populate('parentProfile');
         await profile.publish(req.user);
         parentProfile = profile.parentProfile;
+
+        // depopulate
+        profile.parentProfile = profile.parentProfile.id;
+        EventBus.emit('profilePublished', profile);
     } catch (err) {
         console.log(err);
         next(err);
@@ -338,13 +416,19 @@ exports.publishProfile = async function (req, res, next) {
 exports.deleteProfile = async function (req, res, next) {
     let meta;
     try {
+        // CAREFUL!!!
+        req.profile = req.resource;
         const profile = req.profile;
         if (req.validationScope === 'public') return res.status(401).send(responses.unauthorized('Not Authorized'));
         if (profile.state !== 'draft') return res.status(405).send(responses.notAllowed('Not Allowed: Only drafts can be deleted.'));
 
+        // Not how this works. If it's locked, and you're here, you have the lock.
+        // if (profile.locked) return res.status(409).send(responses.conflict('The profile is currently being edited'));
+
         meta = await profile.getMetadata();
 
         await profile.deleteDraft();
+        // await profile.remove();
     } catch (err) {
         return next(err);
     }
@@ -360,12 +444,31 @@ exports.deleteProfile = async function (req, res, next) {
  * @param {*} next express next function
  */
 exports.importProfile = async function (req, res, next) {
-    const profileLayer = require('../controllers/importProfile/ProfileLayer').ProfileLayer;
+    const profileLayer = require('./importProfile/ProfileLayer')
+        .ProfileLayer;
     const profileDocument = req.body.profile;
-    const published = req.body.status !== 'draft';
+    if (!profileDocument) {
+        throw new validationError('The profile document is missing.');
+    }
+
+    let published;
+    let verificationRequest;
+    if (!('status' in req.body)) {
+        published = true;
+    } else if (!('published' in req.body.status)) {
+        published = true;
+        verificationRequest = req.body.status.verificationRequest;
+    } else {
+        published = req.body.status.published;
+        verificationRequest = req.body.status.verificationRequest;
+    }
+
     let profileModel;
     try {
-        const profileImporter = new profileLayer(req.organization, profileDocument, published);
+        const profileImporter = new profileLayer(
+            req.organization, req.user, profileDocument, published, verificationRequest,
+            req.draftProfile, req.draftVersion,
+        );
         profileModel = await (await (await (await profileImporter
             .scanProfileLayer())
             .scanVersionLayer())
@@ -381,12 +484,12 @@ exports.importProfile = async function (req, res, next) {
             ? await profileModel.currentPublishedVersion.getMetadata()
             : await profileModel.currentDraftVersion.getMetadata();
 
-        return res.send(
-            responses.profileImport(
-                true,
-                metadata,
-            ),
-        );
+        const lastModified = published
+            ? profileModel.currentPublishedVersion.updatedOn
+            : profileModel.currentDraftVersion.updatedOn;
+
+        res.header('Last-Modified', lastModified);
+        return res.send(responses.profileImport(true, metadata));
     } catch (err) {
         return next(err);
     }
@@ -397,9 +500,15 @@ exports.importProfile = async function (req, res, next) {
  * @param {object} profile the profile from the system to be converted to xapi profile format
  */
 exports.profileToJSONLD = async function (profile) {
-    const concepts = await Promise.all(profile.concepts.map(c => c.export(profile.iri)));
-    const templates = await Promise.all(profile.templates.map(t => t.export(profile.iri)));
-    const patterns = await Promise.all(profile.patterns.map(p => p.export(profile.iri)));
+    const concepts = await Promise.all(
+        profile.concepts.map((c) => c.export(profile.iri)),
+    );
+    const templates = await Promise.all(
+        profile.templates.map((t) => t.export(profile.iri)),
+    );
+    const patterns = await Promise.all(
+        profile.patterns.map((p) => p.export(profile.iri)),
+    );
 
     const exportedProfile = {
         id: profile.parentProfile.iri,
@@ -410,10 +519,14 @@ exports.profileToJSONLD = async function (profile) {
         definition: langmaps.definition(profile.description, profile.translations),
         seeAlso: profile.moreInformation,
         versions: createVersionObject(profile.parentProfile.versions),
-        author: { type: 'Organization', name: profile.organization.name, url: profile.organization.collaborationLink },
-        concepts: (concepts && concepts.length) ? concepts : undefined,
-        templates: (templates && templates.length) ? templates : undefined,
-        patterns: (patterns && patterns.length) ? patterns : undefined,
+        author: {
+            type: 'Organization',
+            name: profile.organization.name,
+            url: profile.organization.collaborationLink,
+        },
+        concepts: concepts && concepts.length ? concepts : undefined,
+        templates: templates && templates.length ? templates : undefined,
+        patterns: patterns && patterns.length ? patterns : undefined,
     };
 
     return exportedProfile;
@@ -427,7 +540,7 @@ exports.profileToJSONLD = async function (profile) {
  */
 exports.exportProfile = async function (req, res, next) {
     const profile = req.profile;
-    if (profile.state === 'draft' && req.validationScope === 'public') return next(new notFoundError('Profile not found'));
+    if (profile.state === 'draft' && req.validationScope === 'public') { return next(new notFoundError('Profile not found')); }
 
     const exportedProfile = await exports.profileToJSONLD(profile);
 
@@ -443,7 +556,7 @@ exports.exportProfile = async function (req, res, next) {
  */
 exports.getMetadata = async function (req, res, next) {
     try {
-        if (req.validationScope === 'public') return next(new authorizationError('Not Authorized'));
+        if (req.validationScope === 'public') { return next(new authorizationError('Not Authorized')); }
         res.header('Last-Modified', req.profile.updatedOn);
         res.send(responses.metadata(true, await req.profile.getMetadata()));
     } catch (e) {
@@ -459,8 +572,12 @@ exports.getMetadata = async function (req, res, next) {
  */
 exports.updateStatus = async function (req, res, next) {
     try {
-        if (req.validationScope === 'public') return next(new authorizationError('Not Authorized'));
-        if (!req.body) return next(new validationError('The body of the request did not contain a status'));
+        if (req.validationScope === 'public') { return next(new authorizationError('Not Authorized')); }
+        if (!req.body) {
+            return next(
+                new validationError('The body of the request did not contain a status'),
+            );
+        }
 
         const profile = req.profile;
         const statusreq = mongoSanitize(req.body);
@@ -470,7 +587,10 @@ exports.updateStatus = async function (req, res, next) {
             profile.updatedOn = Date.now();
         }
         if (statusreq.published && profile.state === 'draft') {
+            profile.updatedOn = Date.now();
             profile.publish(req.user);
+
+            EventBus.emit('profilePublished', { ...profile, parentProfile: profile.parentProfile._id });
         }
         profile.save();
         res.send(responses.status(true, (await profile.getMetadata()).status));
@@ -494,7 +614,7 @@ exports.validateProfile = function (asMiddleware) {
 
         let profileDocument = req.body;
         if (asMiddleware) profileDocument = req.body.profile;
-        if (!profileDocument) throw new validationError('Profile document missing.');
+        if (!profileDocument) { throw new validationError('Profile document missing.'); }
 
         const valid = validator.validate(profileDocument, profileSchema);
 
@@ -504,15 +624,27 @@ exports.validateProfile = function (asMiddleware) {
             for (const i in valid.errors) {
                 if (valid.errors[i].name === 'oneOf') {
                     const ins = valid.errors[i].instance;
-                    if (ins.type === 'ResultExtension' || ins.type === 'ContextExtension' || ins.type === 'ActivityExtension') {
+                    if (
+                        ins.type === 'ResultExtension'
+                        || ins.type === 'ContextExtension'
+                        || ins.type === 'ActivityExtension'
+                    ) {
                         valid2 = validator.validate(ins, extension);
                     }
 
-                    if (ins.type === 'Verb' || ins.type === 'ActivityType' || ins.type === 'AttachmentUsageType') {
+                    if (
+                        ins.type === 'Verb'
+                        || ins.type === 'ActivityType'
+                        || ins.type === 'AttachmentUsageType'
+                    ) {
                         valid2 = validator.validate(ins, concept);
                     }
 
-                    if (ins.type === 'StateResource' || ins.type === 'AgentProfileResource' || ins.type === 'ActivityProfileResource') {
+                    if (
+                        ins.type === 'StateResource'
+                        || ins.type === 'AgentProfileResource'
+                        || ins.type === 'ActivityProfileResource'
+                    ) {
                         valid2 = validator.validate(ins, document);
                     }
                 }
@@ -521,9 +653,14 @@ exports.validateProfile = function (asMiddleware) {
                 valid.errors.push(...valid2.errors);
             }
 
-            return next(new validationError(
-                ['Errors in the profile: ' + valid.errors.length, ...valid.errors.map(i => i.stack)].join('\n'),
-            ));
+            return next(
+                new validationError(
+                    [
+                        'Errors in the profile: ' + valid.errors.length,
+                        ...valid.errors.map((i) => i.stack),
+                    ].join('\n'),
+                ),
+            );
         }
 
         if (asMiddleware) {
@@ -540,15 +677,12 @@ exports.validateProfile = function (asMiddleware) {
  * @param {uuid} profileUUID the uuid of the profile
  */
 exports.getProfilePopulated = async function (profileUUID) {
-    let profile = await profileVersionModel
-        .findByUuid(profileUUID);
+    let profile = await profileVersionModel.findByUuid(profileUUID);
 
     if (!profile) {
-        profile = await profileModel
-            .findByUuid(profileUUID)
-            .populate({
-                path: 'currentPublishedVersion',
-            });
+        profile = await profileModel.findByUuid(profileUUID).populate({
+            path: 'currentPublishedVersion',
+        });
         profile = profile.currentPublishedVersion;
 
         if (!profile) {
@@ -587,23 +721,118 @@ exports.getProfilePopulated = async function (profileUUID) {
 
 exports.middleware = {
     /**
-     * Middleware that takes the profile uuid provided in the url and attaches
-     * the fully populated profile to the req object as 'req.profile'
-     * @param {*} req express request object
-     * @param {*} res express response object
-     * @param {*} next express next function
-     */
+  * Middleware that takes the profile uuid provided in the url and attaches
+  * the fully populated profile to the req object as 'req.profile'
+  * @param {*} req express request object
+  * @param {*} res express response object
+  * @param {*} next express next function
+  */
     populateProfile: async function (req, res, next) {
         try {
             const profileUUID = req.params.profile;
             const profile = await exports.getProfilePopulated(profileUUID);
             // test if the requested resource is a draft but the key isn't from the profile's working group
             if (!profile) {
-                throw new notFoundError(`There was no profile found with uuid ${req.params.profile}`);
+                throw new notFoundError(
+                    `There was no profile found with uuid ${req.params.profile}`,
+                );
             }
             req.profile = profile;
         } catch (err) {
             return next(err);
+        }
+
+        next();
+    },
+    /**
+     * Middleware that takes the public api request object and populates it
+     * with values that the lock and unlock functions want.
+     */
+    prepForLock: async function (req, res, next) {
+        try {
+            req.resource = req.profile;
+        } catch (err) {
+            if (console.prodLog) console.prodLog(err);
+            return next(err);
+        }
+        next();
+    },
+    /**
+     * Middleware that tests the existence of an If-Unmodified-Since header property
+     * and test its value against req.profile.updatedOn.
+     * @param {*} req express request object
+     * @param {*} res express response object
+     * @param {*} next express next function
+     */
+    testIfUnmodifiedSince: function (req, res, next) {
+        const profile = req.profile;
+        const ifUnmodifiedSince = req.get('If-Unmodified-Since');
+        try {
+            if (!profile) {
+                throw new Error('The profile is missing.');
+            }
+            if (!ifUnmodifiedSince) {
+                throw new preconditionRequiredError('This request requires a value for the If-Unmodified-Since header property.');
+            }
+
+            let updatedOn = profile.updatedOn.toString();
+            let headerDate = ifUnmodifiedSince instanceof Date
+                ? ifUnmodifiedSince.toString() : ifUnmodifiedSince;
+            headerDate = new Date(headerDate).getTime();
+            updatedOn = new Date(updatedOn).getTime();
+            if (updatedOn > headerDate) {
+                throw new preconditionFailedError('This profile was modified since the If-Unmodified-Since date.');
+            }
+            if (updatedOn < headerDate) {
+                throw new preconditionFailedError('This profile was modified before the If-Unmodified-Since date.');
+            }
+        } catch (err) {
+            return next(err);
+        }
+
+        next();
+    },
+    /**
+     * Checks if profileVersion model found in req.profile can be updated.
+     * If it can, attach the root profile model and teh version model to the
+     * request to be imported.
+     * @param {*} req express request object
+     * @param {*} res express response object
+     * @param {*} next express next function
+     */
+    checkUpdateDraftProfile: async function (req, res, next) {
+        try {
+            const profileVersion = req.profile;
+            if (!profileVersion) {
+                throw new Error('The profile version model is missing from the request.');
+            }
+
+            const profileDocument = req.body.profile;
+            if (!profileDocument) {
+                throw new validationError('The profile document is missing from the request.');
+            }
+
+            if (profileVersion.state !== 'draft') {
+                throw new conflictError('Cannot update a profile version that is not in a draft state.');
+            }
+
+            const parentProfile = (await profileVersion.populate('parentProfile').execPopulate()).parentProfile;
+            if (!parentProfile) {
+                throw new conflictError('Profile version does not a have a root profile.');
+            }
+
+            if (!parentProfile.currentDraftVersion) {
+                throw new conflictError('Cannot update a profile that is not in a draft state.');
+            }
+
+            if (parentProfile.currentDraftVersion._id.toString() !== profileVersion._id.toString()) {
+                throw new conflictError('Cannot update a profile that is not in a draft state.');
+            }
+
+            req.draftProfile = parentProfile;
+            req.draftVersion = profileVersion;
+        } catch (err) {
+            next(err);
         }
 
         next();

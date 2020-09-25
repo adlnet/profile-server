@@ -21,74 +21,87 @@ import ErrorValidation from '../controls/errorValidation';
 import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user"
 import api from "../../api";
+import { useState } from 'react';
 
 var CryptoJS = require("crypto-js");
 
 export default function Login(props) {
-  let dispatch = useDispatch();
-  let userData = useSelector((store) => store.userData)
-  const history = useHistory();
-  const location = useLocation();
+    let dispatch = useDispatch();
+    let userData = useSelector((store) => store.userData)
+    const history = useHistory();
+    const location = useLocation();
+    const [showPassword, setShowPassword] = useState(false);
 
-  function cancel() {
-    history.push('/')
-  }
-  function createAccount() {
-    history.push('./create')
-  }
-
-
-  async function signIn(loginRequest) {
-    let salt = await api.getSalt(loginRequest.username);
-    salt = CryptoJS.enc.Utf8.parse(salt);
-    var key512Bits = CryptoJS.PBKDF2(loginRequest.password, salt, { hasher: CryptoJS.algo.SHA256, keySize: 4, iterations: 10000 });
-    loginRequest.password = key512Bits.toString(CryptoJS.enc.Hex)
-
-    dispatch(user_actions.login(loginRequest, location));
-  }
-
-  return (<>
-    <Formik
-      initialValues={{ username: '', password: '' }}
-      validationSchema={Yup.object({
-        username: Yup.string()
-          .required('Required'),
-        password: Yup.string()
-          .required('Required'),
-      })}
-      onSubmit={(values) => {
-        signIn(values);
-      }}
-    >
-      {(formikProps) => (
-        <Form className="usa-form"> {/*style={{maxWidth: 'inherit'}}>*/}
-          <fieldset className="usa-fieldset">
-
-            <ErrorValidation name="username" type="input">
-              <label className="usa-label" htmlFor="username"><span className="text-secondary">*</span> Email</label>
-              <Field name="username" type="text" className="usa-input" id="input-username" aria-required="true" />
-            </ErrorValidation>
-
-            <ErrorValidation name="password" type="input">
-              <label className="usa-label" htmlFor="password"><span className="text-secondary">*</span> Password</label>
-              <Field name="password" type="password" className="usa-input" id="input-password" aria-required="true" />
-            </ErrorValidation>
-
-            <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
-              Login
-                </button>
-            <button className="usa-button submit-button" type="button" onClick={() => createAccount()}>
-              Create Account
-                </button>
-            <button onClick={() => cancel()} className="usa-button usa-button--unstyled" type="reset"><b>Cancel</b></button>
-          </fieldset>
-        </Form>
-      )}
-
-    </Formik>
-    {
-      userData.loginFeedback && <div className="usa-error-message padding-right-1"><p>{userData.loginFeedback}</p></div>
+    function forgotPassword() {
+        history.push('./forgotpassword')
     }
-  </>
-  );
+    function createAccount() {
+        history.push('./create')
+    }
+
+
+    async function signIn(loginRequest) {
+        let salt = await api.getSalt(loginRequest.email);
+        salt = CryptoJS.enc.Utf8.parse(salt);
+        var key512Bits = CryptoJS.PBKDF2(loginRequest.password, salt, { hasher: CryptoJS.algo.SHA256, keySize: 4, iterations: 10000 });
+        loginRequest.password = key512Bits.toString(CryptoJS.enc.Hex)
+
+        dispatch(user_actions.login(loginRequest, location));
+    }
+
+    return (<>
+        <Formik
+            initialValues={{ email: '', password: '' }}
+            validationSchema={Yup.object({
+                email: Yup.string().email()
+                    .required('Required'),
+                password: Yup.string()
+                    .required('Required'),
+            })}
+            onSubmit={(values) => {
+                signIn(values);
+            }}
+        >
+            {(formikProps) => (
+                <div className="display-flex flex-column flex-align-center margin-top-5">
+                    <Form className="usa-form padding-x-4 padding-top-3 padding-bottom-4 border border-base-light" style={{ width: "30em" }}>
+                        <div className="grid-row ">
+                            <h2 className="margin-y-05">Sign In</h2>
+                        </div>
+                        <div className="grid-row">
+                            <div>or <button className="usa-button usa-button--unstyled" style={{ marginTop: 0 }} type="button" onClick={() => createAccount()}>create an account</button></div>
+                        </div>
+                        <fieldset className="usa-fieldset">
+
+                            <ErrorValidation name="email" type="input">
+                                <label className="usa-label" htmlFor="email"><span className="text-secondary">*</span> <span className="details-label">Email Address</span></label>
+                                <Field name="email" type="text" className="usa-input" id="input-email" aria-required="true" />
+                            </ErrorValidation>
+
+                            <ErrorValidation name="password" type="input">
+                                <label className="usa-label" htmlFor="password"><span className="text-secondary">*</span> <span className="details-label">Password</span></label>
+                                <Field name="password" type={showPassword ? "text" : "password"} className="usa-input" id="input-password" aria-required="true" />
+                            </ErrorValidation>
+                            <div className="display-flex flex-column flex-align-end">
+                                <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show password</button>
+                            </div>
+                            <div className="grid-row">
+                                <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
+                                    Sign in
+                                </button>
+                            </div>
+                            <div className="grid-row">
+                                <button onClick={() => forgotPassword()} className="usa-button usa-button--unstyled" type="reset">Forgot password?</button>
+                            </div>
+                        </fieldset>
+                    </Form>
+                </div>
+            )}
+
+        </Formik>
+        {
+            userData.loginFeedback && <div className="usa-error-message padding-right-1"><p>{userData.loginFeedback}</p></div>
+        }
+    </>
+    );
 }

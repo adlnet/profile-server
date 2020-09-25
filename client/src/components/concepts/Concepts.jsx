@@ -23,7 +23,7 @@ import { createConcept, loadProfileConcepts } from "../../actions/concepts";
 import ConceptDetail from "./ConceptDetails"
 import SortingTable from '../SortingTable';
 
-export default function Concepts({ isMember }) {
+export default function Concepts({ isMember, isCurrentVersion }) {
     const { path, url } = useRouteMatch();
     const dispatch = useDispatch();
     const history = useHistory();
@@ -52,7 +52,7 @@ export default function Concepts({ isMember }) {
                         <div className="desktop:grid-col">
                             <h2 style={{ marginBottom: 0 }}>Concepts</h2>
                         </div>
-                        {isMember &&
+                        {isMember && isCurrentVersion &&
                             <div className="grid-col display-flex flex-column flex-align-end">
                                 <Link
                                     to={`${url}/add`}
@@ -64,6 +64,16 @@ export default function Concepts({ isMember }) {
                                 </Link>
                             </div>
                         }
+                    </div>
+                    <div className="grid-row margin-top-1">
+                        <div className="grid-col text-base font-ui-2xs">
+                            Concepts are the verbs, activity types, attachment usage types and more that are used or referenced in statement templates.
+                        </div>
+                    </div>
+                    <div className="grid-row margin-top-05">
+                        <div className="grid-col text-base font-ui-2xs">
+                            <span className="text-italic">Note: When exporting, not all concepts listed here will be included in the JSON-LD. Only the concepts created by this profile will be included in the JSON-LD.</span>
+                        </div>
                     </div>
                     <div className="grid-row">
                         <SortingTable
@@ -79,7 +89,7 @@ export default function Concepts({ isMember }) {
                     <AddConcepts rootUrl={url} addToName="Profile"></AddConcepts>
                 </Route>
                 <Route path={`${path}/:conceptId`}>
-                    <ConceptDetail isMember={isMember} />
+                    <ConceptDetail isMember={isMember} isCurrentVersion={isCurrentVersion} />
                 </Route>
 
             </Switch>
@@ -128,13 +138,6 @@ function getColumns() {
             }
         },
         {
-            Header: function StmtCountHeader() { return <span>Statement<br />Template Count</span> },
-            accessor: 'templates.length',
-            style: {
-                width: '18%'
-            }
-        },
-        {
             Header: 'Updated',
             accessor: 'updatedOn',
             Cell: ({ cell: { value } }) => (new Date(value)).toLocaleDateString(),
@@ -144,18 +147,5 @@ function getColumns() {
         }
     ];
 
-    // if (isMember) {
-    //     cols.push(
-    //         {
-    //             Header: ' ',
-    //             id: 'remove',
-    //             disableSortBy: true,
-    //             accessor: function removeItem(rowdata) {
-    //                 //TODO: verify this will show with correct values
-    //                 return rowdata.fromTemplate == 0 || rowdata.inTemplate ? <button className="usa-button  usa-button--unstyled" onClick={() => removeClick(rowdata, dispatch)}><span className="text-bold">Remove</span></button> : ""
-    //             }
-    //         }
-    //     )
-    // }
     return cols;
 }

@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 const uuid = require('uuid');
 const locks = require('./locks');
 const createAPIURL = require('../utils/createAPIURL');
@@ -53,7 +54,13 @@ const profile = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'profileVersion',
     },
+    state: {
+        type: String,
+        default: 'draft',
+    },
 }, { toJSON: { virtuals: true } });
+
+profile.plugin(uniqueValidator);
 
 profile.virtual('versions', {
     ref: 'profileVersion',

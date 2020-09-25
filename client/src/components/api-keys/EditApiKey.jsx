@@ -14,13 +14,13 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react'
-import { useParams } from 'react-router-dom';
+import { Link, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import CreateApiKeyForm from './CreateApiKeyForm';
 import { selectApiKey } from '../../actions/apiKeys';
 
-export default function EditApiKey({ onSubmit, onCancel }) {
+export default function EditApiKey({ rootUrl, onSubmit, onCancel, onRemove }) {
     const dispatch = useDispatch();
     const { apiKeyId } = useParams();
 
@@ -32,14 +32,15 @@ export default function EditApiKey({ onSubmit, onCancel }) {
     if (!initialValues) return '';
 
     return (
-        <div className="usa-layout-docs usa-layout-docs__main desktop:grid-col-9 usa-prose">
+        <div className="usa-layout-docs usa-layout-docs__main desktop:grid-col-9 usa-prose margin-top-4">
             <header>
-                <h2 className="site-page-title">Edit API Key</h2>
+                <Link to={rootUrl}><span className="details-label">api keys</span></Link> <i className="fa fa-angle-right"></i>
+                <h2 className="site-page-title margin-top-0">Edit API Key</h2>
             </header>
             <p className="site-text-intro">
                 Instructions if needed...
             </p>
-            <CreateApiKeyForm initialValues={initialValues} onSubmit={onSubmit} onCancel={onCancel}/>
+            <CreateApiKeyForm initialValues={initialValues} onSubmit={onSubmit} onCancel={onCancel} onRemove={onRemove} />
         </div>
     )
 }

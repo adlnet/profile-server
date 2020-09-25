@@ -27,8 +27,8 @@ export default function CreateConcept({ onCancel, onCreate }) {
     const history = useHistory();
     const { url, path } = useRouteMatch();
 
-    return(<>
-        <div className="usa-layout-docs usa-layout-docs__main desktop:grid-col-9 usa-prose">
+    return (<>
+        <div className="usa-layout-docs usa-layout-docs__main usa-prose">
             <header>
                 <h2 className="site-page-title">Create New Concept</h2>
             </header>

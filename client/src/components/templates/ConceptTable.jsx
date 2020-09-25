@@ -17,7 +17,7 @@ import React from 'react';
 
 import ConceptTableRow from "./ConceptTableRow";
 
-export default function ConceptTable({ concepts, url, isMember }) {
+export default function ConceptTable({ concepts, url, isMember, isCurrentVersion }) {
     return (
         <>
             <div className="grid-row">
@@ -32,7 +32,7 @@ export default function ConceptTable({ concepts, url, isMember }) {
                     </thead>
                     <tbody style={{ lineHeight: 3 }}>
                         {(concepts && concepts.length > 0)
-                            ? concepts.map((concept, i) => <ConceptTableRow key={i} {...concept} site_url={url} isMember={isMember} />)
+                            ? concepts.map((concept, i) => <ConceptTableRow key={i} {...concept} site_url={url} isMember={isMember} isCurrentVersion={isCurrentVersion} />)
                             : <tr key={1}><td className="font-sans-xs" colSpan="6" style={{ paddingLeft: '0px' }}><p>There are no concepts in this profile. Concepts created in this profile or added through import or statement templates will appear here.</p></td></tr>}
                     </tbody>
                 </table>

@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
@@ -121,6 +122,7 @@ const template = new mongoose.Schema({
     translations: [
         {
             language: String,
+            languageName: String,
             translationDesc: String,
             translationName: String,
         },
@@ -133,6 +135,8 @@ const template = new mongoose.Schema({
     },
 }, { toJSON: { virtuals: true } });
 
+template.plugin(uniqueValidator);
+
 template.statics.findByUuid = function (uuid, callback) {
     return this.findOne(mongoSanitize({ uuid: uuid }), callback);
 };
@@ -141,15 +145,18 @@ template.statics.deleteByUuid = async function (uuid) {
     await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
 };
 
-template.virtual('concepts').get(function () {
+template.virtual('concepts', { localField: 'id', foreignField: '_id' }).get(function () {
     const propertyTypes = [
         'verb', 'objectActivityType', 'contextCategoryActivityType', 'contextGroupingActivityType',
         'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType',
     ];
 
-    const concepts = [...new Set(propertyTypes.map(prop => this[prop]).filter(p => p).flat(Infinity))];
-    // const conceptIds = [...new Set(concepts.map(c => c._id))];
-    // const foundConcepts = await this.model('concept').find({ _id: { $in: concepts } });
+    // make sure there are no dups.. have to do this because the === comparison of the same objects wasn't working
+    const concepts = propertyTypes.map(prop => this[prop]).filter(p => p).flat(Infinity).reduce((p, obj) => {
+        if (!p.find(e => e._id.toString() === obj._id.toString())) p.push(obj);
+        return p;
+    }, []);
+
     return concepts;
 });
 

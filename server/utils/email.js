@@ -13,18 +13,17 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-const strings = require('./strings').strings;
+
 const config = process.env;
 const Mustache = require('mustache');
 
 const templateCache = {};
-
+const fs = require('fs');
 // these can fail to require in the build when there is no .env, preventing configure from running
-try {
-    templateCache.verifyEmail = require('./emails/verifyEmail.html.txt');
-    templateCache.forgotPassword = require('./emails/forgotPassword.html.txt');
-    templateCache.accountConfirmation = require('./emails/accountConfirmation.html.txt');
-} catch (e) { }
+
+templateCache.verifyEmail = fs.readFileSync(__dirname + '/emails/verifyEmail.html.txt', 'utf8');
+templateCache.forgotPassword = fs.readFileSync(__dirname + '/emails/forgotPassword.html.txt', 'utf8');
+
 
 for (const i in templateCache) {
     Mustache.parse(templateCache[i]);
@@ -61,15 +60,15 @@ exports.sendForgotPasswordEmail = function (user, done) {
     console.log("The user's password reset key is ", user.passwordResetKey);
 
     const message = Mustache.render(templateCache.forgotPassword, {
-        username: user.username,
-        login_url: config.login_url,
-        temp_password: user.passwordResetKey,
+        fullname: user.fullname,
+        email: user.email,
+        reset_url: config.clientURL + '/user/resetpassword?key=' + user.passwordResetKey,
     });
 
     const mailOptions = {
         from: config.system_email_from, // sender address
         to: user.email, // list of receivers
-        subject: strings.forgot_password_email_subject, // Subject line
+        subject: 'Password Reset Request', // Subject line
         text: message, // plaintext body
         html: message, // html body
     };
@@ -87,7 +86,7 @@ exports.sendAccountValidateEmail = function (user, done) {
     console.log("The user's verification key is ", user.verifyCode);
 
     const message = Mustache.render(templateCache.verifyEmail, {
-        username: user.username,
+        fullname: user.fullname,
         email: user.email,
         verify_url: `${config.verify_url}${user.verifyCode}`,
         verify_url_base: config.verify_url,
@@ -97,29 +96,7 @@ exports.sendAccountValidateEmail = function (user, done) {
     const mailOptions = {
         from: config.system_email_from, // sender address
         to: user.email, // list of receivers
-        subject: strings.validate_email_subject, // Subject line
-        text: message, // plaintext body
-        html: message, // html body
-    };
-
-    send(mailOptions);
-};
-
-/**
- * Sends new user an email that their account has been approved
- * @param {User} user User model
- * @param {function} done callback, not used
- */
-exports.sendAccountConfirmationEmail = function (user, done) {
-    const message = Mustache.render(templateCache.accountConfirmation, {
-        username: user.username,
-        login_url: `${config.protocol}://${config.host}:${config.displayPort}/ui/users/login/`,
-    });
-
-    const mailOptions = {
-        from: config.system_email_from, // sender address
-        to: user.email, // list of receivers
-        subject: strings.account_confirmation, // Subject line
+        subject: 'Verify Email Account', // Subject line
         text: message, // plaintext body
         html: message, // html body
     };

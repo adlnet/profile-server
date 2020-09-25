@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useState, useEffect } from 'react';
-import { useField } from 'formik'; 
+import { useField } from 'formik';
 import { useDispatch, useSelector } from 'react-redux';
 
 import SearchSelectComponent from '../controls/search-select/searchSelectComponent';
@@ -24,7 +24,7 @@ import Flyout from '../controls/flyout';
 import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
 
 export default function AddProperty({ isEditing, propertyType, isOneConceptOnly, setPreviousStep, handleSubmit }) {
-    
+
     const [field, meta, helpers] = useField('properties');
     const [selectedResults, setSelectedResults] = useState(
         (isEditing && field.value && (Array.isArray(field.value) ? field.value : [field.value])) || []
@@ -33,6 +33,7 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
     const [infoPanelConcept, setInfoPanelConcept] = useState();
 
     const conceptResults = useSelector((state) => state.searchResults.concepts);
+    const profileVersionId = useSelector((state) => state.application.selectedProfileVersionId)
     const dispatch = useDispatch();
 
     useEffect(() => {
@@ -48,7 +49,7 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
             setSelectedResults([]);
         }
     }, [dispatch]);
-    
+
     function onCancel() {
         setSelectedResults([]);
         dispatch(clearConceptResults());
@@ -64,7 +65,7 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
         } else {
             newSelectedResults = [...selectedResults, concept];
         }
-        
+
         setSelectedResults(newSelectedResults);
         setFieldValue(newSelectedResults);
     }
@@ -96,6 +97,14 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
         setShowConceptInfopanel(true);
     }
 
+    function onSearchConcepts(searchValues, filter) {
+        if (filter === 'profile') {
+            dispatch(searchConcepts(searchValues, null, null, null, JSON.stringify({ parentProfile: profileVersionId })))
+        }
+        else
+            dispatch(searchConcepts(searchValues))
+    }
+
     function propertyConceptFilter(conceptType) {
         const verbRegex = /verb/i;
         const attachmentUsageTypeRegex = /attachmentUsageType/i;
@@ -117,12 +126,12 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
 
     return (<>
         <div className="grid-row">
-            <h2>Adding Determining Property: <span className="text-primary" style={{textTransform: 'capitalize'}}> {propertyType}</span></h2>
+            <h2 className="margin-top-1">{isEditing ? 'Edit' : 'Add'} Determining Property: <span className="text-primary" style={{ textTransform: 'capitalize' }}> {propertyType}</span></h2>
         </div>
         <SearchSelectComponent
-            searchFunction={(searchValues) => dispatch(searchConcepts(searchValues))}
+            searchFunction={onSearchConcepts}
             clearSearchFunction={() => dispatch(clearConceptResults())}
-            searchMessage="Search for existing concept"
+            placeholderText="Search for concepts"
             searchResults={conceptResults && conceptResults.filter(c => propertyConceptFilter(c.conceptType))}
             selectResultFunction={select}
             removeSelectedResultFunction={remove}
@@ -131,7 +140,8 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
             isOneSelectionOnly={isOneConceptOnly}
             oneSelectionOnlyMessage={"Only one concept may be selected for this determining property."}
             selectionMessage={`Selected Concept${isOneConceptOnly ? '' : 's'}`}
-            resultView={<ConceptResultView onViewDetailsClick={onViewDetailsClick}/>}
+            resultView={<ConceptResultView onViewDetailsClick={onViewDetailsClick} currentProfileVersionId={profileVersionId} />}
+            filterOptions={[{ value: 'all', option: 'All profiles' }, { value: 'profile', option: 'In this profile only' }]}
         />
 
         <div className="grid-row">
@@ -142,19 +152,19 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
                 <button
                     disabled={!(selectedResults && selectedResults.length)}
                     className="usa-button"
-                    style={{margin: '0'}}
+                    style={{ margin: '0' }}
                     type="submit"
                     onClick={handleSubmit}
                 >
-                    {isEditing ? 'Save Changes' : 'Add to Profile' }
+                    {isEditing ? 'Save Changes' : 'Add Selected to Statement Template'}
                 </button>
             </div>
         </div>
-        
+
         <Flyout show={showConceptInfopanel} onClose={() => setShowConceptInfopanel(false)}>
             {
                 (showConceptInfopanel && infoPanelConcept) &&
-                    <ConceptInfoPanel infoPanelConcept={infoPanelConcept} />
+                <ConceptInfoPanel infoPanelConcept={infoPanelConcept} />
             }
         </Flyout>
     </>

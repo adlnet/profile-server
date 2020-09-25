@@ -37,7 +37,7 @@ export default function Patterns(props) {
     }, [selectedProfileVersionId])
 
     let data = React.useMemo(() => patterns, [patterns]);
-    let columns = React.useMemo(() => getColumns(dispatch, props.isMember), [props.isMember]);
+    let columns = React.useMemo(() => getColumns(dispatch, props.isMember, props.isCurrentVersion), [props.isMember, props.isCurrentVersion]);
 
     return (<>
         <ErrorBoundary errorType="patterns" />
@@ -55,7 +55,7 @@ export default function Patterns(props) {
                         data={data}
                         emptyMessage="There are no patterns associated with this profile. Add a pattern to define relationships between your xAPI statements." />
                 </div>
-                {props.isMember &&
+                {props.isMember && props.isCurrentVersion &&
                     <div className="grid-row padding-top-2">
                         <div className="desktop:grid-col-3">
                             <Link to={`${url}/add`} className="usa-button">Add Pattern</Link>
@@ -64,13 +64,13 @@ export default function Patterns(props) {
                 }
             </Route>
             <Route exact path={`${path}/add`}>
-                {props.isMember ?
+                {(props.isMember && props.isCurrentVersion) ?
                     <AddPattern root_url={url} />
                     : <Redirect to={url} />
                 }
             </Route>
             <Route path={`${path}/create`}>
-                {props.isMember ?
+                {(props.isMember && props.isCurrentVersion) ?
                     <CreatePattern {...props} root_url={url} />
                     : <Redirect to={url} />
                 }
@@ -83,7 +83,7 @@ export default function Patterns(props) {
     </>);
 }
 
-function getColumns(dispatch, isMember) {
+function getColumns(dispatch, isMember, isCurrentVersion) {
     const cols = [
         {
             Header: 'Name',
@@ -140,7 +140,7 @@ function getColumns(dispatch, isMember) {
             }
         }
     ]
-    if (isMember) {
+    if (isMember && isCurrentVersion) {
         cols.push({
             Header: ' ',
             id: 'remove',

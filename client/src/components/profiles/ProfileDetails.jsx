@@ -19,11 +19,12 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import { Detail, Translations, Tags } from '../DetailComponents';
 import { selectProfileVersion } from '../../actions/profiles';
+import history from '../../history';
 
 import Sparkline from "../controls/sparkline";
 
 
-export default function ProfileDetails({ isMember }) {
+export default function ProfileDetails({ isMember, isCurrentVersion }) {
 
     const dispatch = useDispatch();
     const { url } = useRouteMatch();
@@ -37,12 +38,17 @@ export default function ProfileDetails({ isMember }) {
     let versions = [...profile.versions];
     versions.sort((a, b) => b.version - a.version);
 
+    const changeVersion = (e) => {
+        dispatch(selectProfileVersion(organization.uuid, profile.uuid, e.target.value));
+        history.push(`/organization/${organization.uuid}/profile/${profile.uuid}/version/${e.target.value}`);
+    }
+
     return (
         <>
 
             <div className="grid-row profile-edit">
                 <h2 className="profile-edit">
-                    {isMember &&
+                    {isMember && isCurrentVersion &&
                         <Link to={`${url}/edit`}>
                             <button className="usa-button  usa-button--primary ">
                                 <span className="font-sans-2xs text-bold ">
@@ -74,7 +80,7 @@ export default function ProfileDetails({ isMember }) {
                         {profileVersion.description}
                     </Detail>
                     <Detail title="translations">
-                        <Translations translations={profileVersion.translations} />
+                        <Translations translations={profileVersion.translations} linkable={true} />
                     </Detail>
                     <Detail title="more information">
                         <a href={profileVersion.moreInformation} className="usa-link">{profileVersion.moreInformation}</a>
@@ -86,22 +92,28 @@ export default function ProfileDetails({ isMember }) {
                 <div className="desktop:grid-col-4">
                     <div className="details-metadata-box">
                         <Detail title="version">
-                            <select
-                                name="type" value={`${profileVersion.uuid}`} onChange={(e) => dispatch(selectProfileVersion(organization.uuid, profile.uuid, e.target.value))} rows="3"
-                                className="profile-version-select" id="type" aria-required="true"
-                            >
-                                {
-                                    versions.map(version => (
-                                        <option
-                                            key={version.uuid}
-                                            value={version.uuid}
-                                            disabled={version.isShallowVersion}
-                                        >
-                                            {`${version.version} ${version.state ? version.state : ''}`}
-                                        </option>
-                                    ))
-                                }
-                            </select>
+                            {
+                                !isMember ?
+                                    (profileVersion.version + (profileVersion.state === 'verified' ? profileVersion.state : ''))
+                                    :
+
+                                    <select
+                                        name="type" value={`${profileVersion.uuid}`} onChange={changeVersion} rows="3"
+                                        className="profile-version-select" id="type" aria-required="true"
+                                    >
+                                        {
+                                            versions.map((version, idx) => (
+                                                <option
+                                                    key={version.uuid}
+                                                    value={version.uuid}
+                                                    disabled={version.isShallowVersion}
+                                                >
+                                                    {`${version.version} ${version.isVerified ? 'verified' : idx === 0 ? version.state : ''}`}
+                                                </option>
+                                            ))
+                                        }
+                                    </select>
+                            }
                         </Detail>
                         <Detail title="updated">
                             {(profileVersion.updatedOn) ? (new Date(profileVersion.updatedOn)).toLocaleDateString() : 'Unknown'}
@@ -110,7 +122,7 @@ export default function ProfileDetails({ isMember }) {
                             {profileVersion.organization.name}
                         </Detail>
                         <Detail title="total views for the last 30 days">
-                            <Sparkline url={`/org/${organization.uuid}/profile/${profile.uuid}/usage`} ></Sparkline>
+                            <Sparkline url={`/metrics/profile/${profile.uuid}/usageOverTime`} ></Sparkline>
                         </Detail>
                     </div>
                 </div>

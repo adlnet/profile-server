@@ -29,22 +29,38 @@ export default function CreateSequencePattern(props) {
     const dispatch = useDispatch();
 
     props.updateType && props.updateType('sequence');
+    const { isPublished } = props;
 
     const selectedResults = useSelector((state) => state.searchResults.selectedComponents);
+    const currentProfileVersion = useSelector(state => state.application.selectedProfile);
+
+    const generatedIRIBase = `${currentProfileVersion.iri}/patterns/`;
+
+    let startingValues;
+    if (props.pattern) {
+        // it's possible that the iri was external and still match, but this is what 
+        // the system will use to generate the base of the concept iri, so we'll call it 
+        // generated
+        startingValues = { ...props.pattern };
+        startingValues.primaryorsecondary = props.pattern.primary ? 'primary' : 'secondary';
+        startingValues.componenttype = props.pattern.type;
+        startingValues.iriType = props.pattern.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
+        startingValues.iri = props.pattern.iri.replace(generatedIRIBase, "");
+    }
 
     return (
         <Formik
             enableReinitialize={true}
-            initialValues={{
-                uuid: props.pattern && props.pattern.uuid || undefined,
-                name: props.pattern && props.pattern.name || '',
-                description: props.pattern && props.pattern.description || '',
-                tags: props.pattern && props.pattern.tags || [],
-                primaryorsecondary: props.pattern ? props.pattern.primary ? 'primary' : 'secondary' : 'primary',
-                component: props.components && props.components.map(c => c.component) || [],
-                componenttype: props.pattern && props.pattern.type || '',
-                iri: props.pattern && props.pattern.iri || '',
-                hasIRI: props.pattern && props.pattern.hasIRI || false
+            initialValues={startingValues || {
+                name: '',
+                description: '',
+                translations: [],
+                tags: [],
+                primaryorsecondary: 'primary',
+                component: '',
+                componenttype: '',
+                iri: '',
+                iriType: "external-iri",
             }}
             validationSchema={Yup.object({
                 name: Yup.string()
@@ -52,41 +68,56 @@ export default function CreateSequencePattern(props) {
                 description: Yup.string()
                     .required('Required'),
                 iri: Yup.string()
-                    .when('hasIRI', {
-                        is: true,
-                        then: Yup.string().required('Required'),
-                    }),
+                    .required('Required')
             })}
-            onSubmit={(values, actions) => {
-                let pattern = {
-                    ...values,
-                    type: props.type || values.componenttype,
-                    [props.type || values.componenttype]: selectedResults.map(res => ({ component: res, componentType: res.componentType })),
-                    primary: values.primaryorsecondary === "primary"
-                };
+            onSubmit={(values) => {
+                if (values.iriType === 'generated-iri')
+                    values.iri = `${generatedIRIBase}${values.iri}`;
 
-                props.onSubmit(pattern);
-                actions.setSubmitting(false);
+                if (selectedResults) {
+                    let pattern = {
+                        ...values,
+                        type: props.type || values.componenttype,
+                        [props.type || values.componenttype]: selectedResults.map(res => ({ component: res, componentType: res.componentType })),
+                        primary: values.primaryorsecondary === "primary"
+                    };
+
+                    props.onSubmit(pattern);
+                } else {
+                    props.onSubmit(values);
+                }
             }}
         >
             {(props) => (<>
-                <Sequence>
-                    <div className="profile-form-frame">
-                        <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
-                            <fieldset className="usa-fieldset">
-                                <Step title="Define Pattern">
-                                    <DefinePattern {...props} isEditing={!!props.values.uuid} />
-                                </Step>
-                                <Step title="Add Components">
-                                    <AddComponents isOneComponentOnly={false} pattern={props.pattern} {...props} />
-                                </Step>
-                                <Step title="Arrange Order" button={<button className="usa-button" type="submit" onClick={props.handleSubmit}>Add to Profile</button>}>
-                                    <ArrangeOrder type="Sequence" {...props} />
-                                </Step>
-                            </fieldset>
-                        </Form>
-                    </div>
-                </Sequence>
+                { !isPublished ?
+                    <Sequence>
+                        <div className="profile-form-frame">
+                            <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
+                                <fieldset className="usa-fieldset">
+                                    <Step title="Define Pattern">
+                                        <DefinePattern {...props} isEditing={!!props.values.uuid} generatedIRIBase={generatedIRIBase} />
+                                    </Step>
+                                    <Step title="Add Components">
+                                        <AddComponents isOneComponentOnly={false} pattern={props.pattern} {...props} />
+                                    </Step>
+                                    <Step title="Arrange Order" button={<button className="usa-button" type="submit" onClick={props.handleSubmit}>Add to Profile</button>}>
+                                        <ArrangeOrder type="Sequence" {...props} />
+                                    </Step>
+                                </fieldset>
+                            </Form>
+                        </div>
+                    </Sequence>
+                    :
+                    <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
+                        <fieldset className="usa-fieldset">
+                            <DefinePattern {...props} isEditing={!!props.values.uuid} isPublished={isPublished} />
+                        </fieldset>
+                        <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
+                            Save Changes
+                        </button>
+                        <button className="usa-button usa-button--unstyled" type="reset" onClick={() => history.goBack()}><b>Cancel</b></button>
+                    </Form>
+                }
             </>)}
         </Formik>
     );

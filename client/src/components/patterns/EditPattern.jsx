@@ -20,7 +20,7 @@ import CreateSequencePattern from './CreateSequencePattern';
 import CreateAlternatesPattern from './CreateAlternatesPattern';
 import CreateSinglePattern from './CreateSinglePattern';
 
-export default function EditPattern({ pattern, onEdit }) {
+export default function EditPattern({ pattern, onEdit, isPublished }) {
     let { patternId } = useParams();
 
     let type = pattern && pattern.type;
@@ -30,20 +30,20 @@ export default function EditPattern({ pattern, onEdit }) {
     }
 
     return (<>
-            <div className="grid-row margin-top-3">
-                <div className="grid-col">
-                    {/* <Link to={props.root_url}><span className="text-uppercase font-sans-3xs">patterns</span></Link> <i className="fa fa-angle-right fa-xs"></i> */}
-                    <h2>Edit Pattern{type ? (<><span>: </span><span className="text-primary-dark" style={capitalize()}> {type}</span></>) : ""}</h2>
-                </div>
+        <div className="grid-row margin-top-3">
+            <div className="grid-col">
+                {/* <Link to={props.root_url}><span className="text-uppercase font-sans-3xs">patterns</span></Link> <i className="fa fa-angle-right fa-xs"></i> */}
+                <h2>Edit Pattern{type ? (<><span>: </span><span className="text-primary-dark" style={capitalize()}> {type}</span></>) : ""}</h2>
             </div>
-            {
-                (type === "sequence") ?
-                    <CreateSequencePattern key={`${patternId}-sequence`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} />
-                    : (type === "alternates") ?
-                        <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} />
-                        : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} />
-                            : ""
+        </div>
+        {
+            (type === "sequence") ?
+                <CreateSequencePattern key={`${patternId}-sequence`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} />
+                : (type === "alternates") ?
+                    <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} />
+                    : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} />
+                        : ""
 
-            }
+        }
     </>);
 }

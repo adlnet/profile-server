@@ -20,15 +20,19 @@ const ConceptModel = require('../../ODM/models').concept;
 const { conflictError, validationError } = require('../../errorTypes/errors');
 const hasNoDuplicates = require('../../utils/hasNoDuplicates');
 
-async function testModel(templateDocument, templateModel, versionStatus, parentProfileId) {
+async function testModel(templateDocument, templateModel, versionStatus, parentProfile) {
     let thisModel;
     let testedModel;
 
     const exists = await TemplateModel.findOne({ iri: templateDocument.id });
     if (exists) {
         if (exists.parentProfile) {
-            if (versionStatus === 'new') {
-                const existingJsonLd = await exists.export(parentProfileId);
+            if (versionStatus === 'new'
+                || (versionStatus === 'draft' && exists.parentProfile._id.toString() !== parentProfile._id.toString())
+            ) {
+                // or if versionStatus == 'draft' and exists.parentProfile._id !== parentProfile._id
+                // (need to pass in version.parentProfile and get rid of parentProfileId)
+                const existingJsonLd = await exists.export(parentProfile.iri);
                 jsonLdDiff(existingJsonLd, templateDocument, (path, action, value) => {
                     const splitPath = path.split('.');
                     if (!(
@@ -59,6 +63,9 @@ async function testModel(templateDocument, templateModel, versionStatus, parentP
 
         thisModel = templateModel.toObject();
         delete thisModel._id;
+        delete thisModel.createdOn;
+        delete thisModel.uuid;
+        delete thisModel.createdBy;
         exists.set(thisModel);
         testedModel = exists;
     } else {
@@ -79,11 +86,13 @@ exports.TemplateLayer = function (versionLayer) {
         translations: jsonLdToModel.toTranslations(templateDocument.prefLabel, templateDocument.definition),
         isDeprecated: jsonLdToModel.toIsDeprecated(templateDocument.deprecated),
         rules: templateDocument.rules,
+        createdBy: versionLayer.parentProfile.updatedBy,
+        updatedBy: versionLayer.parentProfile.updatedBy,
     });
 
     return {
         scanProfileComponentLayer: async function () {
-            model = await testModel(templateDocument, model, versionLayer.versionStatus, versionLayer.parentProfile.iri);
+            model = await testModel(templateDocument, model, versionLayer.versionStatus, versionLayer.parentProfile);
 
             return model;
         },
@@ -176,6 +185,7 @@ exports.TemplateLayer = function (versionLayer) {
             // propertyObj.rules = templateDocument.rules;
 
             Object.assign(model, propertyObj);
+            await model.validate();
             return model;
         },
     };

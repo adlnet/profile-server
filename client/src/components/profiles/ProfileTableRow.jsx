@@ -16,31 +16,37 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function ProfileTableRow({ profile, site_url, handleProfileRemove }) {
+export default function ProfileTableRow({ profile, site_url, isMember }) {
     return (
         <tr>
             <th width="20%" scope="row">
                 {
-                    profile && profile.currentDraftVersion ?
+                    !isMember && profile && profile.currentPublishedVersion ?
                         <Link
-                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentDraftVersion.uuid}`}
-                                className="usa-link button-link"
-                        >
-                            {profile.currentDraftVersion.name}
-                        </Link> :
-                        <Link
-                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion.uuid}`}
-                                className="usa-link button-link"
+                            to={`/profile/${profile.currentPublishedVersion.uuid}`}
+                            className="usa-link button-link"
                         >
                             {profile.currentPublishedVersion.name}
                         </Link>
+                        :
+                        profile && profile.currentDraftVersion ?
+                            <Link
+                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentDraftVersion.uuid}`}
+                                className="usa-link button-link"
+                            >
+                                {profile.currentDraftVersion.name}
+                            </Link> :
+                            <Link
+                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion.uuid}`}
+                                className="usa-link button-link"
+                            >
+                                {profile.currentPublishedVersion.name}
+                            </Link>
                 }
             </th>
             <td><span className="font-sans-3xs">{(profile.updatedOn) ? (new Date(profile.updatedOn)).toLocaleDateString() : 'Unknown'}</span></td>
-            <td>
-                <button onClick={() => handleProfileRemove(profile)} className="usa-button  usa-button--unstyled"><span className="text-bold">Remove</span></button>
-            </td>
-          
+
+
 
         </tr>
     )

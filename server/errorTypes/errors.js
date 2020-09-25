@@ -20,4 +20,6 @@ module.exports = {
     validationError: require('./validationError'),
     notFoundError: require('./notFoundError'),
     notAllowedError: require('./notAllowedError'),
+    preconditionFailedError: require('./preconditionFailedError'),
+    preconditionRequiredError: require('./preconditionRequiredError'),
 };

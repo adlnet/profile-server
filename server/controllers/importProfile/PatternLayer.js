@@ -35,6 +35,8 @@ exports.PatternLayer = function (versionLayer) {
         isDeprecated: patternDocument.deprecated,
         primary: patternDocument.primary,
         type: jsonLdToModel.toPatternType(patternDocument),
+        createdBy: versionLayer.parentProfile.updatedBy,
+        updatedBy: versionLayer.parentProfile.updatedBy,
     });
     const existingPatternComponentModels = [];
     let existingParentlessComponent;
@@ -85,7 +87,9 @@ exports.PatternLayer = function (versionLayer) {
             || await TemplateModel.findOne({ iri: patternDocument.id });
         if (exists) {
             if (exists.parentProfile) {
-                if (versionLayer.versionStatus === 'new') {
+                if (versionLayer.versionStatus === 'new'
+                    || (versionLayer.versionStatus === 'draft' && exists.parentProfile._id.toString() !== versionLayer.parentProfile._id.toString())
+                ) {
                     const existingJsonLd = await exists.export(versionLayer.parentProfile.iri);
                     jsonLdDiff(existingJsonLd, patternDocument, (path, action, value) => {
                         const splitPath = path.split('.');
@@ -116,6 +120,9 @@ exports.PatternLayer = function (versionLayer) {
                 model.parentProfile = undefined;
                 thisModel = model.toObject();
                 delete thisModel._id;
+                delete thisModel.createdOn;
+                delete thisModel.uuid;
+                delete thisModel.createdBy;
                 exists.set(thisModel);
                 model = exists;
             } else {
@@ -171,6 +178,8 @@ exports.PatternLayer = function (versionLayer) {
             }
 
             model[model.type] = property;
+
+            await model.validate();
 
             return model;
         },

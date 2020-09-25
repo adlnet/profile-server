@@ -129,7 +129,7 @@ describe('Delete Profile', () => {
     test('test delete profile endpoint', async () => {
         const profiri = 'https://test.tom.com/test/testprofile1';
         const info = await makeAProfile(profiri);
-        const maker = new models.user({ username: 'basic', uuid: require('uuid').v4(), email: 'basic@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'basic@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -160,7 +160,7 @@ describe('Delete Profile', () => {
     test('test delete fail when profile published', async () => {
         const profiri = 'https://test.tom.com/test/testprofile2';
         const info = await makeAProfile(profiri);
-        const maker = new models.user({ username: 'published', uuid: require('uuid').v4(), email: 'published@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'published@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -186,7 +186,7 @@ describe('Delete Profile', () => {
 
         const otherorg = await new models.organization({ name: 'test org' + uuid() });
         await otherorg.save();
-        const other = new models.user({ username: 'wrongkey', uuid: require('uuid').v4(), email: 'wrongkey@test.com' });
+        const other = new models.user({ uuid: require('uuid').v4(), email: 'wrongkey@test.com' });
         await other.save();
         const otherkey = new models.apiKey({ scope: 'organization', scopeObject: otherorg, createdBy: other, updatedBy: other });
         await otherkey.save();
@@ -228,7 +228,7 @@ describe('Delete Profile', () => {
     test('all components created during this draft are deleted', async () => {
         const profiri = 'https://test.tom.com/test/testprofile5';
         const info = await makeAProfile(profiri);
-        const maker = new models.user({ username: 'delcomps', uuid: require('uuid').v4(), email: 'delcomps@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'delcomps@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -308,7 +308,7 @@ describe('Delete Profile', () => {
     test('all components created during previous versions are not deleted', async () => {
         const profiri = 'https://test.tom.com/test/testprofile6';
         const info = await makeAProfile(profiri);
-        const maker = new models.user({ username: 'delsomecomps', uuid: require('uuid').v4(), email: 'delsomecomps@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'delsomecomps@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();

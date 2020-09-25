@@ -50,6 +50,11 @@ export const FINISH_UPDATE_TEMPLATE = 'FINISH_UPDATE_TEMPLATE'
 export const SELECT_TEMPLATE_RESULT = 'SELECT_TEMPLATE_RESULT';
 export const DESELECT_TEMPLATE_RESULT = 'DESELECT_TEMPLATE_RESULT';
 
+export const START_REMOVE_TEMPLATE_LINK = 'START_REMOVE_TEMPLATE_LINK';
+export const REMOVE_TEMPLATE_LINK = 'REMOVE_TEMPLATE_LINK';
+export const ERROR_REMOVE_TEMPLATE_LINK = 'ERROR_REMOVE_TEMPLATE_LINK';
+export const FINISH_REMOVE_TEMPLATE_LINK = 'FINISH_REMOVE_TEMPLATE_LINK';
+
 export const START_SELECT_EXTERNAL_TEMPLATES = 'START_SELECT_EXTERNAL_TEMPLATES';
 export const FINISH_SELECT_EXTERNAL_TEMPLATES = 'FINISH_SELECT_EXTERNAL_TEMPLATES';
 
@@ -178,11 +183,24 @@ export function deleteTemplate(template) {
         });
 
         try {
+            const selectedProfileVersion = state.application.selectedProfileVersion;
             let profileVersionId = state.application.selectedProfileVersionId
             if (state.application.selectedProfileVersion.state === 'published') {
+                let newVersion = {
+                    tags: selectedProfileVersion.tags,
+                    concepts: selectedProfileVersion.concepts,
+                    externalConcepts: selectedProfileVersion.externalConcepts,
+                    templates: selectedProfileVersion.templates,
+                    translations: selectedProfileVersion.translations,
+                    patterns: selectedProfileVersion.patterns,
+                    name: selectedProfileVersion.name,
+                    description: selectedProfileVersion.description,
+                    moreInformation: selectedProfileVersion.moreInformation,
+                    version: selectedProfileVersion.version
+                };
                 const newProfileVersion = await API.createProfileVersion(
                     state.application.selectedOrganizationId, state.application.selectedProfileId,
-                    Object.assign({}, state.application.selectedProfileVersion))
+                    newVersion);
                 profileVersionId = newProfileVersion.uuid;
             }
 
@@ -240,6 +258,33 @@ export function selectTemplate(templateId) {
         } finally {
             dispatch({
                 type: FINISH_GET_TEMPLATE,
+            });
+        }
+    };
+}
+
+export function removeTemplateLink(selectedOrganizationId, profileId, selectedProfileVersionId, templateId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_REMOVE_TEMPLATE_LINK,
+        });
+
+        try {
+            await API.removeTemplateLink(selectedOrganizationId, profileId, selectedProfileVersionId, templateId);
+
+            dispatch({
+                type: REMOVE_TEMPLATE_LINK,
+            });
+
+        } catch (err) {
+            dispatch({
+                type: ERROR_REMOVE_TEMPLATE_LINK,
+                errorType: 'templates',
+                error: err.message,
+            });
+        } finally {
+            dispatch({
+                type: FINISH_REMOVE_TEMPLATE_LINK,
             });
         }
     };

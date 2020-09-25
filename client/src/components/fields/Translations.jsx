@@ -21,18 +21,21 @@ import * as Yup from 'yup';
 import ModalBox from '../controls/modalBox';
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 import ErrorValidation from '../controls/errorValidation';
+import { Autocomplete, TextField } from '@cmsgov/design-system';
+
+import languages from './data/languages.json';
 
 export default function Translations(props) {
-    const [translations, setTranslations] = useState( ( props.field ? props.field.value : [] ) || []);
+    const [translations, setTranslations] = useState((props.field ? props.field.value : []) || []);
     const [showModal, setShowModal] = useState(false);
     const [editing, setEditing] = useState(null);
     const [removing, setRemoving] = useState(null)
     const [showRemoveTranslationModal, setShowRemoveTranslationModal] = useState(false);
 
-    function onFormSubmit(values) { 
+    function onFormSubmit(values) {
         let newTranslations = [...translations];
 
-        if (editing) 
+        if (editing)
             newTranslations[editing.index] = values;
         else
             newTranslations = [...newTranslations, values];
@@ -60,7 +63,7 @@ export default function Translations(props) {
 
     function onRemove(index) {
         const languageObject = translations[index];
-        setRemoving({index: index, language: languageObject.language});
+        setRemoving({ index: index, langObj: languageObject });
         setShowRemoveTranslationModal(true);
     }
 
@@ -80,84 +83,101 @@ export default function Translations(props) {
     }
 
     return (<>
-        {translations.length > 0 && 
+        {translations.length > 0 &&
             <div className="grid-row">
-                <table style={{margin: '0'}} className="usa-table usa-table--borderless" width="100%">
+                <table style={{ margin: '0' }} className="usa-table usa-table--borderless" width="100%">
                     <thead>
                         <tr>
-                            <th width="90%" scope="col" style={{padding: '4px'}}></th>
-                            <th width="10%" scope="col" style={{padding: '4px'}}></th>
+                            <th width="90%" scope="col" style={{ padding: '4px' }}></th>
+                            <th width="10%" scope="col" style={{ padding: '4px' }}></th>
                         </tr>
                     </thead>
-                    <tbody> 
+                    <tbody>
                         {translations.map((translation, key) => (
                             <tr key={key}>
                                 <th scope="row">
-                                    <span>{translation.language}</span>
+                                    <span>{
+                                        translation.languageName ?
+                                            `${translation.languageName} (${translation.language})` :
+                                            `${translation.language}`
+                                    }</span>
                                 </th>
-                                <td><button style={{marginTop: '0'}} className="usa-button  usa-button--unstyled" type="button" onClick={() => onEdit(key, translation)}>
+                                <td><button style={{ marginTop: '0' }} className="usa-button  usa-button--unstyled" type="button" onClick={() => onEdit(key, translation)}>
                                     <span className="text-bold">Edit</span>
                                 </button></td>
-                                <td><button style={{marginTop: '0'}} className="usa-button  usa-button--unstyled" type="button" onClick={() => onRemove(key)}>
+                                <td><button style={{ marginTop: '0' }} className="usa-button  usa-button--unstyled" type="button" onClick={() => onRemove(key)}>
                                     <span className="text-bold">Remove</span>
                                 </button> </td>
                             </tr>)
-                        )}    
+                        )}
                     </tbody>
                 </table>
             </div>
         }
-        <button className="usa-button usa-button--outline" onClick={onAdd} type='button' style={{marginTop: '8px'}}>Add Translation</button>
+        <button className="usa-button usa-button--outline" onClick={onAdd} type='button' style={{ marginTop: '8px' }}>Add Translation</button>
 
         <ModalBoxWithoutClose show={showRemoveTranslationModal}>
-            <RemoveTranslationConfirmation langauge={removing} onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
+            <RemoveTranslationConfirmation selectedLang={removing} onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
         </ModalBoxWithoutClose>
 
         <ModalBox show={showModal} onClose={() => setShowModal(false)}>
-            <TranslationForm 
-                onSubmit={(values) => onFormSubmit(values)} 
+            <TranslationForm
+                onSubmit={(values) => onFormSubmit(values)}
                 onCancel={onCancel}
-                initialValue={editing ? editing.translation : null} 
+                initialValue={editing ? editing.translation : null}
             />
         </ModalBox>
     </>)
 }
 
 function TranslationForm(props) {
+    let nonEnLangs = languages.filter(val => (val.id !== "en"));
 
-    const languages = ["Lang 1", "Lang 2", "Lang 3"];
+    const [langs, setLangs] = useState(nonEnLangs);
 
     return (
         <Formik
-            initialValues={props.initialValue || { translationName: '', translationDesc: '', language: '' }}
+            initialValues={props.initialValue || { translationName: '', translationDesc: '', language: '', languageName: '' }}
             validationSchema={Yup.object({
                 language: Yup.string()
-                  .required('Required'),
+                    .required('Required'),
+                languageName: Yup.string(),
                 translationName: Yup.string()
                     .required('Required'),
                 translationDesc: Yup.string()
                     .required('Required')
-              })}
-              onSubmit={(values) => props.onSubmit(values)}
+            })}
+            onSubmit={(values) => {
+                const lang = nonEnLangs.find(lang => lang.language === values.language);
+                if (lang)
+                    values.languageName = lang.languageName;
+                props.onSubmit(values)
+            }}
         >
-            {({ values, handleSubmit, handleChange }) => (
+            {({ values, handleSubmit, setFieldValue }) => (
                 <div className="usa-form translation-form">
-                    <h2 style={{margin: '0'}}>Add Translation</h2>
+                    <h2 style={{ margin: '0' }}>Add Translation</h2>
                     <div className="grid-row">
                         <div className="grid-col-6" >
                             <ErrorValidation name="language" type="input">
-                                <label className="usa-label" htmlFor="language"><span className="text-secondary">*</span>Language</label>
-                                <Field
-                                        name="language" component="select" value={values.language} onChange={handleChange} rows="3" 
-                                        className="usa-select" id="language" aria-required="true"
+                                <Autocomplete
+                                    items={langs}
+                                    loadingMessage="Loading"
+                                    noResultsMessage="No results found"
+                                    initialSelectedItem={values.language ? { id: values.language, name: values.languageName } : null}
+                                    clearSearchButton={false}
+                                    onChange={(selectedItem) => {
+                                        setFieldValue('language', selectedItem.id);
+                                        setFieldValue('languageName', selectedItem.name);
+                                    }}
+                                    onInputValueChange={(val) => setLangs(nonEnLangs.filter(lang => lang.id.startsWith(val) || lang.name.match(new RegExp(`.*${val}.*`, 'i'))))}
                                 >
-                                    <option value="" disabled defaultValue>- Select Language -</option>
-                                    {
-                                        languages.map((language, key) => (
-                                            <option key={key} value={language}>{language}</option>
-                                        ))
-                                    }
-                                </Field>
+                                    <TextField
+                                        label={<label className="usa-label" htmlFor="language"><span className="text-secondary">*</span>Language</label>}
+                                        name="language"
+                                        style={{ border: "1px solid #000000", borderRadius: "0" }}
+                                    />
+                                </Autocomplete>
                             </ErrorValidation>
                         </div>
                     </div>
@@ -174,7 +194,7 @@ function TranslationForm(props) {
                         </Field>
                     </ErrorValidation>
 
-                    <button className="usa-button submit-button" type="button" onClick={handleSubmit}>Save Language</button> 
+                    <button className="usa-button submit-button" type="button" onClick={handleSubmit}>Save Language</button>
                     <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}>
                         <span className="text-bold">Cancel</span>
                     </button>
@@ -185,10 +205,9 @@ function TranslationForm(props) {
 }
 
 function RemoveTranslationConfirmation(props) {
-
     return (<>
         <h2 className="margin-top-0">Remove Translation</h2>
-        <div><span>Are you sure you want to remove the translation from this profile?</span></div>
+        <div><span>Are you sure you want to remove <strong>{props.selectedLang.langObj.languageName} ({props.selectedLang.langObj.language})</strong> from this profile?</span></div>
         <button className="usa-button submit-button" type="button" onClick={props.onConfirm}>Remove Translation</button>
         <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}><b>Keep Translation</b></button>
     </>);

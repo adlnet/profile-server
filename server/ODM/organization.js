@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 const uuid = require('uuid');
 const locks = require('./locks');
 const mongoSanitize = require('mongo-sanitize');
@@ -31,6 +32,18 @@ const organization = new mongoose.Schema({
     members: [
         {
             level: String,
+            user: {
+                type: mongoose.Schema.Types.ObjectId,
+                ref: 'user',
+            },
+        },
+    ],
+    memberRequests: [
+        {
+            requestedOn: {
+                type: Date,
+                default: new Date(),
+            },
             user: {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: 'user',
@@ -55,6 +68,8 @@ const organization = new mongoose.Schema({
         ref: 'user',
     },
 }, { toJSON: { virtuals: true } });
+
+organization.plugin(uniqueValidator);
 
 organization.virtual('profiles', {
     ref: 'profile',

@@ -19,6 +19,7 @@ const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
+const templates = require('../routes/templates');
 
 async function getVersionTemplates(versionUuid) {
     let templates;
@@ -27,8 +28,12 @@ async function getVersionTemplates(versionUuid) {
             .findByUuid(versionUuid)
             .populate({
                 path: 'templates',
-                select: 'uuid name iri updatedOn',
-                populate: { path: 'parentProfile', select: 'uuid name' },
+                parentProfile: { $ne: null },
+                populate: {
+                    path: 'parentProfile concepts verb objectActivityType contextCategoryActivityType contextGroupingActivityType contextOtherActivityType contextParentActivityType attachmentUsageType',
+                    select: 'name uuid',
+                    populate: { path: 'parentProfile', select: 'uuid', populate: { path: 'parentProfile organization', select: 'uuid' } },
+                },
             });
 
         if (!profileVersion) {
@@ -46,41 +51,50 @@ async function getVersionTemplates(versionUuid) {
 
 exports.getVersionTemplates = getVersionTemplates;
 
-async function searchTemplates(search) {
-    const query = queryBuilder.buildSearchQuery(search);
-    const results = await templateModel.find(mongoSanitize(query))
-        .populate({
-            path: 'parentProfile',
-            select: 'uuid iri name state',
-            populate: { path: 'organization', select: 'uuid name' },
-        })
+async function searchTemplates(search, limit, page, sort) {
+    const query = queryBuilder.buildSearchQuery(mongoSanitize(search));
+    let results = templateModel.find(query);
+    if (!results) return [];
+    if (limit) {
+        const offset = limit * (page - 1 || 0);
+        results = results.limit(Number(limit)).skip(offset);
+    }
+    if (sort) {
+        const sorting = (sort === 'desc') ? '-createdOn' : 'createdOn';
+        results = results.sort(sorting);
+    }
+    results.populate({
+        path: 'parentProfile',
+        select: 'uuid iri name state',
+        populate: { path: 'organization', select: 'uuid name' },
+    })
         .populate({
             path: 'verb',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         })
         .populate({
             path: 'objectActivityType',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         })
         .populate({
             path: 'contextGroupingActivityType',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         })
         .populate({
             path: 'contextParentActivityType',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         })
         .populate({
             path: 'contextOtherActivityType',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         })
         .populate({
             path: 'contextCategoryActivityType',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         })
         .populate({
             path: 'attachmentUsageType',
-            select: 'uuid iri name',
+            select: 'uuid iri name description',
         });
 
     return results;
@@ -92,7 +106,7 @@ async function getAllTemplates() {
     let templates;
     try {
         templates = await templateModel
-            .find({}, 'uuid iri name description updatedOn ')
+            .find({ parentProfile: { $ne: null } }, 'uuid iri name description updatedOn ')
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name state',
@@ -114,7 +128,7 @@ exports.getTemplates = async function (req, res) {
         if (req.params.version) {
             templates = await getVersionTemplates(req.params.version);
         } else if (req.query.search) {
-            templates = await searchTemplates(req.query.search);
+            templates = await searchTemplates(req.query.search, req.query.limit, req.query.page, req.query.sort);
         } else {
             templates = await getAllTemplates();
         }
@@ -178,7 +192,7 @@ exports.getTemplate = async function (req, res) {
         template = await templateModel.findByUuid(req.params.template)
             .populate({
                 path: 'parentProfile',
-                select: 'uuid iri name',
+                select: 'uuid iri name state',
                 populate: [
                     { path: 'organization', select: 'uuid name' },
                     { path: 'parentProfile', select: 'uuid iri' },
@@ -186,37 +200,47 @@ exports.getTemplate = async function (req, res) {
             })
             .populate({
                 path: 'verb',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             })
             .populate({
                 path: 'objectActivityType',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             })
             .populate({
                 path: 'contextGroupingActivityType',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             })
             .populate({
                 path: 'contextParentActivityType',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             })
             .populate({
                 path: 'contextOtherActivityType',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             })
             .populate({
                 path: 'contextCategoryActivityType',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             })
             .populate({
                 path: 'attachmentUsageType',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn description',
+                populate: { path: 'parentProfile', select: 'uuid name' },
+            })
+            .populate({
+                path: 'objectStatementRefTemplate',
+                select: 'uuid iri name updatedOn description',
+                populate: { path: 'parentProfile', select: 'uuid name' },
+            })
+            .populate({
+                path: 'contextStatementRefTemplate',
+                select: 'uuid iri name updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             });
 
@@ -298,4 +322,34 @@ exports.deleteTemplate = async function (req, res) {
     res.send({
         success: true,
     });
+};
+
+exports.unlinkTemplate = async function (req, res) {
+    try {
+        const template = req.resource;
+        const profileVersion = await profileVersionModel.findByUuid(req.params.version);
+        if (!profileVersion) {
+            res.status(404).send({
+                status: false,
+                message: 'Unknown profile version',
+            });
+        }
+
+        // only unlink external templates (aka different parent profile version)
+        if (template.parentProfile.uuid !== profileVersion.uuid) {
+            if (profileVersion.templates && profileVersion.templates.length) {
+                profileVersion.templates = profileVersion.templates.filter(c => c._id.toString() !== template._id.toString());
+                await profileVersion.save();
+            }
+        }
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    return res.send({ success: true });
 };

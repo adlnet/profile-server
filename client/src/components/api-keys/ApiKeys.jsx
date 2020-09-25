@@ -46,6 +46,8 @@ export default function ApiKeys() {
 
     function handleRemove(apiKeyId) {
         dispatch(deleteApiKey(apiKeyId));
+        dispatch(loadOrgApiKeys(organizationId));
+        history.push(url)
     }
 
     return (
@@ -57,7 +59,7 @@ export default function ApiKeys() {
                     </div>
                     <div className="grid-col display-flex flex-column flex-align-end">
                         <Link
-                                to={`${url}/create`}
+                            to={`${url}/create`}
                         >
                             <button className="usa-button margin-top-2 margin-right-0">
                                 <i className="fa fa-plus margin-right-05"></i>
@@ -66,21 +68,22 @@ export default function ApiKeys() {
                         </Link>
                     </div>
                 </div>
-                <ApiKeyTable apiKeys={apiKeys} onRemove={handleRemove} />
+                <ApiKeyTable apiKeys={apiKeys} />
             </Route>
             <Route exact path={`${path}/create`}>
-                <div className="usa-layout-docs usa-layout-docs__main desktop:grid-col-9 usa-prose">
+                <div className="usa-layout-docs usa-layout-docs__main desktop:grid-col-9 usa-prose margin-top-4">
                     <header>
-                        <h2 className="site-page-title">Create API Key</h2>
+                        <Link to={url}><span className="details-label">api keys</span></Link> <i className="fa fa-angle-right"></i>
+                        <h2 className="site-page-title margin-top-0">Create API Key</h2>
                     </header>
                     <p className="site-text-intro">
                         Instructions if needed...
                     </p>
-                    <CreateApiKeyForm onSubmit={handleCreateSubmit} onCancel={() => history.goBack()}/>
+                    <CreateApiKeyForm onSubmit={handleCreateSubmit} onCancel={() => history.goBack()} />
                 </div>
             </Route>
             <Route exact path={`${path}/:apiKeyId/edit`}>
-                <EditApiKey onSubmit={handleEditSubmit} onCancel={() => history.goBack()} />
+                <EditApiKey rootUrl={url} onSubmit={handleEditSubmit} onCancel={() => history.goBack()} onRemove={handleRemove} />
             </Route>
         </Switch>
     )

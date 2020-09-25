@@ -16,8 +16,8 @@
 const User = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
 
-module.exports.getMembers = async function(req, res, next) {
-    await req.resource.populate({ path: 'members.user', select: 'uuid username' }).execPopulate();
+module.exports.getMembers = async function (req, res, next) {
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
     res.send({
         success: true,
@@ -33,7 +33,7 @@ module.exports.addMember = async function (req, res, next) {
 
     for (const i in req.resource.members) {
         if (req.resource.members[i].user.toString() == req.body.user.id) {
-            await req.resource.populate({ path: 'members.user', select: 'uuid username' }).execPopulate();
+            await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
             const members = req.resource.toObject({ virtuals: true }).members;
             return res.send({
                 success: false,
@@ -48,7 +48,7 @@ module.exports.addMember = async function (req, res, next) {
         user: req.body.user.id,
     });
     await req.resource.save();
-    await req.resource.populate({ path: 'members.user', select: 'uuid username' }).execPopulate();
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
     return res.send({
         success: true,
@@ -58,16 +58,18 @@ module.exports.addMember = async function (req, res, next) {
 
 module.exports.updateMember = async function (req, res, next) {
     // member must exist;
-    const member = await User.findOne(mongoSanitize({ uuid: req.body.uuid }));
+    const member = await User.findOne({ _id: mongoSanitize(req.body.user.id) });
     if (!member) { return next(new Error('User not found in add member')); }
 
     for (const i in req.resource.members) {
-        if (req.resource.members[i].uuid == req.body.uuid) {
+        if (req.resource.members[i].user.toString() == req.body.user.id) {
             req.resource.members[i].level = req.body.level;
             await req.resource.save();
+            await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+            const members = req.resource.toObject({ virtuals: true }).members;
             return res.send({
                 success: true,
-                members: req.resource.members,
+                members: members,
             });
         }
     }
@@ -95,7 +97,7 @@ module.exports.removeMember = async function (req, res, next) {
     }
     req.resource.members.splice(idx, 1);
     await req.resource.save();
-    await req.resource.populate({ path: 'members.user', select: 'uuid username' }).execPopulate();
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
     return res.send({
         success: true,

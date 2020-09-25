@@ -28,6 +28,12 @@ const profileController = require('../../../../controllers/profiles');
 const profileVersionsController = require('../../../../controllers/profileVersions');
 const conceptController = require('../../../../controllers/concepts');
 const models = require('../../../../ODM/models');
+const { Decipher } = require('crypto');
+const { POINT_CONVERSION_UNCOMPRESSED } = require('constants');
+
+const TEST_PROF_1 = 'http://tom.com/test/profile2';
+const TEST_PROF_2 = 'http://keith.com/test/profile1';
+const TEST_PROF_3 = 'https://adlnet.gov/xapi/test/profiles/1';
 
 async function makeAProfile(profiri) {
     const org = await new models.organization({ name: 'test org' + uuid() });
@@ -50,6 +56,11 @@ async function makeAProfile(profiri) {
         org: org,
         prof: p_profile,
         vers: [p_version],
+        cleanUp: async function () {
+            if (org) await org.remove();
+            if (p_profile) await p_profile.remove();
+            if (p_version) await p_version.remove();
+        },
     };
 }
 
@@ -64,6 +75,7 @@ describe('Get Profile', () => {
     });
 
     afterAll(async () => {
+        await mongoose.disconnect();
         await mongoServer.stop();
     });
 
@@ -163,7 +175,7 @@ describe('Get Profile', () => {
     test('get profile does return draft versions when a key from the profile wg is used', async () => {
         const profiri = 'https://test.tom.com/test/testprofile6';
         const info = await makeAProfile(profiri);
-        const maker = new models.user({ username: 'versionman', uuid: require('uuid').v4(), email: 'test@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'test@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -191,7 +203,7 @@ describe('Get Profile', () => {
 
         const otherorg = await new models.organization({ name: 'test org' + uuid() });
         await otherorg.save();
-        const other = new models.user({ username: 'publicdude', uuid: require('uuid').v4(), email: 'publicdude@test.com' });
+        const other = new models.user({ uuid: require('uuid').v4(), email: 'publicdude@test.com' });
         await other.save();
         const otherkey = new models.apiKey({ scope: 'organization', scopeObject: otherorg, createdBy: other, updatedBy: other });
         await otherkey.save();
@@ -213,7 +225,7 @@ describe('Get Profile', () => {
     test('returned profile should be valid (through the validator)', async () => {
         const wg = new models.organization({ name: 'wg_name' });
         await wg.save();
-        const maker = new models.user({ username: 'test_name', uuid: require('uuid').v4(), email: 'test1@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'test1@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: wg, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -224,7 +236,9 @@ describe('Get Profile', () => {
             .set('Content-Type', 'application/json')
             .set('x-api-key', key.uuid)
             .send({
-                status: 'published',
+                status: {
+                    published: true,
+                },
                 profile: scormprofile,
             });
 
@@ -262,6 +276,7 @@ describe('Get Profiles', () => {
     });
 
     afterAll(async () => {
+        await mongoose.disconnect();
         await mongoServer.stop();
     });
 
@@ -297,36 +312,41 @@ describe('Get Profiles', () => {
         expect(profmeta.working_group.url).toBe(info.org.collaborationLink);
     });
 
-    test('test limit param on get profiles', async () => {
-        const prof2 = await makeAProfile('http://tom.com/test/profile2');
-        const prof3 = await makeAProfile('http://keith.com/test/profile1');
-        const prof4 = await makeAProfile('https://adlnet.gov/xapi/test/profiles/1');
+    describe('with query params', () => {
+        let prof2;
+        let prof3;
+        let prof4;
+        beforeEach(async () => {
+            prof2 = await makeAProfile(TEST_PROF_1);
+            prof3 = await makeAProfile(TEST_PROF_2);
+            prof4 = await makeAProfile(TEST_PROF_3);
+        });
 
-        const res = await request(app).get('/api/profile').query({ limit: 1 });
-        expect(res.status).toBe(200);
-        expect(res.body.metadata.length).toBe(1);
-    });
+        afterEach(async () => {
+            if (prof2) await prof2.cleanUp();
+            if (prof2) await prof3.cleanUp();
+            if (prof2) await prof4.cleanUp();
+        });
 
-    test('test both page and limit on get profiles', async () => {
-        const prof2 = await makeAProfile('http://tom.com/test/profile2');
-        const prof3 = await makeAProfile('http://keith.com/test/profile1');
-        const prof4 = await makeAProfile('https://adlnet.gov/xapi/test/profiles/1');
+        test('test limit param on get profiles', async () => {
+            const res = await request(app).get('/api/profile').query({ limit: 1 });
+            expect(res.status).toBe(200);
+            expect(res.body.metadata.length).toBe(1);
+        });
 
-        const res = await request(app).get('/api/profile').query({ limit: 1, page: 2 });
-        expect(res.status).toBe(200);
-        expect(res.body.metadata.length).toBe(1);
-        expect(res.body.metadata[0].profile_id).toBe(prof2.prof.iri);
-    });
+        test('test both page and limit on get profiles', async () => {
+            const res = await request(app).get('/api/profile').query({ limit: 1, page: 2 });
+            expect(res.status).toBe(200);
+            expect(res.body.metadata.length).toBe(1);
+            expect(res.body.metadata[0].profile_id).toBe(prof2.prof.iri);
+        });
 
-    test('test get working group profiles', async () => {
-        const prof2 = await makeAProfile('http://tom.com/test/profile2');
-        const prof3 = await makeAProfile('http://keith.com/test/profile1');
-        const prof4 = await makeAProfile('https://adlnet.gov/xapi/test/profiles/1');
-
-        const res = await request(app).get('/api/profile').query({ workinggroup: prof3.org.uuid });
-        expect(res.status).toBe(200);
-        expect(res.body.metadata.length).toBe(1);
-        expect(res.body.metadata[0].profile_id).toBe(prof3.prof.iri);
+        test('test get working group profiles', async () => {
+            const res = await request(app).get('/api/profile').query({ workinggroup: prof3.org.uuid });
+            expect(res.status).toBe(200);
+            expect(res.body.metadata.length).toBe(1);
+            expect(res.body.metadata[0].profile_id).toBe(prof3.prof.iri);
+        });
     });
 });
 

@@ -21,20 +21,20 @@ import AddTemplate from "./AddTemplate";
 import Template from "./Template";
 import CreateTemplateForm from "./CreateTemplateForm";
 import SortingTable from '../SortingTable';
-import { loadProfileTemplates, deleteTemplate } from "../../actions/templates";
+import { loadProfileTemplates } from "../../actions/templates";
 
-export default function Templates({ isMember }) {
+export default function Templates({ isMember, isCurrentVersion }) {
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
     const { selectedProfileVersionId } = useSelector(state => state.application);
+    const templates = useSelector((state) => state.templates);
 
     useEffect(() => {
         dispatch(loadProfileTemplates(selectedProfileVersionId));
     }, [selectedProfileVersionId]);
 
-    const templates = useSelector((state) => state.templates);
     let data = React.useMemo(() => templates, [templates]);
-    let columns = React.useMemo(() => getColumns(dispatch, isMember), [isMember]);
+    let columns = React.useMemo(() => getColumns(), [selectedProfileVersionId]);
 
     return (
         <>
@@ -44,42 +44,37 @@ export default function Templates({ isMember }) {
                         <div className="desktop:grid-col">
                             <h2 style={{ marginBottom: 0 }}>Statement Templates</h2>
                         </div>
+                        {isMember && isCurrentVersion &&
+                            <div className="grid-col display-flex flex-column flex-align-end">
+                                <NavLink exact
+                                    to={`${url}/add`}
+                                    className="usa-button margin-top-2 margin-right-0">
+                                    <i className="fa fa-plus margin-right-05"></i> <span> Add Statement Template</span>
+                                </NavLink>
+                            </div>
+                        }
                     </div>
                     <div className="grid-row">
                         <SortingTable
                             columns={columns}
                             data={data}
-                            emptyMessage="There are no statement templates associated with this profile. Add statement templates manually or import from a JSON file." />
+                            emptyMessage="There are no statement templates associated with this profile." />
                     </div>
-                    {isMember &&
-                        <div className="grid-row padding-top-2">
-                            <div className="desktop:grid-col-3">
-                                <NavLink exact
-                                    to={`${url}/add`}
-                                    className="usa-button">
-                                    <span>Add Statement Template</span>
-                                </NavLink>
-                            </div>
-                            <div className="desktop:grid-col-3">
-                                <button className="usa-button ">Import from JSON File</button>
-                            </div>
-                        </div>
-                    }
                 </Route>
                 <Route exact path={`${path}/add`}>
-                    {isMember ?
+                    {(isMember && isCurrentVersion) ?
                         <AddTemplate rootUrl={url} />
                         : <Redirect to={url} />
                     }
                 </Route>
                 <Route exact path={`${path}/create`}>
-                    {isMember ?
-                        <CreateTemplateForm />
+                    {(isMember && isCurrentVersion) ?
+                        <CreateTemplateForm rootUrl={url} />
                         : <Redirect to={url} />
                     }
                 </Route>
                 <Route path={`${path}/:templateId`}>
-                    <Template isMember={isMember} />
+                    <Template isMember={isMember} isCurrentVersion={isCurrentVersion} />
                 </Route>
             </Switch>
         </>
@@ -87,7 +82,7 @@ export default function Templates({ isMember }) {
 }
 
 
-function getColumns(dispatch, isMember) {
+function getColumns() {
     const cols = [
         {
             Header: 'Name',
@@ -95,49 +90,57 @@ function getColumns(dispatch, isMember) {
             accessor: 'name',
             Cell: function NameLink(
                 { cell: { value },
-                    cell: { row: { original: { uuid } } } }
+                    cell: { row: { original: { uuid, description } } } }
             ) {
-                return (
+                return (<>
                     <Link
                         to={`templates/${uuid}`}
                         className="usa-link button-link"
                     >
                         <span>{value}</span>
                     </Link >
-                )
+                    <div className="font-ui-3xs">{description}</div>
+                </>)
             },
-            style: {
-                width: '48%'
+            cellStyle: {
+                width: '48%',
+                paddingRight: "2em"
+            }
+        },
+        {
+            Header: 'Required Concepts',
+            accessor: 'concepts',
+            Cell: ({ cell: { value } }) => {
+                let links = [];
+                if (value && value.length)
+                    for (const c of value) {
+                        if (c.parentProfile && c.parentProfile.uuid) {
+                            links.push(<br key={`br-${c.name}`} />)
+                            links.push(<Link key={c.uuid} to={`/profile/${c.parentProfile.uuid}/concepts/${c.uuid}`}>{c.name}</Link>)
+                        }
+                    }
+                return links.slice(1);
+            },
+            cellStyle: {
+                width: '20%'
             }
         },
         {
             Header: 'Profile',
             accessor: 'parentProfile.name',
-            style: {
-                width: '18%'
+            cellStyle: {
+                width: '16%'
             }
         },
         {
             Header: 'Updated',
             accessor: 'updatedOn',
             Cell: ({ cell: { value } }) => (new Date(value)).toLocaleDateString(),
-            style: {
-                width: '25%'
+            cellStyle: {
+                width: '16%'
             }
         }
     ]
 
-    if (isMember) {
-        cols.push(
-            {
-                Header: ' ',
-                id: 'remove',
-                disableSortBy: true,
-                accessor: function removeItem(rowdata) {
-                    return <button className="usa-button  usa-button--unstyled" onClick={() => dispatch(deleteTemplate(rowdata))}><span className="text-bold">Remove</span></button>
-                }
-            }
-        )
-    }
     return cols;
 }

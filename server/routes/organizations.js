@@ -28,7 +28,6 @@ const permissionStack = [
     mustBeLoggedIn,
     getResource(Org, 'org', 'uuid'),
     permissions(),
-
 ];
 
 const lock = require('../utils/lock');
@@ -42,10 +41,15 @@ organizations.get('/:org/lock', ...permissionStack, lock());
 organizations.get('/:org/unlock', ...permissionStack, unlock());
 organizations.put('/:org', ...permissionStack, level('admin'), unlock(true), controller.updateOrganization);
 organizations.delete('/:org', ...permissionStack, level('admin'), lock(true), controller.deleteOrganization);
+organizations.post('/:org/join', ...permissionStack, controller.requestJoinOrganization);
+organizations.post('/:org/join/member', ...permissionStack, controller.approveJoinOrganization);
+organizations.delete('/:org/deny/member/:userId', ...permissionStack, controller.denyJoinOrganization);
+organizations.delete('/:org/join/member/:userId', ...permissionStack, controller.revokeJoinOrganization);
 
 const apiKeys = require('./apiKeys');
 const profiles = require('./profiles');
 const members = require('./members');
+
 
 organizations.use('/:org/apiKey', ...permissionStack, getResource(Org, 'org', 'uuid', true, 'organization'), apiKeys);
 organizations.use('/:org/profile', profiles);

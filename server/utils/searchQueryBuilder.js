@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 function setRegex(column, searchArray) {
-    return searchArray.map(s => ({ [column]: { $regex: new RegExp(s, 'i') } }));
+    return searchArray.map(s => ({ [column]: { $regex: `.*${s}.*`, $options: 'i' } }));
 }
 
 /**
@@ -22,14 +22,17 @@ function setRegex(column, searchArray) {
  * @param {string} searchString The string to search for
  */
 exports.buildSearchQuery = function (searchString) {
-    const search = searchString.split(' ')
+    if (!searchString) return { parentProfile: { $ne: null } };
+    let search = searchString.split(' ')
         .map(s => s.trim())
         .filter(s => s);
+    // if it's empty the search string was " "
+    if (!search.length) { search = ['\\w']; }
     return {
+        parentProfile: { $ne: null },
         $or: [
             { $or: setRegex('name', search) },
             { $or: setRegex('description', search) },
-            { $or: setRegex('uuid', search) },
             { $or: setRegex('iri', search) },
         ],
     };

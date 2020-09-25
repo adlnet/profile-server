@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { Link, Route, Switch, useRouteMatch, useHistory, useParams } from 'react-router-dom';
+import { Link, Route, Switch, useRouteMatch, useHistory, useParams, Redirect } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 
@@ -31,7 +31,6 @@ export default function Members({ isMember }) {
     const { organizationId } = useParams();
 
     const organization = useSelector((state) => state.application.selectedOrganization);
-    const members = useSelector((state) => state.application.members);
 
     useEffect(() => {
         dispatch(getMembers());
@@ -50,18 +49,29 @@ export default function Members({ isMember }) {
                     </div>
                     <div className="grid-col display-flex flex-column flex-align-end">
                         <Link
-                                to={`${url}/add`}
-                                className="usa-button margin-top-2 margin-right-0"
+                            to={`${url}/add`}
+                            className="usa-button margin-top-2 margin-right-0"
                         >
                             <i className="fa fa-plus margin-right-05"></i>
                             Add Member
                         </Link>
                     </div>
                 </div>
-                <MemberTable members={members}></MemberTable>
+                <MemberTable members={[...organization.memberRequests, ...organization.members]}></MemberTable>
             </Route>
             <Route exact path={`${path}/add`}>
-                <AddMember />
+                {
+                    isMember ?
+                        <AddMember url={url} />
+                        : <Redirect to={url} />
+                }
+            </Route>
+            <Route exact path={`${path}/:userId/edit`}>
+                {
+                    isMember ?
+                        <AddMember url={url} />
+                        : <Redirect to={url} />
+                }
             </Route>
         </Switch>
     );

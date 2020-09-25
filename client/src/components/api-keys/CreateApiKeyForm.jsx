@@ -19,7 +19,7 @@ import * as Yup from 'yup';
 
 import ErrorValidation from '../controls/errorValidation';
 
-export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel }) {
+export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel, onRemove }) {
     function handlePermissionChange(setFieldTouched, handleChange, event) {
         setFieldTouched('permisssions');
         handleChange(event);
@@ -38,21 +38,21 @@ export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel }) 
                 description: Yup.string()
                     .required('Required'),
             })
-            .test(
-                'permissionsTest',
-                null,
-                (obj) => {
-                    if ( obj.readPermission || obj.writePermission ) {
-                        return true;
-                    }
+                .test(
+                    'permissionsTest',
+                    null,
+                    (obj) => {
+                        if (obj.readPermission || obj.writePermission) {
+                            return true;
+                        }
 
-                    return new Yup.ValidationError (
-                        'Check at least one.',
-                        null,
-                        'permissions',
-                    )
-                }
-            )}
+                        return new Yup.ValidationError(
+                            'Check at least one.',
+                            null,
+                            'permissions',
+                        )
+                    }
+                )}
             onSubmit={(values) => {
                 onSubmit(values);
             }}
@@ -60,11 +60,9 @@ export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel }) 
             {(formikProps) => (<>
                 <div className="border-1px border-base-lighter padding-bottom-4 padding-left-4">
                     <div className="grid-row">
-                        <h3 className="grid-col-5">API Key Details</h3>
-                        <div className="grid-col">
-                            <div className="margin-top-3">
-                                <span className="text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
-                            </div>
+                        <h3 className="grid-col-3">API Key Details</h3>
+                        <div className="grid-col" style={{ marginTop: "1.25em" }}>
+                            <span className="grid-col text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
                         </div>
                     </div>
                     <form className="usa-form">
@@ -80,28 +78,28 @@ export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel }) 
                         </ErrorValidation>
 
                         <div className={`usa-form-group ${formikProps.errors.permissions && formikProps.touched.permissions ? "usa-form-group--error" : ""}`}>
-                            <label 
-                                    className={`usa-label details-label ${formikProps.errors.permissions && formikProps.touched.permissions ? "usa-label--error" : ""}`}
-                                    htmlFor="permissions"
+                            <label
+                                className={`usa-label details-label ${formikProps.errors.permissions && formikProps.touched.permissions ? "usa-label--error" : ""}`}
+                                htmlFor="permissions"
                             >
                                 <span className="text-secondary">*</span> permissions
                             </label>
                             {
                                 (formikProps.errors.permissions && formikProps.touched.permissions) && (
                                     <span className="usa-error-message" id="input-error-message" role="alert">{formikProps.errors.permissions}</span>
-                                ) 
+                                )
                             }
                             <ul className="horizontal-list">
                                 <li>
                                     <Field type="checkbox" id="readPermission" name="readPermission"
-                                        onChange={e => handlePermissionChange(formikProps.setFieldTouched, formikProps.handleChange, e)} 
+                                        onChange={e => handlePermissionChange(formikProps.setFieldTouched, formikProps.handleChange, e)}
                                         className="usa-checkbox__input"
                                     />
                                     <label className="usa-checkbox__label" htmlFor="readPermission">Read</label>
                                 </li>
                                 <li>
-                                    <Field type="checkbox" id="writePermission" name="writePermission" 
-                                        onChange={e => handlePermissionChange(formikProps.setFieldTouched, formikProps.handleChange, e)} 
+                                    <Field type="checkbox" id="writePermission" name="writePermission"
+                                        onChange={e => handlePermissionChange(formikProps.setFieldTouched, formikProps.handleChange, e)}
                                         className="usa-checkbox__input"
                                     />
                                     <label className="usa-checkbox__label" htmlFor="writePermission">Write</label>
@@ -126,15 +124,17 @@ export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel }) 
                     </form>
                 </div>
                 <button
-                        className="usa-button submit-button"
-                        type="button"
-                        onClick={formikProps.handleSubmit}>
+                    className="usa-button submit-button"
+                    type="button"
+                    onClick={formikProps.handleSubmit}>
                     {
                         initialValues ? "Save Changes" : "Create API Key"
                     }
                 </button>
                 <button onClick={onCancel} className="usa-button usa-button--unstyled" type="reset"><b>Cancel</b></button>
-                    
+                { initialValues &&
+                    <button type="button" className="usa-button usa-button--unstyled pin-right text-secondary-darker" onClick={() => onRemove(initialValues.uuid)} style={{ margin: "2em 0em 2em 2em" }}><b>Remove API Key</b></button>
+                }
             </>)}
         </Formik>
     )

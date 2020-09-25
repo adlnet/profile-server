@@ -16,13 +16,15 @@
 import React, { Component } from 'react';
 import { Router, Route, Switch } from 'react-router-dom';
 
-
+import Home from "./pages/Home";
 import Organizations from './pages/Organizations';
 import Organization from './pages/Organization';
 import Profile from './pages/Profile';
 import CreateOrganization from './components/organizations/CreateOrganization';
 import ErrorPage from './components/errors/ErrorPage';
-
+import Profiles from "./pages/Profiles";
+import APIInfo from "./pages/APIInfo";
+import SelectOrganization from "./components/profiles/SelectOrganization";
 
 import Search from "./components/search/Search";
 import Users from './pages/Users';
@@ -34,6 +36,7 @@ import TitleBanner from './components/home/TitleBanner';
 import PrivateRoute from './components/users/PrivateRoute';
 import GlobalErrorBoundary from "./components/errors/GlobalErrorBoundary"
 import ErrorBoundary from './components/errors/ErrorBoundary';
+import Webhooks from "./components/webhooks/Webhooks.jsx";
 export default class App extends Component {
 
     render() {
@@ -47,6 +50,9 @@ export default class App extends Component {
                             <Profile />
                         </Route>
                         <Route exact path="/">
+                            <Home />
+                        </Route>
+                        <Route exact path="/organization">
                             <Organizations />
                         </Route>
                         <PrivateRoute exact path="/organization/create">
@@ -55,11 +61,23 @@ export default class App extends Component {
                         <PrivateRoute path="/organization/:organizationId">
                             <Organization />
                         </PrivateRoute>
+                        <PrivateRoute exact path="/profiles/create">
+                            <SelectOrganization />
+                        </PrivateRoute>
+                        <PrivateRoute path="/user/hooks">
+                            <Webhooks />
+                        </PrivateRoute>
                         <Route path="/user">
                             <Users></Users>
                         </Route>
                         <Route path="/search">
                             <Search></Search>
+                        </Route>
+                        <Route path="/profiles">
+                            <Profiles />
+                        </Route>
+                        <Route path="/api-info">
+                            <APIInfo></APIInfo>
                         </Route>
                         <Route>
                             <ErrorPage />
@@ -68,13 +86,13 @@ export default class App extends Component {
                 </GlobalErrorBoundary>
                 <ErrorBoundary />
                 <footer className="usa-footer usa-footer--slim">
-                    <div className="grid-container usa-footer__return-to-top">
+                    {/* <div className="grid-container usa-footer__return-to-top">
                         <a href="#">Return to top</a>
-                    </div>
+                    </div> */}
                     <div className="usa-footer__primary-section">
                         <div className="usa-footer__primary-container grid-row">
                             <div className="mobile-lg:grid-col-8">
-                                ADL Initiative
+
                             </div>
                             <div className="mobile-lg:grid-col-4">
                                 <address className="usa-footer__address">

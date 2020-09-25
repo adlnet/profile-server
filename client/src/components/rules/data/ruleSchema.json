@@ -1,0 +1,58 @@
+{
+    "type": "object",
+    "id": "/#Rule",
+    "properties": {
+        "location": {
+            "type": "string"
+        },
+        "selector": {
+            "type": "string"
+        },
+        "scopeNote": {
+            "type": "object"
+        },
+        "presence": {
+            "type": "string",
+            "enum": [
+                "included",
+                "excluded",
+                "recommended"
+            ]
+        },
+        "any": {
+            "type": "array"
+        },
+        "all": {
+            "type": "array"
+        },
+        "none": {
+            "type": "array"
+        }
+    },
+    "additionalProperties": false,
+    "required": [
+        "location"
+    ],
+    "anyOf": [
+        {
+            "required": [
+                "presence"
+            ]
+        },
+        {
+            "required": [
+                "any"
+            ]
+        },
+        {
+            "required": [
+                "all"
+            ]
+        },
+        {
+            "required": [
+                "none"
+            ]
+        }
+    ]
+}

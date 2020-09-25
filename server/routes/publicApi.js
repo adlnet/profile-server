@@ -20,6 +20,9 @@ const profileController = require('../controllers/profiles');
 const apiKeyController = require('../controllers/apiKeys');
 const responses = require('../reponseTypes/responses');
 const errors = require('../errorTypes/errors');
+const unlock = require('../utils/unlock');
+const getResource = require('../utils/getResource');
+const ProfileVersionModel = require('../ODM/models').profileVersion;
 
 router.use('/sparql', require('./sparql'));
 router.post(
@@ -73,9 +76,15 @@ router.post(
 //     );
 // });
 
-router.put('/profile/:profile', async (req, res, next) => {
-
-});
+router.put(
+    '/profile/:profile',
+    apiKeyController.middleware.validateApiKey('organization'),
+    profileController.validateProfile(true),
+    getResource(ProfileVersionModel, 'profile', 'uuid', true, 'profile'),
+    profileController.middleware.testIfUnmodifiedSince,
+    profileController.middleware.checkUpdateDraftProfile,
+    profileController.importProfile,
+);
 
 // published profiles
 // foo.com/profile/abc123
@@ -94,6 +103,8 @@ router.get('/profile', profileController.getPublishedProfiles);
 router.delete('/profile/:profile',
     apiKeyController.middleware.validateApiKey('profile'),
     profileController.middleware.populateProfile,
+    profileController.middleware.prepForLock,
+    unlock(true, true),
     profileController.deleteProfile);
 
 // Get the metadata of the profile, such as versions, status, publish state and group.

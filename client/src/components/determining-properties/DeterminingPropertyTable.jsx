@@ -19,16 +19,23 @@ import { useSelector } from 'react-redux';
 
 import DeterminingPropertyTableRow from './DeterminingPropertyTableRow';
 
-export default function DeterminingPropertyTable({ removeDeterminingProperty, url, isMember }) {
+export default function DeterminingPropertyTable({ removeDeterminingProperty, url, isMember, isCurrentVersion, isPublished }) {
     const determiningProperties = useSelector(state => state.application.selectedDeterminingProperties);
 
     return (<>
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
                 <tr>
-                    <th width="30%" scope="col">Property</th>
-                    <th width="65%" scope="col">Concept</th>
-                    <th width="5%" scope="col"></th>
+                    {(determiningProperties && determiningProperties.length > 0) ?
+                        <>
+                            <th width="30%" scope="col">Property</th>
+                            <th width="65%" scope="col">Concept</th>
+                            <th width="5%" scope="col"></th>
+                        </> :
+                        <th width="90%" scope="col" colSpan={3}>
+                            <span className="text-normal text-base font-ui-2xs">At least one determining property is needed to match and validate statements to rules in this template.</span>
+                        </th>
+                    }
                 </tr>
             </thead>
             <tbody style={{ lineHeight: 3 }}>
@@ -38,17 +45,19 @@ export default function DeterminingPropertyTable({ removeDeterminingProperty, ur
                             key={i}
                             determiningProperty={determiningProperty}
                             removeDeterminingProperty={removeDeterminingProperty}
-                            url={url} isMember={isMember} />
+                            url={url}
+                            isMember={isMember}
+                            isCurrentVersion={isCurrentVersion}
+                            isPublished={isPublished} />
                     ) :
                     <tr key={1}>
                         <td className="font-sans-xs" colSpan="3" style={{ paddingLeft: '0px' }}>
                             <p>There are no determining properties set for this statement template.</p>
-                            <p>At least one determining property is needed to validate statements to rules in this template. If properties are not added, statements will not be matched to this template.</p>
                         </td></tr>
                 }
             </tbody>
         </table>
-        {isMember &&
+        {isMember && isCurrentVersion && !isPublished &&
             <Link
                 to={`${url}/create`}>
                 <button className="usa-button">Add Determining Property</button>

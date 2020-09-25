@@ -16,6 +16,7 @@
 const mongoose = require('mongoose');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
+const UserModel = require('../../../../ODM/models').user;
 const TemplateModel = require('../../../../ODM/models').template;
 const ConceptModel = require('../../../../ODM/models').concept;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
@@ -25,9 +26,12 @@ const TemplateLayer = require('../../../../controllers/importProfile/TemplateLay
 const mongoServer = new MongoMemoryServer();
 jest.setTimeout(10000);
 
+let user;
 beforeAll(async () => {
     const cnnStr = await mongoServer.getUri();
     await mongoose.connect(cnnStr, { useNewUrlParser: true, useUnifiedTopology: true });
+
+    user = new UserModel({ email: 'an@email.com' });
 });
 
 afterAll(async () => {
@@ -52,6 +56,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                     iri: 'parent_profile_id',
                     name: 'profile_name',
                     description: 'profile_description',
+                    createdBy: user,
+                    updatedBy: user,
                 }),
             });
             const templateModel = await templateLayer.scanProfileComponentLayer();
@@ -83,6 +89,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         iri: 'parent_profile_id',
                         name: 'parent_profile_name',
                         description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
                     }),
                 });
                 await existingTemplate.save();
@@ -101,6 +109,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         iri: 'parent_profile_id',
                         name: 'parent_profile_name',
                         description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
                     }),
                 });
 
@@ -135,6 +145,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         iri: 'parent_profile_id',
                         name: 'parent_profile_name',
                         description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
                     }),
                 });
 
@@ -228,6 +240,8 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                                 iri: 'parent_profile_id',
                                 name: 'parent_profile_name',
                                 description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
                             }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -247,6 +261,8 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                                 iri: 'parent_profile_id',
                                 name: 'parent_profile_name',
                                 description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
                             }),
                         });
 
@@ -284,6 +300,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.verb = 'existing_concept';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -321,6 +344,8 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                                 iri: 'parent_profile_id',
                                 name: 'parent_profile_name',
                                 description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
                             }),
                         });
 
@@ -341,6 +366,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                     templateDocument.verb = 'non-existent_concept';
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                            createdBy: user,
+                            updatedBy: user,
+                        }),
                     });
 
                     const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -362,6 +394,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.objectActivityType = 'non-existent_concept';
                         templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -401,6 +440,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.objectActivityType = 'non-existent_concept';
                         templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         otherTemplateDocument = {
@@ -411,6 +457,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         };
                         otherTemplateLayer = new TemplateLayer({
                             templateDocument: otherTemplateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         // templateModels = await Promise.all([templateLayer, otherTemplateLayer].map(
@@ -438,6 +491,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.objectActivityType = 'concept2_id';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -452,6 +512,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.objectActivityType = 'concept1_id';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         let error;
@@ -497,6 +564,8 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                                 iri: 'parent_profile_id',
                                 name: 'parent_profile_name',
                                 description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
                             }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -531,6 +600,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.objectActivityType = 'existing_concept';
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         let error;
@@ -550,6 +626,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                     templateDocument.objectActivityType = 'non-existent_concept';
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                            createdBy: user,
+                            updatedBy: user,
+                        }),
                     });
 
                     const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -571,6 +654,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.contextGroupingActivityType = ['concept2_id', 'concept25_id'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -585,6 +675,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.contextGroupingActivityType = ['concept1_id'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         let error;
@@ -644,6 +741,8 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                                 iri: 'parent_profile_id',
                                 name: 'parent_profile_name',
                                 description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
                             }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -678,6 +777,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.contextGroupingActivityType = ['existing_concept'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         let error;
@@ -697,6 +803,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                     templateDocument.contextGroupingActivityType = ['non-existent_concept'];
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                            createdBy: user,
+                            updatedBy: user,
+                        }),
                     });
 
                     const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -717,6 +830,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                     templateDocument.attachmentUsageType = ['concept3_id', 'concept3_id', 'concept35_id'];
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                            createdBy: user,
+                            updatedBy: user,
+                        }),
                     });
                     let error;
                     try {
@@ -735,6 +855,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.attachmentUsageType = ['concept3_id', 'concept35_id'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -749,6 +876,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.attachmentUsageType = ['concept1_id'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         let error;
@@ -808,6 +942,8 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                                 iri: 'parent_profile_id',
                                 name: 'parent_profile_name',
                                 description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
                             }),
                         });
                         const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -842,6 +978,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                         templateDocument.attachmentUsageType = ['existing_concept'];
                         const templateLayer = new TemplateLayer({
                             templateDocument: templateDocument,
+                            parentProfile: new ProfileVersionModel({
+                                iri: 'parent_profile_id',
+                                name: 'parent_profile_name',
+                                description: 'parent_profile_description',
+                                createdBy: user,
+                                updatedBy: user,
+                            }),
                         });
 
                         let error;
@@ -861,6 +1004,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                     templateDocument.attachmentUsageType = ['non-existent_concept'];
                     const templateLayer = new TemplateLayer({
                         templateDocument: templateDocument,
+                        parentProfile: new ProfileVersionModel({
+                            iri: 'parent_profile_id',
+                            name: 'parent_profile_name',
+                            description: 'parent_profile_description',
+                            createdBy: user,
+                            updatedBy: user,
+                        }),
                     });
 
                     const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
@@ -902,6 +1052,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                 templateDocument.objectStatementRefTemplate = ['template2_id'];
                 const templateLayer = new TemplateLayer({
                     templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
+                    }),
                 });
 
                 let error;
@@ -920,6 +1077,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                 templateDocument.objectStatementRefTemplate = ['template3_id'];
                 const templateLayer = new TemplateLayer({
                     templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
+                    }),
                 });
 
                 let error;
@@ -938,6 +1102,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                 templateDocument.objectStatementRefTemplate = ['template2_id'];
                 const templateLayer = new TemplateLayer({
                     templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
+                    }),
                 });
                 const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -971,6 +1142,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                 templateDocument.contextStatementRefTemplate = ['template3_id'];
                 const templateLayer = new TemplateLayer({
                     templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
+                    }),
                 });
 
                 let error;
@@ -989,6 +1167,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                 templateDocument.contextStatementRefTemplate = ['template2_id'];
                 const templateLayer = new TemplateLayer({
                     templateDocument: templateDocument,
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
+                    }),
                 });
                 const templateModel = await templateLayer.scanSubcomponentLayer(profileConcepts, profileTemplates);
 
@@ -1019,6 +1204,13 @@ describe('TemplateLayer#scanSubcomponentLayer', () => {
                             },
                         ],
                     },
+                    parentProfile: new ProfileVersionModel({
+                        iri: 'parent_profile_id',
+                        name: 'parent_profile_name',
+                        description: 'parent_profile_description',
+                        createdBy: user,
+                        updatedBy: user,
+                    }),
                 });
                 const profileConcepts = [];
                 const profileTemplates = [];

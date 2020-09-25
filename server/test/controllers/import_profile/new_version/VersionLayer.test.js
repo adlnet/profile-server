@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const { user } = require('../../../../ODM/models');
 const pattern = require('../../../../profileValidator/schemas/pattern');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
@@ -24,6 +25,7 @@ const PatternComponentModel = require('../../../../ODM/models').patternComponent
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
 const ProfileModel = require('../../../../ODM/models').profile;
 const OraganizationModel = require('../../../../ODM/models').organization;
+const UserModel = require('../../../../ODM/models').user;
 const VersionLayer = require('../../../../controllers/importProfile/VersionLayer')
     .VersionLayer;
 
@@ -104,6 +106,7 @@ describe('VersionLayer#scanVersionLayer', () => {
     let parentProfile;
     let parentProfileVersion;
     let orgModel;
+    let user;
     beforeEach(async () => {
         versionDocument = {
             prefLabel: { en: 'profile1' },
@@ -124,9 +127,14 @@ describe('VersionLayer#scanVersionLayer', () => {
         orgModel = new OraganizationModel({ name: 'org_1' });
         await orgModel.save();
 
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
         parentProfile = new ProfileModel({
             iri: 'profile1_id',
             organization: orgModel,
+            createdBy: user,
+            updatedBy: user,
         });
 
         parentProfileVersion = new ProfileVersionModel({
@@ -146,6 +154,7 @@ describe('VersionLayer#scanVersionLayer', () => {
         await parentProfile.remove();
         await parentProfileVersion.remove();
         await orgModel.remove();
+        await user.remove();
         if (versionModel) await versionModel.remove();
     });
 

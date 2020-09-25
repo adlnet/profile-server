@@ -54,6 +54,13 @@ const defaults = {
         configurable: true,
         category: 'Basics',
     },
+    createUser: {
+        default: false,
+        type: Boolean,
+        description: 'Run the create user script',
+        configurable: true,
+        category: 'Basics',
+    },
     debug: {
         default: false,
         type: Boolean,
@@ -103,6 +110,19 @@ const defaults = {
         configurable: true,
         category: 'Basics',
     },
+    forceExit: {
+        default: false,
+        type: StringBool,
+        description: 'only here to allow the test suite to run',
+        configurable: true,
+        category: '',
+    },
+
+    email_user: { type: String, category: 'Email', configurable: true, description: 'The username for the outgoing email server' },
+    email_pass: { type: String, category: 'Email', configurable: true, description: 'The password for the outgoing email server' },
+    email_server: { type: String, category: 'Email', default: 'smtp.gmail.com', configurable: true, description: 'The address of the outgoing email server' },
+    system_email_from: { type: String, category: 'Email', default: 'support@adlnet.gov', configurable: true, description: 'The email address that will be used in the <from> field of outgoing emails.' },
+    clientURL: { type: String, category: 'Basics', default: 'http://localhost:3000', configurable: true, description: 'The URL of the client side software' },
 };
 
 
@@ -162,6 +182,11 @@ const sections = [{
     header: 'Basic Options',
     optionList: optionList,
     group: ['Basics'],
+},
+{
+    header: 'Email Configuration',
+    optionList: optionList,
+    group: ['Email'],
 }];
 
 if (process.stdout.columns < 80) {
@@ -211,6 +236,15 @@ const p = new Proxy(settings, {
                     if (commandLine.help) {
                         console.prodLog(getUsage(sections));
                         process.exit();
+                    }
+                }
+                if (p.createUser) {
+                    const getUsage = require('command-line-usage');
+                    if (commandLine.createUser) {
+                        require('./scripts/createUser.js');
+
+                        return false;
+                        // require("./scripts/configure")
                     }
                 }
 

@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
@@ -68,6 +69,7 @@ const pattern = new mongoose.Schema({
     translations: [
         {
             language: String,
+            languageName: String,
             translationDesc: String,
             translationName: String,
         },
@@ -97,6 +99,8 @@ const pattern = new mongoose.Schema({
         ref: 'patternComponent',
     },
 }, { toJSON: { virtuals: true } });
+
+pattern.plugin(uniqueValidator);
 
 pattern.statics.findByUuid = function (uuid, callback) {
     return this.findOne(mongoSanitize({ uuid: uuid }), callback);

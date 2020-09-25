@@ -18,63 +18,64 @@ import { Field } from 'formik';
 
 
 export default function ChoosePropertyType({ propertyType, onPropertyChange, setNextStep, onCancel }) {
-    
+
     return (
-        <div className="usa-form">
-            <div><span className="text-secondary">*</span><span> Choose the type of property that must be included in a statement to be matched to this template for validation.</span></div>
+        <div>
+            <h2 className="margin-top-1">Add Determining Property</h2>
+            <div className="margin-bottom-1"><span className="text-secondary">*</span><span> Choose the type of property that must be included in a statement to be matched to this template for validation.</span></div>
 
             <fieldset className="usa-fieldset">
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="verb"
                     label="verb"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="objectActivityType"
                     label="objectActivityType"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="contextCategoryActivityType"
                     label="contextCategoryActivityType"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="contextGroupingActivityType"
                     label="contextGroupingActivityType"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="contextOtherActivityType"
                     label="contextOtherActivityType"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="contextParentActivityType"
                     label="contextParentActivityType"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
-                <Field 
-                    component={RadioButton} 
+                <Field
+                    component={RadioButton}
                     name="propertyType"
                     id="attachmentUsageType"
                     label="attachmentUsageType"
                     onChange={propertyTypeArg => onPropertyChange(propertyTypeArg)}
                 />
             </fieldset>
-    
+
             <button className="usa-button submit-button" type="button" onClick={setNextStep} disabled={!propertyType}>Continue</button>
             <button className="usa-button usa-button--unstyled text-bold" type="reset" onClick={onCancel}>Cancel</button>
         </div>
@@ -91,7 +92,7 @@ function RadioButton(props) {
     return (
         <div className="usa-radio">
             <input
-                className="usa-radio__input" 
+                className="usa-radio__input"
                 name={props.field.name}
                 id={props.id}
                 type="radio"

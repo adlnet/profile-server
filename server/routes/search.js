@@ -29,6 +29,9 @@ const models = {
 };
 
 searchRouter.get('/:type', async (req, res, next) => {
+    let published = await models.profiles.find({ state: { $ne: 'draft' } }, { select: '_id' }).exec();
+    published = published.map(i => i._id);
+
     const model = models[req.params.type];
     if (!model) {
         return res.status(400).send({
@@ -44,15 +47,54 @@ searchRouter.get('/:type', async (req, res, next) => {
         ...subfields,
     };
 
-    const regex = new RegExp(escapeRegExp(req.query.search));
-    const query = {};
-    console.log(query);
-    for (const i in allFields) {
-        if (req.query.search && allFields[i].instance == 'String') { query[i] = regex; }
+    const regex = new RegExp(escapeRegExp(req.query.search), 'ig');
+    const query = {
+        $or: [],
+    };
+    if (req.params.type !== 'profiles') {
+        query.parentProfile = {
+            $in: published,
+        };
+    } else {
+        let published = await (require('../ODM/models').profile).find({ currentPublishedVersion: { $ne: undefined } }).lean().exec();
+        published = published.map(i => i.currentPublishedVersion);
+        query._id = {
+            $in: published,
+        };
     }
-    const results = await model.find(query).populate('parentProfile organization parentProfile.organization').exec();
+
+    for (const i in allFields) {
+        if (req.query.search && allFields[i].instance == 'String') { query.$or.push({ [allFields[i].path]: regex }); }
+
+        if (req.query.search && allFields[i].instance == 'Array' && allFields[i].$embeddedSchemaType.instance == 'String') { query.$or.push({ [allFields[i].path]: regex }); }
+        if (allFields[i].path == 'isDeprecated') {
+            if (req.query.deprecated === 'true') {
+
+            } else {
+                query.isDeprecated = false;
+            }
+        }
+
+        if (allFields[i].path == 'isVerified') {
+            if (req.query.verified === 'true') { query.isVerified = true; }
+        }
+    }
+    if (query.$or.length === 0) { delete query.$or; }
+    console.log(query);
+    const total = await model.find(query).count();
+    const results = await model.find(query).skip(parseInt(req.query.page)).limit(10)
+        .populate('parentProfile organization')
+        .populate('parentProfile.organization')
+        .lean()
+        .exec();
+
+    await Promise.all(results.map(async i => {
+        const o = await (require('../ODM/models').organization).findOne({ _id: i.parentProfile.organization.toString() }).lean();
+        i.parentProfile.organization = o;
+    }));
     res.send({
         success: true,
         results: results,
+        total: total,
     });
 });

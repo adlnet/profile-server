@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const uniqueValidator = require('mongoose-unique-validator');
 const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
@@ -63,6 +64,7 @@ const concept = new mongoose.Schema({
     translations: [
         {
             language: String,
+            languageName: String,
             translationDesc: String,
             translationName: String,
         },
@@ -150,6 +152,8 @@ const concept = new mongoose.Schema({
         default: false,
     },
 }, { toJSON: { virtuals: true } });
+
+concept.plugin(uniqueValidator);
 
 // concept.virtual('templateCount').get(() => 0);
 

@@ -56,6 +56,10 @@ export default function Profile() {
 
     if (!(profile && profileVersion && organization)) return '';
 
+    let versions = [...profile.versions];
+    versions.sort((a, b) => b.version - a.version);
+
+    let isCurrentVersion = profileVersion.uuid === versions[0].uuid;
 
     function publishProfile() {
         if (profileVersion.state !== 'draft') return;
@@ -110,7 +114,7 @@ export default function Profile() {
                         </div>
                     </div>
                 </div> :
-                !isMaxVersion(profileVersion.version) ?
+                !isMaxVersion(profileVersion.version) && isMember ?
                     <div className="outer-alert">
                         <div className="usa-alert usa-alert--slim usa-alert--warning margin-top-2" >
                             <div className="usa-alert__body">
@@ -124,11 +128,12 @@ export default function Profile() {
         }
         <header className="usa-header usa-header--extended">
             <div className="usa-navbar bg-base-lightest">
-                <div className="usa-logo" id="extended-logo">
-                    <span className="text-uppercase text-thin font-sans-3xs">Manage Profile</span>
-                    <em className="usa-logo__text"><a href="/" title="Home" aria-label="Home">{profileVersion.name}</a></em>
+                <div className="usa-logo" id="extended-logo" style={{ maxWidth: "75%", margin: ".5em 0 0 0" }}>
+                    <h3 className="margin-y-0"><a href="/" title="Home" aria-label="Home">{profileVersion.name}</a></h3>
                 </div>
-                <button className="usa-menu-btn">Menu</button>
+                <div style={{ marginBottom: "1em" }}>
+                    <span className="text-base font-ui-3xs" style={{ lineHeight: ".1" }}>IRI: {profileVersion.iri}</span>
+                </div>
             </div>
             <nav aria-label="Primary navigation" className="usa-nav">
                 <div className="usa-nav__inner">
@@ -172,7 +177,7 @@ export default function Profile() {
                             </NavLink>
                         </li>
                     </ul>
-                    {isMember &&
+                    {isMember && isCurrentVersion && profileVersion.state === 'draft' &&
                         <div className="usa-nav__secondary">
                             <div className="pull-right">
                                 <ProfilePublishButton onPublish={publishProfile} />
@@ -186,19 +191,19 @@ export default function Profile() {
 
             <Switch>
                 <Route exact path={path}>
-                    <ProfileDetails isMember={isMember} />
+                    <ProfileDetails isMember={isMember} isCurrentVersion={isCurrentVersion} />
                 </Route>
                 <Route path={`${path}/templates`} >
-                    <Templates isMember={isMember} />
+                    <Templates isMember={isMember} isCurrentVersion={isCurrentVersion} />
                 </Route>
                 <Route path={`${path}/patterns`} >
-                    <Patterns isMember={isMember} />
+                    <Patterns isMember={isMember} isCurrentVersion={isCurrentVersion} />
                 </Route>
                 <Route path={`${path}/concepts`} >
-                    <Concepts isMember={isMember} />
+                    <Concepts isMember={isMember} isCurrentVersion={isCurrentVersion} />
                 </Route>
                 <Route path={`${path}/edit`}>
-                    {isMember ? <>
+                    {(isMember && isCurrentVersion) ? <>
                         <h2>Edit Profile Details</h2>
 
                         <Lock resourceUrl={`/org/${organization.uuid}/profile/${profile.uuid}/version/${profileVersion.uuid}`}>

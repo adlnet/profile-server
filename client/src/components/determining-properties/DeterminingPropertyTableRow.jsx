@@ -16,7 +16,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function DeterminingPropertyTableRow({ determiningProperty, removeDeterminingProperty, onPropertyClick, url, isMember }) {
+export default function DeterminingPropertyTableRow({ determiningProperty, removeDeterminingProperty, onPropertyClick, url, isMember, isCurrentVersion, isPublished }) {
 
     return (
         <tr>
@@ -51,7 +51,7 @@ export default function DeterminingPropertyTableRow({ determiningProperty, remov
                         )
                 }
             </td>
-            {isMember &&
+            {isMember && isCurrentVersion && !isPublished ?
                 <>
                     <td>
                         <Link
@@ -69,7 +69,13 @@ export default function DeterminingPropertyTableRow({ determiningProperty, remov
                             <span className="text-bold">Remove</span>
                         </button>
                     </td>
-                </>}
+                </>
+                :
+                <>
+                    <td> </td>
+                    <td> </td>
+                </>
+            }
         </tr>
     );
 }

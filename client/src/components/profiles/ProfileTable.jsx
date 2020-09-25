@@ -17,20 +17,19 @@ import React from 'react';
 
 import ProfileTableRow from './ProfileTableRow';
 
-export default function ProfileTable({ profiles, siteUrl, handleProfileRemove }) {
+export default function ProfileTable({ profiles, siteUrl, isMember }) {
     return (
         <div className="grid-row">
             <table className="usa-table usa-table--borderless" width="100%">
                 <thead>
                     <tr>
-                        <th width="50%" scope="col">Name</th>
+                        <th width="80%" scope="col">Name</th>
                         <th width="20%" scope="col">Updated</th>
-                        <th width="10%" scope="col"></th>
                     </tr>
                 </thead>
                 <tbody style={{ lineHeight: 3 }}>
                     {(profiles && profiles.length > 0)
-                        ? profiles.map((profile) => <ProfileTableRow key={profile.uuid} profile={profile} site_url={siteUrl} handleProfileRemove={handleProfileRemove}/>)
+                        ? profiles.map((profile) => <ProfileTableRow key={profile.uuid} profile={profile} site_url={siteUrl} isMember={isMember} />)
                         : <tr key={1}><td className="font-sans-xs" colSpan="6"><p>There are no concepts in this profile. Concepts created in this profile or added through import or statement templates will appear here.</p></td></tr>}
                 </tbody>
             </table>

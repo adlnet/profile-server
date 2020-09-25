@@ -30,7 +30,7 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
                         <a href={concept.moreInformation}>{concept.moreInformation}</a>
                     </Detail>
                     <Detail title="activity type">
-                        {concept && concept.activityType}
+                        {concept && concept.activityType || "None provided"}
                     </Detail>
                 </>
             );
@@ -53,21 +53,21 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
                         {concept && concept.type}
                     </Detail>
                     <Detail title="mediaType">
-                        {concept && concept.mediaType}
+                        {concept && concept.mediaType || "None provided"}
                     </Detail>
                     <Detail title="context iri">
-                        {concept && concept.contextIri}
+                        {concept && concept.contextIri || "None provided"}
                     </Detail>
                     {
                         (concept && concept.inlineSchema) &&
                         <Detail title="schema iri">
-                            {concept && concept.inlineSchema}
+                            {concept && concept.inlineSchema || "None provided"}
                         </Detail>
                     }
                     {
                         (concept && concept.schemaString) &&
                         <Detail title="schema">
-                            <pre className="margin-0" style={{font: 'inherit'}}>{concept && concept.schemaString}</pre>
+                            <pre className="margin-0" style={{ font: 'inherit' }}>{concept && concept.schemaString}</pre>
                         </Detail>
                     }
                 </>
@@ -77,7 +77,7 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
             detailExtention = (
                 <>
                     <Detail title="extention type">
-                        {concept && concept.type}
+                        {concept && concept.type || "None provided"}
                     </Detail>
                     <Detail title="recommended terms">
                         <RecommendedTermsDetails
@@ -86,7 +86,7 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
                         />
                     </Detail>
                     <Detail title="context iri">
-                        {concept && concept.contextIri}
+                        {concept && concept.contextIri || "None provided"}
                     </Detail>
                     {
                         (concept && concept.inlineSchema) &&
@@ -97,7 +97,7 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
                     {
                         (concept && concept.schemaString) &&
                         <Detail title="schema">
-                            <pre className="margin-0" style={{font: 'inherit'}}>{concept && concept.schemaString}</pre>
+                            <pre className="margin-0" style={{ font: 'inherit' }}>{concept && concept.schemaString}</pre>
                         </Detail>
                     }
                 </>

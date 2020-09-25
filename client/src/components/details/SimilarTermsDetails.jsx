@@ -30,22 +30,23 @@ export default function SimilarTermsDetails({ similarTerms, linkable }) {
     return (
         <div>
             {
-                similarTerms.map(
-                    (similarTerm, key) =>
-                        <div key={key} className="margin-bottom-05">
-                            {
-                                linkable ? 
-                                    <span
-                                        className="usa-link button-link"
+                similarTerms.length ?
+                    similarTerms.map(
+                        (similarTerm, key) =>
+                            <div key={key} className="margin-bottom-05">
+                                {
+                                    linkable ?
+                                        <span
+                                            className="usa-link button-link"
                                         // onClick={() => onConceptClick(similarTerm.concept)}
-                                    >
-                                        {similarTerm.concept.name || similarTerm.concept.iri}
-                                    </span> :
-                                    <span>{similarTerm.concept.name || similarTerm.concept.iri}</span>
-                            }
-                            <span style={{ textTransform: 'capitalize' }}> ({similarTerm.relationType})</span>
-                        </div>
-                )
+                                        >
+                                            {similarTerm.concept.name || similarTerm.concept.iri}
+                                        </span> :
+                                        <span>{similarTerm.concept.name || similarTerm.concept.iri}</span>
+                                }
+                                <span style={{ textTransform: 'capitalize' }}> ({similarTerm.relationType})</span>
+                            </div>
+                    ) : "None provided"
             }
 
             {/* <Flyout show={showConceptInfopanel} onClose={() => setShowConceptInfopanel(false)}>

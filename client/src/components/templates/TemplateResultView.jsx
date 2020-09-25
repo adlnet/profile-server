@@ -21,19 +21,19 @@ export default function TemplateResultView({ children, result, onViewDetailsClic
 
     return (
         <SearchSelectResultView
-                result={result}
-                resultName='name'
-                resultDescription='description'
-                subdescriptionView={<TemplateResultSubdescriptionView />}
-                onViewDetailsClick={onViewDetailsClick}
+            result={result}
+            resultName='name'
+            resultDescription='description'
+            subdescriptionView={<TemplateResultSubdescriptionView />}
+            onViewDetailsClick={onViewDetailsClick}
         >
             {children}
         </SearchSelectResultView>
     );
 }
 
-function TemplateResultSubdescriptionView ({ result }) {
+function TemplateResultSubdescriptionView({ result }) {
     return (<>
-        {`Statement Template  |  ${result && result.parentProfile && result.parentProfile.name}`}
+        <span className="text-bold">Profile: </span>{result && result.parentProfile && result.parentProfile.name}
     </>);
 }

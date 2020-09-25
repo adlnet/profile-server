@@ -33,11 +33,11 @@ export default function AccountButton() {
     return (
         userData.user ? <>
             <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-two">
-                <span className="text-bold"><i className="fa fa-user margin-right-05"></i>{userData.user.username}</span>
+                <span className="text-bold"><i className="fa fa-user margin-right-05"></i>{userData.user.fullname}</span>
             </button>
             <ul id="basic-nav-section-two" className="usa-nav__submenu" hidden>
                 <li className="usa-nav__submenu-item">
-                    <NavLink exact to="/"
+                    <NavLink exact to="/user/account"
                         className="usa-link"
                     >
                         My Account
@@ -49,6 +49,14 @@ export default function AccountButton() {
                         onClick={() => signOut()}
                     >
                         Sign Out
+                </NavLink>
+                </li>
+                <li className="usa-nav__submenu-item">
+                    <NavLink exact to="/user/hooks"
+                        className="usa-link"
+
+                    >
+                        WebHooks
                 </NavLink>
                 </li>
             </ul></> :

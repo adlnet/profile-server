@@ -49,6 +49,11 @@ async function makeAProfile(profiri) {
         org: org,
         prof: p_profile,
         vers: [p_version],
+        cleanUp: async function () {
+            if (org) await org.remove();
+            if (p_profile) await p_profile.remove();
+            if (p_version) await p_version.remove();
+        },
     };
 }
 
@@ -63,6 +68,7 @@ describe('Profile Metadata Get', () => {
     });
 
     afterAll(async () => {
+        await mongoose.disconnect();
         await mongoServer.stop();
     });
 
@@ -70,7 +76,7 @@ describe('Profile Metadata Get', () => {
         const profiri = 'https://test.tom.com/test/testprofile1';
         const info = await makeAProfile(profiri);
 
-        const maker = new models.user({ username: 'versionman', uuid: require('uuid').v4(), email: 'test@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'test@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -104,7 +110,7 @@ describe('Profile Metadata Get', () => {
         const profiri = 'https://test.tom.com/test/testprofile2';
         const info = await makeAProfile(profiri);
 
-        const maker = new models.user({ username: 'draftman', uuid: require('uuid').v4(), email: 'draftman@test.com' });
+        const maker = new models.user({ uuid: require('uuid').v4(), email: 'draftman@test.com' });
         await maker.save();
         const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
@@ -146,7 +152,7 @@ describe('Profile Metadata Get', () => {
 
         const otherorg = await new models.organization({ name: 'test org' + uuid() });
         await otherorg.save();
-        const other = new models.user({ username: 'publicdude', uuid: require('uuid').v4(), email: 'publicdude@test.com' });
+        const other = new models.user({ uuid: require('uuid').v4(), email: 'publicdude@test.com' });
         await other.save();
         const otherkey = new models.apiKey({ scope: 'organization', scopeObject: otherorg, createdBy: other, updatedBy: other });
         await otherkey.save();
@@ -178,22 +184,47 @@ describe('Profile Status Update', () => {
     });
 
     afterAll(async () => {
+        await mongoose.disconnect();
         await mongoServer.stop();
     });
 
-    test('update published via status endpoint', async () => {
-        const profiri = 'https://test.tom.com/test/testprofile1';
-        const info = await makeAProfile(profiri);
-
-        const maker = new models.user({ username: 'draftman', uuid: require('uuid').v4(), email: 'draftman@test.com' });
+    let maker;
+    let key;
+    let newVersion;
+    let info;
+    let otherorg;
+    let otherkey;
+    let other;
+    beforeEach(async () => {
+        info = await makeAProfile('https://test.tom.com/test/testprofile1');
+        maker = new models.user({ email: 'draftman@test.com' });
         await maker.save();
-        const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
+        key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
         await key.save();
 
+        otherorg = await new models.organization({ name: 'test org' + uuid() });
+        await otherorg.save();
+        other = new models.user({ email: 'wrongkey@test.com' });
+        await other.save();
+        otherkey = new models.apiKey({ scope: 'organization', scopeObject: otherorg, createdBy: other, updatedBy: other });
+        await otherkey.save();
+    });
+
+    afterEach(async () => {
+        await info.cleanUp();
+        await maker.remove();
+        await key.remove();
+        if (newVersion) newVersion.remove();
+        await otherorg.remopve;
+        await other.remove();
+        await otherkey.remove();
+    });
+
+    test('update published via status endpoint', async () => {
         const mods = info.vers[0].toJSON();
         delete mods.iri;
         mods.name = 'test profile v2';
-        const newVersion = await profileVersionsController.addNewProfileVersion(info.org.uuid, info.prof.uuid, mods);
+        newVersion = await profileVersionsController.addNewProfileVersion(info.org.uuid, info.prof.uuid, mods);
 
         info.draft = newVersion;
 
@@ -253,14 +284,6 @@ describe('Profile Status Update', () => {
     });
 
     test('update verification request via status endpoint', async () => {
-        const profiri = 'https://test.tom.com/test/testprofile2';
-        const info = await makeAProfile(profiri);
-
-        const maker = new models.user({ username: 'draftman', uuid: require('uuid').v4(), email: 'draftman@test.com' });
-        await maker.save();
-        const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
-        await key.save();
-
         const res = await request(app)
             .get(`/api/profile/${info.vers[0].uuid}/meta`)
             .set('x-api-key', key.uuid)
@@ -314,25 +337,10 @@ describe('Profile Status Update', () => {
     });
 
     test('fail update published via status endpoint with wrong key', async () => {
-        const profiri = 'https://test.tom.com/test/testprofile1';
-        const info = await makeAProfile(profiri);
-
-        const maker = new models.user({ username: 'ok', uuid: require('uuid').v4(), email: 'ok@test.com' });
-        await maker.save();
-        const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
-        await key.save();
-
-        const otherorg = await new models.organization({ name: 'test org' + uuid() });
-        await otherorg.save();
-        const other = new models.user({ username: 'wrongkey', uuid: require('uuid').v4(), email: 'wrongkey@test.com' });
-        await other.save();
-        const otherkey = new models.apiKey({ scope: 'organization', scopeObject: otherorg, createdBy: other, updatedBy: other });
-        await otherkey.save();
-
         const mods = info.vers[0].toJSON();
         delete mods.iri;
         mods.name = 'test profile v2';
-        const newVersion = await profileVersionsController.addNewProfileVersion(info.org.uuid, info.prof.uuid, mods);
+        newVersion = await profileVersionsController.addNewProfileVersion(info.org.uuid, info.prof.uuid, mods);
 
         info.draft = newVersion;
 
@@ -384,18 +392,10 @@ describe('Profile Status Update', () => {
     });
 
     test('fail update published via status endpoint with no key', async () => {
-        const profiri = 'https://test.tom.com/test/testprofile1';
-        const info = await makeAProfile(profiri);
-
-        const maker = new models.user({ username: 'ok', uuid: require('uuid').v4(), email: 'ok@test.com' });
-        await maker.save();
-        const key = new models.apiKey({ scope: 'organization', scopeObject: info.org, createdBy: maker, updatedBy: maker });
-        await key.save();
-
         const mods = info.vers[0].toJSON();
         delete mods.iri;
         mods.name = 'test profile v2';
-        const newVersion = await profileVersionsController.addNewProfileVersion(info.org.uuid, info.prof.uuid, mods);
+        newVersion = await profileVersionsController.addNewProfileVersion(info.org.uuid, info.prof.uuid, mods);
 
         info.draft = newVersion;
 

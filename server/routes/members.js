@@ -36,7 +36,7 @@ const permissionStack = [
 
 members.get('/', getResource(Org, 'org', 'uuid'), controller.getMembers);
 members.post('/', ...permissionStack, controller.addMember);
-members.put('/:memberId', ...permissionStack, controller.updateMember);
+members.put('/', ...permissionStack, controller.updateMember);
 members.delete('/:memberId', ...permissionStack, controller.removeMember);
 
 

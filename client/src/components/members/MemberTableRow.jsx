@@ -12,32 +12,30 @@
 * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 * See the License for the specific language governing permissions and
 * limitations under the License.
-**************************************************************** */import React from 'react';
+**************************************************************** */
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { removeMember } from "../../actions/organizations";
-
-import { useDispatch, useSelector } from 'react-redux';
-
 
 export default function MemberTableRow({ member }) {
-
-    const dispatch = useDispatch();
-    function _removeMember()
-    {
-        dispatch(removeMember(member.user.id))
-    }
     let disabled = "";
-    if(member.level === "owner")
-    disabled = "disabled";
+    let pending = !member.level;
+    if (member.level === "owner")
+        disabled = "disabled";
     return (
-        <tr>
-            <th width="20%" scope="row">
-                { member.user.username}
-            </th>
-            <td><span >{member.level}</span></td>
+        <tr >
+            <th scope="row">{member.user.fullname}</th>
+            <td>{member.user.email}</td>
+            <td>{pending ? <em>Pending Approval</em> : <span style={{ textTransform: "capitalize" }}>{member.level}</span>}</td>
+            <td>{member.user._created && (new Date(member.user._created)).toLocaleDateString()}</td>
             <td>
-                
-                <button onClick={() => _removeMember()} className={disabled + " usa-button  usa-button--unstyled"}><span className="text-bold">Remove</span></button>
+                {!disabled &&
+                    <Link to={{
+                        pathname: `./members/${member.user.id}/edit`,
+                        state: { member: member, pending: pending }
+                    }} className={disabled}>
+                        <button className={disabled + " usa-button  usa-button--unstyled"}><span className="text-bold">{pending ? 'Review' : 'Edit'}</span></button>
+                    </Link>
+                }
             </td>
         </tr>
     )

@@ -17,6 +17,7 @@ const mongoose = require('mongoose');
 const { template } = require('lodash');
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
+const UserModel = require('../../../../ODM/models').user;
 const TemplateModel = require('../../../../ODM/models').template;
 const ConceptModel = require('../../../../ODM/models').concept;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
@@ -69,29 +70,56 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
     const SOME_OTHER_CONCEPT_ID = 'some_other_concept_id';
     const SOME_TEMPLATE_ID = 'some_template_id';
     const SOME_OTHER_TEMPLATE_ID = 'some_other_template_id';
+    const TEMPLATE1_ID = 'template1_id';
+    const PROFILE_VERSION1_ID = 'parent_profile_id';
+    const PROFILE_VERSION2_ID = 'creating_profile_id';
+
 
     let templateDocument;
     let templateModel;
-    let templateLayer;
     let parentProfile;
+    let creatingVersion;
+    let user;
+    let otherUser;
     beforeEach(async () => {
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
+        otherUser = new UserModel({ email: 'another@email.com' });
+        await otherUser.save();
+
         templateDocument = {
-            id: 'template1_id',
+            id: TEMPLATE1_ID,
             type: 'StatementTemplate',
-            inScheme: 'parent_profile_id',
+            inScheme: PROFILE_VERSION2_ID,
             prefLabel: { en: 'template1' },
             definition: { en: 'template description' },
         };
         parentProfile = new ProfileVersionModel({
-            iri: 'parent_profile_id',
+            iri: PROFILE_VERSION1_ID,
             name: 'profile_name',
             description: 'profile_description',
+            state: 'published',
+            createdBy: user,
+            updatedBy: user,
         });
         await parentProfile.save();
+
+        creatingVersion = new ProfileVersionModel({
+            iri: PROFILE_VERSION2_ID,
+            name: 'profile_name',
+            description: 'profile_description',
+            state: 'draft',
+            createdBy: otherUser,
+            updatedBy: otherUser,
+        });
     });
 
     afterEach(async () => {
         await parentProfile.remove();
+        await creatingVersion.remove();
+        await user.remove();
+        await otherUser.remove();
     });
 
     describe('when versionLayer#versionStatus is `new`', () => {
@@ -99,10 +127,12 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
             let existingTemplate;
             beforeEach(async () => {
                 existingTemplate = new TemplateModel({
-                    iri: 'template1_id',
+                    iri: TEMPLATE1_ID,
                     name: 'template1',
                     description: 'template description',
                     parentProfile: parentProfile,
+                    createdBy: user,
+                    updatedBy: user,
                 });
                 await existingTemplate.save();
             });
@@ -113,12 +143,14 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
             describe('and the template is not different from the existing model', () => {
                 test('it should return a the existing model with the correct unchanged properties.', async () => {
-                    templateModel = await testSuccess(templateDocument, parentProfile);
+                    templateModel = await testSuccess(templateDocument, creatingVersion);
 
                     expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                     expect(templateModel.iri).toEqual(existingTemplate.iri);
                     expect(templateModel.name).toEqual(existingTemplate.name);
                     expect(templateModel.description).toEqual(existingTemplate.description);
+                    expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                    expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                 });
             });
 
@@ -128,7 +160,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         test('it should return the model found on the server with the correct values.', async () => {
                             templateDocument.prefLabel.new_lang = 'new_name';
 
-                            templateModel = await testSuccess(templateDocument, parentProfile);
+                            templateModel = await testSuccess(templateDocument, creatingVersion);
 
                             expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                             expect(templateModel.translations.length).toEqual(1);
@@ -137,6 +169,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             expect(templateModel.iri).toEqual(existingTemplate.iri);
                             expect(templateModel.name).toEqual(existingTemplate.name);
                             expect(templateModel.description).toEqual(existingTemplate.description);
+                            expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                            expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                         });
                     });
 
@@ -144,7 +178,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         test('it should return the model found on the server with the correct values.', async () => {
                             templateDocument.definition.new_lang = 'new_description';
 
-                            templateModel = await testSuccess(templateDocument, parentProfile);
+                            templateModel = await testSuccess(templateDocument, creatingVersion);
 
                             expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                             expect(templateModel.translations.length).toEqual(1);
@@ -153,6 +187,8 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             expect(templateModel.iri).toEqual(existingTemplate.iri);
                             expect(templateModel.name).toEqual(existingTemplate.name);
                             expect(templateModel.description).toEqual(existingTemplate.description);
+                            expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                            expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                         });
                     });
 
@@ -161,13 +197,15 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should return the model found on the server with the correct values.', async () => {
                                 templateDocument.deprecated = 'true';
 
-                                templateModel = await testSuccess(templateDocument, parentProfile);
+                                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                                 expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                                 expect(templateModel.isDeprecated).toEqual(true);
                                 expect(templateModel.iri).toEqual(existingTemplate.iri);
                                 expect(templateModel.name).toEqual(existingTemplate.name);
                                 expect(templateModel.description).toEqual(existingTemplate.description);
+                                expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                                expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                             });
                         });
 
@@ -178,13 +216,15 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                                 templateDocument.deprecated = false;
 
-                                templateModel = await testSuccess(templateDocument, parentProfile);
+                                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                                 expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                                 expect(templateModel.isDeprecated).toEqual(false);
                                 expect(templateModel.iri).toEqual(existingTemplate.iri);
                                 expect(templateModel.name).toEqual(existingTemplate.name);
                                 expect(templateModel.description).toEqual(existingTemplate.description);
+                                expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                                expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                             });
                         });
 
@@ -193,14 +233,47 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 existingTemplate.isDeprecated = true;
                                 await existingTemplate.save();
 
-                                templateModel = await testSuccess(templateDocument, parentProfile);
+                                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                                 expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                                 expect(templateModel.isDeprecated).toBeFalsy();
                                 expect(templateModel.iri).toEqual(existingTemplate.iri);
                                 expect(templateModel.name).toEqual(existingTemplate.name);
                                 expect(templateModel.description).toEqual(existingTemplate.description);
+                                expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                                expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                             });
+                        });
+                    });
+
+                    describe('template#rules - deleting an empty array', () => {
+                        test('it should return the model found on the server with the correct values.', async () => {
+                            existingTemplate.rules = [];
+                            await existingTemplate.save();
+
+                            templateModel = await testSuccess(templateDocument, creatingVersion);
+
+                            expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
+                            expect(templateModel.iri).toEqual(existingTemplate.iri);
+                            expect(templateModel.name).toEqual(existingTemplate.name);
+                            expect(templateModel.description).toEqual(existingTemplate.description);
+                            expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                            expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
+                        });
+                    });
+
+                    describe('template#rules - adding an empty array', () => {
+                        test('it should return the model found on the server with the correct values.', async () => {
+                            templateDocument.rules = [];
+
+                            templateModel = await testSuccess(templateDocument, creatingVersion);
+
+                            expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
+                            expect(templateModel.iri).toEqual(existingTemplate.iri);
+                            expect(templateModel.name).toEqual(existingTemplate.name);
+                            expect(templateModel.description).toEqual(existingTemplate.description);
+                            expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                            expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                         });
                     });
 
@@ -216,13 +289,15 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should return the model found on the server with the correct values.', async () => {
                                 templateDocument.rules[0].scopeNote = 'this is a adding note.';
 
-                                templateModel = await testSuccess(templateDocument, parentProfile);
+                                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                                 expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                                 expect(templateModel.rules[0].scopeNote).toEqual(templateDocument.rules[0].scopeNote);
                                 expect(templateModel.iri).toEqual(existingTemplate.iri);
                                 expect(templateModel.name).toEqual(existingTemplate.name);
                                 expect(templateModel.description).toEqual(existingTemplate.description);
+                                expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                                expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                             });
                         });
 
@@ -233,13 +308,15 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                                 templateDocument.rules[0].scopeNote = 'this is a this was updated another note.';
 
-                                templateModel = await testSuccess(templateDocument, parentProfile);
+                                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                                 expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                                 expect(templateModel.rules[0].scopeNote).toEqual(templateDocument.rules[0].scopeNote);
                                 expect(templateModel.iri).toEqual(existingTemplate.iri);
                                 expect(templateModel.name).toEqual(existingTemplate.name);
                                 expect(templateModel.description).toEqual(existingTemplate.description);
+                                expect(templateModel.updatedBy._id.toString()).toEqual(otherUser._id.toString());
+                                expect(templateModel.createdBy._id.toString()).toEqual(user._id.toString());
                             });
                         });
 
@@ -248,7 +325,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 existingTemplate.rules[0].scopeNote = 'this is a will be deleted note';
                                 await existingTemplate.save();
 
-                                templateModel = await testSuccess(templateDocument, parentProfile);
+                                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                                 expect(templateModel._id.toString()).toEqual(existingTemplate._id.toString());
                                 expect(templateModel.rules[0].scopeNote).toBeFalsy();
@@ -267,7 +344,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should throw an error.', async () => {
                                 templateDocument.prefLabel.en = 'new_template_name';
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/prefLabel.en cannot be updated on published template template1_id/);
                             });
@@ -277,7 +354,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         //     test('it should throw an error.', async () => {
                         //         delete templateDocument.prefLabel.en;
 
-                        //         error = await testError(templateDocument, parentProfile);
+                        //         error = await testError(templateDocument, creatingVersion);
 
                         //         expect(error).toMatch(/prefLabel.en cannot be deleted from published template template1_id/);
                         //     });
@@ -289,7 +366,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should throw an error.', async () => {
                                 templateDocument.definition.en = 'changed definition';
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/definition.en cannot be updated on published template template1_id/);
                             });
@@ -299,7 +376,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                         //     test('it should throw an error.', async () => {
                         //         delete templateDocument.definition.en;
 
-                        //         error = await testError(templateDocument, parentProfile);
+                        //         error = await testError(templateDocument, creatingVersion);
 
                         //         expect(error).toMatch(/definition.en cannot be deleted from published template template1_id/);
                         //     });
@@ -317,7 +394,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should throw an error.', async () => {
                                 templateDocument.verb = SOME_CONCEPT_ID;
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/verb cannot be added to published template template1_id/);
                             });
@@ -338,7 +415,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                                 templateDocument.verb = SOME_OTHER_CONCEPT_ID;
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/verb cannot be updated on published template template1_id/);
                             });
@@ -357,7 +434,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 existingTemplate.verb = detPropModel;
                                 await existingTemplate.save();
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/verb cannot be deleted from published template template1_id/);
                             });
@@ -379,7 +456,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should throw an error.', async () => {
                                 templateDocument.contextGroupingActivityType = [SOME_CONCEPT_ID];
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/contextGroupingActivityType cannot be added to published template template1_id/);
                             });
@@ -403,7 +480,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 test('it should throw an error.', async () => {
                                     templateDocument.contextGroupingActivityType = [SOME_CONCEPT_ID, SOME_OTHER_CONCEPT_ID];
 
-                                    error = await testError(templateDocument, parentProfile);
+                                    error = await testError(templateDocument, creatingVersion);
 
                                     expect(error).toMatch(/contextGroupingActivityType cannot be added to published template template1_id/);
                                 });
@@ -424,7 +501,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                                     templateDocument.contextGroupingActivityType = [SOME_CONCEPT_ID];
 
-                                    error = await testError(templateDocument, parentProfile);
+                                    error = await testError(templateDocument, creatingVersion);
 
                                     expect(error).toMatch(/contextGroupingActivityType cannot be deleted from published template template1_id/);
                                 });
@@ -444,7 +521,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 existingTemplate.contextGroupingActivityType = [detPropModel];
                                 await existingTemplate.save();
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/contextGroupingActivityType cannot be deleted from published template template1_id/);
                             });
@@ -466,7 +543,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should throw an error.', async () => {
                                 templateDocument.objectStatementRefTemplate = [SOME_TEMPLATE_ID];
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/objectStatementRefTemplate cannot be added to published template template1_id/);
                             });
@@ -488,7 +565,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 test('it should throw an error.', async () => {
                                     templateDocument.objectStatementRefTemplate = [SOME_TEMPLATE_ID, SOME_OTHER_TEMPLATE_ID];
 
-                                    error = await testError(templateDocument, parentProfile);
+                                    error = await testError(templateDocument, creatingVersion);
 
                                     expect(error).toMatch(/objectStatementRefTemplate cannot be added to published template template1_id/);
                                 });
@@ -507,7 +584,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                                     templateDocument.objectStatementRefTemplate = [SOME_TEMPLATE_ID];
 
-                                    error = await testError(templateDocument, parentProfile);
+                                    error = await testError(templateDocument, creatingVersion);
 
                                     expect(error).toMatch(/objectStatementRefTemplate cannot be deleted from published template template1_id/);
                                 });
@@ -525,7 +602,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 existingTemplate.objectStatementRefTemplate = [templatePropModel];
                                 await existingTemplate.save();
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/objectStatementRefTemplate cannot be deleted from published template template1_id/);
                             });
@@ -537,7 +614,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                             test('it should throw an error.', async () => {
                                 templateDocument.rules = [{ location: 'some.location' }];
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/rules cannot be added to published template template1_id/);
                             });
@@ -556,7 +633,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                         { location: 'some.other.location' },
                                     ];
 
-                                    error = await testError(templateDocument, parentProfile);
+                                    error = await testError(templateDocument, creatingVersion);
 
                                     expect(error).toMatch(/rules cannot be added to published template template1_id/);
                                 });
@@ -569,7 +646,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
                                     templateDocument.rules = [{ location: 'some.location' }];
 
-                                    error = await testError(templateDocument, parentProfile);
+                                    error = await testError(templateDocument, creatingVersion);
 
                                     expect(error).toMatch(/rules cannot be deleted from published template template1_id/);
                                 });
@@ -581,7 +658,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
                                 existingTemplate.rules = { location: 'some.location' };
                                 await existingTemplate.save();
 
-                                error = await testError(templateDocument, parentProfile);
+                                error = await testError(templateDocument, creatingVersion);
 
                                 expect(error).toMatch(/rules cannot be deleted from published template template1_id/);
                             });
@@ -593,7 +670,7 @@ describe('TemplateLayer#scanProfileComponentLayer', () => {
 
         describe('and the template does not exist on the server', () => {
             test('it should return a new model with the correct values.', async () => {
-                templateModel = await testSuccess(templateDocument, parentProfile);
+                templateModel = await testSuccess(templateDocument, creatingVersion);
 
                 expect(templateModel.iri).toEqual(templateDocument.id);
                 expect(templateModel.name).toEqual(templateDocument.prefLabel.en);

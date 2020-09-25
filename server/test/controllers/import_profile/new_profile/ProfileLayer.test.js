@@ -19,70 +19,108 @@ const ProfileLayer = require('../../../../controllers/importProfile/ProfileLayer
     .ProfileLayer;
 const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
+const { profileVersion, concept, template, pattern } = require('../../../../ODM/models');
+const ProfileModel = require('../../../../ODM/models').profile;
 const OrganizationModel = require('../../../../ODM/models').organization;
+const UserModel = require('../../../../ODM/models').user;
 
 const mongoServer = new MongoMemoryServer();
 jest.setTimeout(10000);
 
-beforeEach(async () => {
+
+beforeAll(async () => {
     const cnnStr = await mongoServer.getUri();
     await mongoose.connect(cnnStr, { useNewUrlParser: true, useUnifiedTopology: true });
 });
 
-afterEach(async () => {
+afterAll(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
 });
 
 describe('ProfileLayer#scanProfileLayer', () => {
+    const PROFILE1_ID = 'profile1_id';
+    const VERSION1_ID = 'version1_id';
+    const VERSION2_ID = 'version2_id';
+    const VERSION3_ID = 'version3_id';
+    const CONCEPT1_ID = 'concept1_id';
+    const CONCEPT2_ID = 'concept2_id';
+    const CONCEPT3_ID = 'concept3_id';
+    const TEMPLATE1_ID = 'template1_id';
+    const PATTERN1_ID = 'pattern1_id';
+
+    let organization;
+    let user;
+    beforeEach(async () => {
+        user = new UserModel({ email: 'an@email.com' });
+        await user.save();
+
+        organization = new OrganizationModel({ name: 'workGroup1' });
+        await organization.save();
+    });
+
+    afterEach(async () => {
+        await user.remove();
+        await organization.remove();
+
+        await ProfileModel.findOneAndDelete({ iri: PROFILE1_ID });
+        await profileVersion.findOneAndDelete({ iri: VERSION1_ID });
+        await profileVersion.findOneAndDelete({ iri: VERSION2_ID });
+        await profileVersion.findOneAndDelete({ iri: VERSION3_ID });
+        await concept.findOneAndDelete({ iri: CONCEPT1_ID });
+        await concept.findOneAndDelete({ iri: CONCEPT2_ID });
+        await concept.findOneAndDelete({ iri: CONCEPT3_ID });
+        await template.findOneAndDelete({ iri: TEMPLATE1_ID });
+        await pattern.findOneAndDelete({ iri: PATTERN1_ID });
+    });
+
     test('it should return a profile model with the correct values.', async () => {
-        const organization = new OrganizationModel({ name: 'workGroup1' });
         const profileDocument = {
-            id: 'profile1_id',
+            id: PROFILE1_ID,
             '@context': 'https://w3id.org/xapi/profiles/context',
             type: 'Profile',
             conformsTo: 'https://w3id.org/xapi/profiles#1.0',
             versions: [
-                { id: 'version1_id' },
+                { id: VERSION1_ID },
             ],
             author: { type: 'Organization', name: 'workGroup1', url: 'https://github.com/thingies' },
             prefLabel: { en: 'profile1' },
             definition: { en: 'test_description.' },
             seeAlso: 'stuff.com',
             concepts: [{
-                id: 'concept1_id',
+                id: CONCEPT1_ID,
                 prefLabel: { en: 'concept1' },
                 definition: { en: 'concept1_desc' },
                 type: 'Verb',
             }, {
-                id: 'concept2_id',
+                id: CONCEPT2_ID,
                 prefLabel: { en: 'concept2' },
                 definition: { en: 'concept2_desc' },
                 type: 'Verb',
                 related: [
-                    'concept1_id',
+                    CONCEPT1_ID,
                 ],
             }, {
-                id: 'concept3_id',
+                id: CONCEPT3_ID,
                 prefLabel: { en: 'concept3' },
                 definition: { en: 'concept3_desc' },
                 type: 'ActivityType',
             }],
             templates: [{
-                id: 'template1_id',
+                id: TEMPLATE1_ID,
                 prefLabel: { en: 'template1' },
                 definition: { en: 'template1_desc' },
-                contextGroupingActivityType: ['concept3_id'],
+                contextGroupingActivityType: [CONCEPT3_ID],
             }],
             patterns: [{
-                id: 'pattern1_id',
+                id: PATTERN1_ID,
                 prefLabel: { en: 'pattern1' },
                 definition: { en: 'pattern1_desc' },
-                optional: 'template1_id',
+                optional: TEMPLATE1_ID,
             }],
         };
 
-        const profileLayer = new ProfileLayer(organization, profileDocument);
+        const profileLayer = new ProfileLayer(organization, user, profileDocument);
 
         const profileModel = await (await (await (await
         profileLayer
@@ -97,18 +135,16 @@ describe('ProfileLayer#scanProfileLayer', () => {
     describe('when there are multiple versions', () => {
         let profileDocument;
         let profileModel;
-        let organization;
         beforeEach(() => {
-            organization = new OrganizationModel({ name: 'workGroup1' });
             profileDocument = {
-                id: 'profile1_id',
+                id: PROFILE1_ID,
                 '@context': 'https://w3id.org/xapi/profiles/context',
                 type: 'Profile',
                 conformsTo: 'https://w3id.org/xapi/profiles#1.0',
                 versions: [
-                    { id: 'version3_id', wasRevisionOf: ['version2_id'], generatedAtTime: new Date() },
-                    { id: 'version2_id', wasRevisionOf: ['version1_id'], generatedAtTime: new Date() },
-                    { id: 'version1_id', wasRevisionOf: ['otherProfileVersion_id'], generatedAtTime: new Date() },
+                    { id: VERSION3_ID, wasRevisionOf: [VERSION2_ID], generatedAtTime: new Date() },
+                    { id: VERSION2_ID, wasRevisionOf: [VERSION1_ID], generatedAtTime: new Date() },
+                    { id: VERSION1_ID, wasRevisionOf: ['otherProfileVersion_id'], generatedAtTime: new Date() },
                 ],
                 author: { type: 'Organization', name: 'workGroup1', url: 'https://github.com/thingies' },
                 prefLabel: { en: 'profile1' },
@@ -122,30 +158,31 @@ describe('ProfileLayer#scanProfileLayer', () => {
                 profileDocument.versions.push({ id: 'version05_id', wasRevisionOf: profileDocument.id, generatedAtTime: new Date() });
             });
 
-            test('it should throw and error.', async () => {
-                const profileLayer = new ProfileLayer(organization, profileDocument);
+            // This is allowed but we are filtering out any reference to the root profile from any wasRevisionOf array.
+            // test('it should throw and error.', async () => {
+            //     const profileLayer = new ProfileLayer(organization, profileDocument);
 
-                let error;
-                try {
-                    profileModel = await (await (await (await
-                    profileLayer
-                        .scanProfileLayer())
-                        .scanVersionLayer())
-                        .scanProfileComponentLayer())
-                        .save();
-                } catch (err) {
-                    error = err.message;
-                }
+            //     let error;
+            //     try {
+            //         profileModel = await (await (await (await
+            //         profileLayer
+            //             .scanProfileLayer())
+            //             .scanVersionLayer())
+            //             .scanProfileComponentLayer())
+            //             .save();
+            //     } catch (err) {
+            //         error = err.message;
+            //     }
 
-                expect(error).toMatch(/profile1_id cannot be a member of a version's wasRevisionOf property because it is the root id of this profile/);
-            });
+            //     expect(error).toMatch(/profile1_id cannot be a member of a version's wasRevisionOf property because it is the root id of this profile/);
+            // });
         });
 
         describe('and none of these versions are on the server', () => {
             let currentVersion;
             let versions;
             beforeEach(async () => {
-                const profileLayer = new ProfileLayer(organization, profileDocument);
+                const profileLayer = new ProfileLayer(organization, user, profileDocument);
 
                 profileModel = await (await (await (await
                 profileLayer
@@ -160,9 +197,9 @@ describe('ProfileLayer#scanProfileLayer', () => {
 
             test('it should create shallow versions for the previous versions.', () => {
                 expect(versions.length).toEqual(profileDocument.versions.length);
-                expect(versions.map(v => v.iri).includes('version3_id')).toBeTruthy();
-                expect(versions.map(v => v.iri).includes('version2_id')).toBeTruthy();
-                expect(versions.map(v => v.iri).includes('version1_id')).toBeTruthy();
+                expect(versions.map(v => v.iri).includes(VERSION3_ID)).toBeTruthy();
+                expect(versions.map(v => v.iri).includes(VERSION2_ID)).toBeTruthy();
+                expect(versions.map(v => v.iri).includes(VERSION1_ID)).toBeTruthy();
             });
 
             test('those shallow versions that are created should have wasRevisionOf props with the correct profile versions', () => {

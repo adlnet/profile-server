@@ -17,7 +17,7 @@ module.exports = {
     title: 'login',
     type: 'object',
     properties: {
-        username: {
+        email: {
             type: 'string',
             pattern: "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
         },
@@ -28,5 +28,5 @@ module.exports = {
         },
     },
     additionalProperties: false,
-    required: ['username', 'password'],
+    required: ['email', 'password'],
 };

@@ -130,8 +130,16 @@ class API {
 
         return body.profile;
     }
-    async getProfiles(organizationId) {
-        let body = await this.getJSON(`${appApiRoot}/org/${organizationId}/profile`);
+    async getProfiles(organizationId, published, draft, limit) {
+        let body;
+        if (organizationId)
+            body = await this.getJSON(`${appApiRoot}/org/${organizationId}/profile`);
+        else {
+            // const query = JSON.stringify({published, draft, limit});
+            // body = await this.getJSON(`${appApiRoot}/profile/${query}`);
+            body = await this.getJSON(`${appApiRoot}/profile?published=${published}&draft=${draft}&limit=${limit}`);
+        }
+
         return body.profiles;
     }
     async createProfile(orgId, profile) {
@@ -165,6 +173,11 @@ class API {
     async publishProfileVersion(profileId) {
         let body = await this.postJSON(`${appApiRoot}/profile/${profileId}/publish`);
         return body;
+    }
+
+    async loadProfileRootIRI() {
+        let body = await this.getJSON(`${appApiRoot}/rootProfileIRI`);
+        return body.iri;
     }
 
     async getOrganization(uuid) {
@@ -202,10 +215,30 @@ class API {
     }
     async editMember(organizationId, member) {
         let body = await this.putJSON(`${appApiRoot}/org/${organizationId}/member`, member);
-        return body.member;
+        return body.members;
     }
 
+    async approveMember(organizationId, member) {
+        let body = await this.postJSON(`${appApiRoot}/org/${organizationId}/join/member`, member);
+        return body.members;
+    }
 
+    /** to be called when an admin denies a request someone made to join the org */
+    async denyMemberRequest(organizationId, userId) {
+        let body = await this.deleteJSON(`${appApiRoot}/org/${organizationId}/deny/member/${userId}`);
+        return body.organization;
+    }
+
+    /** to be called when the user who requested to join an org cancels that request */
+    async revokeMemberRequest(orguuid, userId) {
+        let body = await this.deleteJSON(`${appApiRoot}/org/${orguuid}/join/member/${userId}`);
+        return body.organization;
+    }
+
+    async requestJoinOrganization(organizationUUID, user) {
+        let body = await this.postJSON(`${appApiRoot}/org/${organizationUUID}/join`, user);
+        return body.organization;
+    }
 
     async getConcepts(organizationId, profileId, versionId) {
         let body = await this.getJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept`);
@@ -274,6 +307,15 @@ class API {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/${concept.uuid}`);
         return;
     }
+    async removeConceptLink(organizationId, profileId, versionId, conceptId) {
+        await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/link/${conceptId}`);
+        return;
+    }
+
+    async removeTemplateLink(selectedOrganizationId, profileId, selectedProfileVersionId, templateId) {
+        await this.deleteJSON(`${appApiRoot}/org/${selectedOrganizationId}/profile/${profileId}/version/${selectedProfileVersionId}/template/link/${templateId}`)
+    }
+
     async deleteTemplate(organizationId, profileId, versionId, templateId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/template/${templateId}`);
         return;
@@ -304,28 +346,58 @@ class API {
         return;
     }
 
-    async searchTemplates(search) {
-        let body = await this.getJSON(`${appApiRoot}/template/?search=${search}`);
+
+    async getWebHookSubjects() {
+        const body = await this.getJSON(`${appApiRoot}/user/hooks/subjects`);
+        return body.subjects;
+    }
+    async getWebHooks() {
+        const body = await this.getJSON(`${appApiRoot}/user/hooks`);
+        return body.hooks;
+    }
+    async createWebHook(hook) {
+        const body = await this.postJSON(`${appApiRoot}/user/hooks`, hook);
+        return body.hook;
+    }
+    async getWebHook(hookId) {
+
+        const body = await this.getJSON(`${appApiRoot}/user/hooks/${hookId}`);
+        return body.hook;
+    }
+    async editWebHook(hook) {
+        const body = await this.putJSON(`${appApiRoot}/user/hooks/${hook.uuid}`, hook);
+        return body.hook;
+    }
+    async deleteWebHook(hookId) {
+        await this.deleteJSON(`${appApiRoot}/user/hooks/${hookId}`);
+        return;
+    }
+
+
+
+
+    async searchTemplates(search, limit, page, sort) {
+        let body = await this.getJSON(`${appApiRoot}/template/?search=${search || ''}&limit=${limit || ''}&page=${page || ''}&sort=${sort || ''}`);
         return body.templates;
     }
-    async searchConcepts(search) {
-        let body = await this.getJSON(`${appApiRoot}/concept/?search=${search}`);
+    async searchConcepts(search, limit, page, sort, filter) {
+        let body = await this.getJSON(`${appApiRoot}/concept/?search=${search || ''}&limit=${limit || ''}&page=${page || ''}&sort=${sort || ''}&filter=${filter || ''}`);
         return body.concepts;
     }
-    async searchPatterns(search) {
-        let body = await this.getJSON(`${appApiRoot}/pattern/?search=${search}`);
+    async searchPatterns(search, limit, page, sort) {
+        let body = await this.getJSON(`${appApiRoot}/pattern/?search=${search || ''}&limit=${limit || ''}&page=${page || ''}&sort=${sort || ''}`);
         return body.patterns;
     }
-    async searchProfiles(search) {
-        let body = await this.getJSON(`${appApiRoot}/profile/?search=${search}`);
-        return body.patterns;
+    async searchProfiles(search, limit, page, sort) {
+        let body = await this.getJSON(`${appApiRoot}/profile/?search=${search || ''}&limit=${limit || ''}&page=${page || ''}&sort=${sort || ''}`);
+        return body.profiles;
     }
-    async searchOrganizations(search) {
-        let body = await this.getJSON(`${appApiRoot}/org/?search=${search}`);
-        return body.patterns;
+    async searchOrganizations(search, limit, page, sort) {
+        let body = await this.getJSON(`${appApiRoot}/org/?search=${search || ''}&limit=${limit || ''}&page=${page || ''}&sort=${sort || ''}`);
+        return body.organizations;
     }
-    async searchUsers(search) {
-        let body = await this.getJSON(`${appApiRoot}/user/?search=${search}`);
+    async searchUsers(search, limit, page, sort) {
+        let body = await this.getJSON(`${appApiRoot}/user/?search=${search || ''}&limit=${limit || ''}&page=${page || ''}&sort=${sort || ''}`);
         return body.users;
     }
 
@@ -353,5 +425,13 @@ class API {
         let body = await this.getJSON(`${appApiRoot}/search/${type}/?search=` + searchString);
         return body.results;
     }
+
+    async getPublishedProfiles() {
+
+        let body = await this.getJSON(`${appApiRoot}/profile/published`);
+        return body.profiles;
+    }
+
+
 }
 export default new API()

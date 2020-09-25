@@ -19,6 +19,7 @@ const MongoMemoryServer = require('mongodb-memory-server').MongoMemoryServer;
 
 const ConceptModel = require('../../../../ODM/models').concept;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
+const UserModel = require('../../../../ODM/models').user;
 const ConceptLayerFactory = require('../../../../controllers/importProfile/ConceptLayerFactory')
     .ConceptLayerFactory;
 
@@ -33,6 +34,21 @@ beforeAll(async () => {
 afterAll(async () => {
     await mongoose.disconnect();
     await mongoServer.stop();
+});
+
+let user;
+let otherUser;
+beforeEach(async () => {
+    user = new UserModel({ email: 'an@email.com' });
+    await user.save();
+
+    otherUser = new UserModel({ email: 'another@email.com' });
+    await otherUser.save();
+});
+
+afterEach(async () => {
+    await user.remove();
+    await otherUser.remove();
 });
 
 describe('ConceptLayer contructor', () => {
@@ -51,6 +67,8 @@ describe('ConceptLayer contructor', () => {
                             iri: 'parent_profile_id',
                             name: 'profile_name',
                             description: 'profile_description',
+                            createdBy: user,
+                            updatedBy: user,
                         }),
                     });
                     const conceptModel = await conceptLayer.scanProfileComponentLayer();
@@ -58,6 +76,8 @@ describe('ConceptLayer contructor', () => {
                     expect(conceptModel.parentProfile.iri).toEqual('parent_profile_id');
                     expect(conceptModel.parentProfile.name).toEqual('profile_name');
                     expect(conceptModel.parentProfile.description).toEqual('profile_description');
+                    expect(conceptModel.updatedBy._id.toString()).toEqual(user._id.toString());
+                    expect(conceptModel.createdBy._id.toString()).toEqual(user._id.toString());
                 });
             });
         });

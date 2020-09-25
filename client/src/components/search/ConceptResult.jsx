@@ -14,12 +14,16 @@
 * limitations under the License.
 **************************************************************** */
 import React, {useState} from "react";
+import {Link} from "react-router-dom";
+export default function ConceptResult({result, type}) {
+    let date = new Date(result.createdOn);
+    date = (date.getMonth()+1) + '/' + date.getDate() + '/' +  date.getFullYear()
+    
 
-export default function ConceptResult({result}) {
     return <div className = "grid-row profile-result">
         <div className="grid-col-12">
-            <p><a href="#">{result.name}</a></p>
-            <p><strong>{new Date(result.createdOn).toDateString()} - {result.parentProfile.organization.name}</strong><br></br>
+            <h4><Link to={"/profile/"+result.parentProfile.uuid+"/"+type+"/" + result.uuid}>{result.name}</Link></h4>
+            <p><strong>{date} {result.type ? "- " + result.type : "" } - Profile: {result.parentProfile.name}</strong><br></br>
             {result.description}</p>
             <div className="tags">{result.tags && result.tags.map( i=> <span className="usa-tag display-inline-flex bg-accent-cool-lighter text-base-darkest padding-y-05 margin-right-1" ><span className="margin-05">{i}</span></span>)}</div>
         </div>

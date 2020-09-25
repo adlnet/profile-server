@@ -16,28 +16,25 @@
 import React from 'react';
 import RuleTableRow from './RuleTableRow';
 
-export default function RuleTable({ rules, onAddRule, isMember }) {
+export default function RuleTable({ rules, onAddRule, isMember, isCurrentVersion, isPublished, removeRule, url, belongsToAnotherProfile }) {
     return (<>
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
                 <tr>
-                    <th width="30%" scope="col">Location</th>
-                    <th width="15%" scope="col">Presence</th>
-                    <th width="50%" scope="col">Value</th>
-                    <th width="5%" scope="col"></th>
+                    <th width="90%" scope="col" colSpan={2}><span className="text-normal text-base font-ui-2xs">Rules are the restrictions on value(s) for specific locations within statements that must be met to conform to this template.</span></th>
                 </tr>
             </thead>
             <tbody style={{ lineHeight: 3 }}>
                 {(rules && rules.length > 0) ?
-                    rules.map((rule, key) => <RuleTableRow key={key} {...rule} isMember={isMember} />) :
+                    rules.map((rule, key) => <RuleTableRow key={key} rule={rule} url={url} isMember={isMember} isCurrentVersion={isCurrentVersion} isPublished={isPublished} removeRule={removeRule} belongsToAnotherProfile={belongsToAnotherProfile} />) :
                     <tr key={1}><td className="font-sans-xs" colSpan="4" style={{ paddingLeft: '0px' }}>
-                        <p>There are no rules set for this statement template. Add a rule.</p>
+                        <p>There are no rules set for this statement template.</p>
                     </td></tr>
                 }
             </tbody>
         </table>
-        {isMember &&
-            <button className="usa-button usa-button--outline padding-x-4" onClick={onAddRule}>Add Rule</button>
+        {isMember && isCurrentVersion && !isPublished && !belongsToAnotherProfile &&
+            <button className="usa-button padding-x-4" onClick={onAddRule}>Add Rule</button>
         }
     </>);
 }

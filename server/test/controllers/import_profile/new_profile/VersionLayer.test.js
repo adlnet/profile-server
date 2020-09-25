@@ -25,6 +25,7 @@ const VersionLayer = require('../../../../controllers/importProfile/VersionLayer
 const ProfileModel = require('../../../../ODM/models').profile;
 const ProfileVersionModel = require('../../../../ODM/models').profileVersion;
 const OrganizationModel = require('../../../../ODM/models').organization;
+const UserModel = require('../../../../ODM/models').user;
 
 const mongoServer = new MongoMemoryServer();
 jest.setTimeout(10000);
@@ -39,11 +40,18 @@ afterAll(async () => {
     await mongoServer.stop();
 });
 
+let user;
+beforeEach(async () => {
+    user = new UserModel({ email: 'an@email.com' });
+    await user.save();
+});
+
+afterEach(async () => {
+    await user.remove();
+});
+
 describe('VersionLayer#Constructor', () => {
     let otherProfileVersion;
-    beforeEach(async () => {
-
-    });
 
     test('it should return a profileVersion model with the correct values.', async () => {
         const versionDocument = {
@@ -87,6 +95,8 @@ describe('VersionLayer#Constructor', () => {
             profileModel: new ProfileModel({
                 iri: 'profile1_id',
                 organization: new OrganizationModel({ name: 'workGroup1' }),
+                createdBy: user,
+                updatedBy: user,
             }),
             versionDocument: versionDocument,
             previousVersionModels: [],
@@ -96,8 +106,7 @@ describe('VersionLayer#Constructor', () => {
             },
         });
 
-        const versionModel = await (await (await
-        versionLayer
+        const versionModel = await (await (await versionLayer
             .scanVersionLayer())
             .scanProfileComponentLayer())
             .save();
@@ -120,6 +129,8 @@ describe('VersionLayer#scanVersionLayer', () => {
         profileModel = new ProfileModel({
             iri: 'profile1_id',
             organization: new OrganizationModel({ name: 'workGroup1' }),
+            createdBy: user,
+            updatedBy: user,
         });
 
         versionDocument = {
@@ -175,8 +186,7 @@ describe('VersionLayer#scanVersionLayer', () => {
                     let foundParentlessVersion;
                     beforeEach(async () => {
                         versionLayer = new VersionLayer(profileLayer);
-                        versionModel = await (await (await
-                        versionLayer
+                        versionModel = await (await (await versionLayer
                             .scanVersionLayer())
                             .scanProfileComponentLayer())
                             .save();
@@ -212,8 +222,7 @@ describe('VersionLayer#scanVersionLayer', () => {
                         await existingVersion.save();
 
                         versionLayer = new VersionLayer(profileLayer);
-                        versionModel = await (await (await
-                        versionLayer
+                        versionModel = await (await (await versionLayer
                             .scanVersionLayer())
                             .scanProfileComponentLayer())
                             .save();
@@ -242,8 +251,7 @@ describe('VersionLayer#scanVersionLayer', () => {
                     profileLayer.previousVersionModels.push(previousVersion);
 
                     versionLayer = new VersionLayer(profileLayer);
-                    versionModel = await (await (await
-                    versionLayer
+                    versionModel = await (await (await versionLayer
                         .scanVersionLayer())
                         .scanProfileComponentLayer())
                         .save();
@@ -266,6 +274,7 @@ describe('VersionLayer#scanVersionLayer', () => {
             profileLayer = {
                 profileModel: profileModel,
                 versionDocument: versionDocument,
+                previousVersionModels: [],
                 save: save,
             };
 
@@ -301,6 +310,7 @@ describe('VersionLayer#scanVersionLayer', () => {
             profileLayer = {
                 profileModel: profileModel,
                 versionDocument: versionDocument,
+                previousVersionModels: [],
                 save: save,
             };
             const versionLayer = new VersionLayer(profileLayer);
@@ -322,6 +332,7 @@ describe('VersionLayer#scanVersionLayer', () => {
             profileLayer = {
                 profileModel: profileModel,
                 versionDocument: versionDocument,
+                previousVersionModels: [],
                 save: save,
             };
             const versionLayer = new VersionLayer(profileLayer);
@@ -343,6 +354,7 @@ describe('VersionLayer#scanVersionLayer', () => {
             profileLayer = {
                 profileModel: profileModel,
                 versionDocument: versionDocument,
+                previousVersionModels: [],
                 save: save,
             };
             const versionLayer = new VersionLayer(profileLayer);

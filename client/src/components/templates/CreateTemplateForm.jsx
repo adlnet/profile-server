@@ -16,38 +16,64 @@
 import React from 'react';
 import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
-import { withRouter } from "react-router-dom";
-import { useDispatch } from 'react-redux';
+import { Link, withRouter } from "react-router-dom";
+import { useDispatch, useSelector } from 'react-redux';
 
 import { createTemplate } from '../../actions/templates';
 import Translations from '../../components/fields/Translations';
 import Tags from '../../components/fields/Tags';
 import ErrorValidation from '../controls/errorValidation';
 import Iri from '../fields/Iri';
+import { useState } from 'react';
+import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 
 function CreateTemplateForm(props) {
     const dispatch = useDispatch();
 
-    function handleCancel() {
-        props.history.goBack();
+    const [showModal, setShowModal] = useState(false);
+
+    const currentProfileVersion = useSelector(state => state.application.selectedProfile);
+
+    const generatedIRIBase = `${currentProfileVersion.iri}/templates/`;
+
+    let startingValues;
+    if (props.initialValues) {
+        // it's possible that the iri was external and still match, but this is what 
+        // the system will use to generate the base of the concept iri, so we'll call it 
+        // generated
+        startingValues = { ...props.initialValues };
+        startingValues.iriType = props.initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
+        startingValues.iri = props.initialValues.iri.replace(generatedIRIBase, "");
+    }
+
+    function handleCancel(formEdited) {
+        if (formEdited)
+            setShowModal(true)
+        else
+            props.history.push(props.rootUrl);
     }
 
     return (
-        <div className="usa-layout-docs usa-layout-docs__main desktop:grid-col-9 usa-prose">
+        <div className="usa-layout-docs usa-layout-docs__main usa-prose">
             <header>
-                <h2 className="margin-bottom-1">Create Statement Template</h2>
+                <div className="grid-row">
+                    <div className="grid-col margin-top-3">
+                        <Link to={props.rootUrl}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right"></i>
+                        <h2 style={{ margin: "0 0 .5em 0" }}>Create Statement Template</h2>
+                    </div>
+                </div>
             </header>
-            <div>
+            <div className="grid-row">
                 A Statement Template describes one way statements following this profile may be structured.
-            </div><br />
-            <div>
+            </div>
+            <div className="grid-row margin-top-1">
                 <label className="text-italic">
-                Once the statement template is created you will be able to add concepts, determining properties, and rules to it.
+                    Once the statement template is created you will be able to add concepts, determining properties, and rules to it.
                 </label>
             </div>
 
             <Formik
-                initialValues={{ name: '', description: '', 'more-information': '', tags: [], hasIRI: false, iri: '' }}
+                initialValues={{ name: '', description: '', 'more-information': '', tags: [], iriType: "external-iri", iri: '' }}
                 validationSchema={Yup.object({
                     name: Yup.string()
                         .required('Required'),
@@ -55,18 +81,24 @@ function CreateTemplateForm(props) {
                         .required('Required')
                 })}
                 onSubmit={(values) => {
+                    if (values.iriType === 'generated-iri')
+                        values.iri = `${generatedIRIBase}${values.iri}`;
                     dispatch(createTemplate(values));
                 }}
             >
                 {(formikProps) => (<>
                     <div className="grid-container border-1px border-base-lighter padding-4 margin-y-2">
-                        <h3 className="display-inline padding-right-5">
+                        <h2 className="display-inline padding-right-5">
                             Define Statement Template Details
-                        </h3>
+                        </h2>
                         <span className="text-secondary">*</span><span className="usa-hint text-lowercase text-thin font-sans-3xs"> indicates required field</span>
-                        <Form className="usa-form margin-top-3"> {/*style={{maxWidth: 'inherit'}}>*/}
+                        <Form className="usa-form" style={{ maxWidth: "none" }}> {/*style={{maxWidth: 'inherit'}}>*/}
                             <fieldset className="usa-fieldset">
-                                <Iri message="This statement template already has an IRI used in xAPI statments" {...formikProps} />
+                                <Iri message="This statement template already has an IRI used in xAPI statments"
+                                    sublabel={props.isPublished ? '' : <>The IRI is what you will use to identify this concept in xAPI statements. A portion of the IRI depends on the IRI for the profile.
+                                    You may use an IRI that is managed externally or one that is generated by the profile server.
+                                    <span className="text-bold"> This is permanent and cannot be changed.</span></>}
+                                    {...formikProps} generatedIRIBase={generatedIRIBase} />
 
                                 <ErrorValidation name="name" type="input">
                                     <label className="usa-label text-uppercase text-thin font-sans-3xs" htmlFor="name"><span className="text-secondary">*</span><span className="details-label"> statement template name</span></label>
@@ -91,9 +123,29 @@ function CreateTemplateForm(props) {
                         </Form>
                     </div>
                     <button className="usa-button submit-button" type="submit" onClick={formikProps.handleSubmit} >Create Statement Template</button>
-                    <button className="usa-button usa-button--unstyled" onClick={handleCancel} type="reset">Cancel</button>
+                    <button className="usa-button usa-button--unstyled" onClick={() => handleCancel(Object.values(formikProps.touched).length > 0)} type="reset">Cancel</button>
                 </>)}
             </Formik>
+            <ModalBoxWithoutClose show={showModal}>
+                <div className="grid-row">
+                    <div className="grid-col">
+                        <h3>Cancel Create Statement Template</h3>
+                    </div>
+                </div>
+                <div className="grid-row">
+                    <div className="grid-col">
+                        <span>Are you sure you want to stop creating this statement template? The information you entered in this form will not be saved if you cancel.</span>
+                    </div>
+                </div>
+                <div className="grid-row">
+                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                        <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={() => handleCancel(false)}>Cancel Create Statement Template</button>
+                    </div>
+                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                        <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} style={{ margin: "2.3em 1.5em" }}><b>Return to Create Statement Template</b></button>
+                    </div>
+                </div>
+            </ModalBoxWithoutClose>
         </div>
     );
 }

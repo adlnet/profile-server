@@ -42,6 +42,11 @@ export const START_EDIT_CONCEPT = 'START_EDIT_CONCEPT';
 export const FINISH_EDIT_CONCEPT = 'FINISH_EDIT_CONCEPT';
 export const ERROR_EDIT_CONCEPT = 'ERROR_EDIT_CONCEPT';
 
+export const START_REMOVE_CONCEPT_LINK = 'START_REMOVE_CONCEPT_LINK';
+export const REMOVE_CONCEPT_LINK = 'REMOVE_CONCEPT_LINK';
+export const ERROR_REMOVE_CONCEPT_LINK = 'ERROR_REMOVE_CONCEPT_LINK';
+export const FINISH_REMOVE_CONCEPT_LINK = 'FINISH_REMOVE_CONCEPT_LINK';
+
 export const START_LOAD_EXTERNAL_CONCEPTS = 'START_LOAD_EXTERNAL_CONCEPTS';
 export const FINISH_LOAD_EXTERNAL_CONCEPTS = 'FINISH_LOAD_EXTERNAL_CONCEPTS';
 
@@ -187,6 +192,32 @@ export function selectConcept(organizationId, profileId, versionId, conceptId) {
     }
 }
 
+export function removeConceptLink(organizationId, profileId, versionId, conceptId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_REMOVE_CONCEPT_LINK,
+        });
+
+        try {
+            await API.removeConceptLink(organizationId, profileId, versionId, conceptId);
+
+            dispatch({
+                type: REMOVE_CONCEPT_LINK,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_REMOVE_CONCEPT_LINK,
+                errorType: 'concepts',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_REMOVE_CONCEPT_LINK,
+            });
+        }
+    }
+}
+
 export function selectInfopanelConcept(conceptId) {
     return async function (dispatch) {
         dispatch({
@@ -236,14 +267,14 @@ export function clearConceptResults() {
     }
 }
 
-export function searchConcepts(search) {
+export function searchConcepts(search, limit, page, sort, filter) {
     return async function (dispatch) {
 
         dispatch({
             type: START_SEARCH_CONCEPTS,
         });
 
-        const concepts = await API.searchConcepts(search);
+        const concepts = await API.searchConcepts(search, limit, page, sort, filter);
 
         dispatch({
             type: FINISH_SEARCH_CONCEPTS,

@@ -13,14 +13,27 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { NavLink, useHistory } from 'react-router-dom';
 import AccountButton from "../../components/users/AccountButton"
 import { useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
+import { loadProfileRootIRI } from '../../actions/profiles';
 // usa-nav__primary-item>a:hover and [href]:focus cause the blue box
 export default function TitleBanner() {
+    const dispatch = useDispatch();
     let userData = useSelector((store) => store.userData);
+    let history = useHistory();
+    let [searchString, setSearchString] = useState();
 
+    useEffect(() => {
+        dispatch(loadProfileRootIRI())
+    }, [])
+    function search(e) {
+        history.push("/search?search=" + (searchString || ""));
+        e.preventDefault();
+        return false;
+    }
     return (<>
         <div className="usa-overlay"></div>
         <header className="usa-header usa-header--extended" id="title-banner">
@@ -47,7 +60,7 @@ export default function TitleBanner() {
                             </NavLink>
                         </li>
                         <li className="usa-nav__primary-item">
-                            <NavLink exact to="/"
+                            <NavLink exact to="/organization"
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current"
                             >
@@ -96,10 +109,10 @@ export default function TitleBanner() {
                         </li>
                     </ul>
                     <div className="usa-nav__secondary">
-                        <form className="usa-search usa-search--small " role="search" style={{ display: 'flex' }}>
+                        <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
                             <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
-                            <input className="usa-input" id="extended-search-field-small" type="search" name="search" />
-                            <button className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
+                            <input className="usa-input" id="extended-search-field-small" onChange={e => setSearchString(e.target.value)} type="search" name="search" />
+                            <button id="site-search" className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
                         </form>
                     </div>
                 </div>

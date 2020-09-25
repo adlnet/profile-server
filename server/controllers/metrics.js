@@ -30,7 +30,19 @@ module.exports.count = function(counterName, counterType, inc = 1) {
     timeStamp *= day;
     Metrics.updateOne({ timeStamp: timeStamp, counterName: counterName, counterType: counterType }, { $inc: { value: inc } }, { upsert: true });
 };
-
+module.exports.populateDemoData = async function(req, res) {
+    for (let i = 0.0; i < 5000; i++) {
+        let timeStamp = Date.now();
+        timeStamp /= (day);
+        timeStamp = Math.floor(timeStamp);
+        timeStamp *= day;
+        timeStamp -= Math.floor(Math.random() * 400) * day;
+        const inc = Math.floor(Math.random() * 3);
+        const counterType = ['profileAPIExport', 'profileUIExport', 'profileUIView', 'profileAPIView'][Math.floor(Math.random() * 3.99999)];
+        Metrics.updateOne({ timeStamp: timeStamp, counterName: req.params.profile, counterType: counterType }, { $inc: { value: inc } }, { upsert: true });
+    }
+    res.send('ok');
+};
 module.exports.overtime = async function(counterName, counterType) {
     if (!Metrics) return;
     const overTime = await Metrics.aggregate([
@@ -38,7 +50,7 @@ module.exports.overtime = async function(counterName, counterType) {
             $match: {
                 counterName: counterName,
                 counterType: counterType,
-                timeStamp: { $gt: Date.now() - week },
+                timeStamp: { $gt: Date.now() - week * 4 },
             },
         },
         {
@@ -56,37 +68,172 @@ module.exports.overtime = async function(counterName, counterType) {
     return overTime;
 };
 
-module.exports.serveProfileSparkline = function() {
-    const counterType = 'profileDownloads';
-    return async function(req, res, next) {
-        const counterName = req.params.profile;
-        const data = await module.exports.overtime(counterName, counterType);
-        return res.send([{ // mockup data for testing
-            _id: 100,
-            value: 100,
+module.exports.total = async function(counterName, counterType) {
+    if (!Metrics) return;
+    const overTime = await Metrics.aggregate([
+        {
+            $match: {
+                counterName: counterName,
+                counterType: counterType,
+                timeStamp: { $gt: Date.now() - (week * 4) },
+            },
         },
         {
-            _id: 200,
-            value: 100,
-        }, {
-            _id: 300,
-            value: 1300,
-        }, {
-            _id: 400,
-            value: 1400,
-        }, {
-            _id: 500,
-            value: 1100,
-        }, {
-            _id: 600,
-            value: 1500,
-        }, {
-            _id: 700,
-            value: 1200,
-        }, {
-            _id: 800,
-            value: 1060,
-        }]);
+            $group: {
+                _id: 1,
+                value: { $sum: '$value' },
+            },
+        },
+    ]).toArray();
+    return overTime;
+};
+
+module.exports.mostViewed = async function(req, res) {
+    if (!Metrics) return;
+    const overTime = await Metrics.aggregate([
+        {
+            $match: {
+                counterType: 'profileUIView',
+                timeStamp: { $gt: Date.now() - req.query.days * day },
+            },
+        },
+        {
+            $group: {
+                _id: '$counterName',
+                value: { $sum: '$value' },
+            },
+        },
+        {
+            $sort: {
+
+                value: -1,
+            },
+        },
+        {
+            $limit: 10,
+        },
+        {
+            $lookup: {
+                from: 'profiles',
+                localField: '_id',
+                foreignField: 'uuid',
+                as: 'profile',
+            },
+        },
+        {
+            $addFields: {
+                profile: { $arrayElemAt: ['$profile', 0] },
+            },
+        },
+        {
+            $match: { 'profile.currentPublishedVersion': { $exists: true } },
+        },
+        {
+            $lookup: {
+                from: 'profileversions',
+                localField: 'profile.currentPublishedVersion',
+                foreignField: '_id',
+                as: 'currentPublishedVersion',
+            },
+        },
+        {
+            $addFields: {
+                currentPublishedVersion: { $arrayElemAt: ['$currentPublishedVersion', 0] },
+            },
+        },
+        {
+            $project: {
+                y: '$value',
+                name: '$currentPublishedVersion.name',
+            },
+        },
+
+    ]).toArray();
+    res.send(overTime);
+};
+module.exports.mostExported = async function(req, res) {
+    if (!Metrics) return;
+    const overTime = await Metrics.aggregate([
+        {
+            $match: {
+                counterType: { $in: ['profileAPIExport', 'profileUIExport'] },
+                timeStamp: { $gt: Date.now() - req.query.days * day },
+            },
+        },
+        {
+            $group: {
+                _id: { counterName: '$counterName', counterType: '$counterType' },
+                value: { $sum: '$value' },
+            },
+        },
+        {
+            $sort: {
+                value: -1,
+            },
+        },
+        {
+            $limit: 10,
+        },
+        {
+            $lookup: {
+                from: 'profiles',
+                localField: '_id.counterName',
+                foreignField: 'uuid',
+                as: 'profile',
+            },
+        },
+        {
+            $addFields: {
+                profile: { $arrayElemAt: ['$profile', 0] },
+            },
+        },
+        {
+            $lookup: {
+                from: 'profileversions',
+                localField: 'profile.currentPublishedVersion',
+                foreignField: '_id',
+                as: 'currentPublishedVersion',
+            },
+        },
+        {
+            $addFields: {
+                currentPublishedVersion: { $arrayElemAt: ['$currentPublishedVersion', 0] },
+            },
+        },
+        {
+            $project: {
+                y: '$value',
+                name: '$currentPublishedVersion.name',
+            },
+        },
+
+    ]).toArray();
+    res.send(overTime);
+};
+
+module.exports.serveProfileSparkline = function() {
+    return async function(req, res, next) {
+        const counterName = req.params.profile;
+        const data = await module.exports.overtime(counterName, { $in: ['profileUIView', 'profileDownloads'] });
+
+        res.send(data);
+    };
+};
+
+module.exports.serveProfileViewTotal = function() {
+    return async function(req, res, next) {
+        const counterName = req.params.profile;
+        const data = await module.exports.total(counterName, { $in: ['profileUIView', 'profileDownloads'] });
+
+        res.send(data);
+    };
+};
+
+module.exports.serveProfileExportTotal = function() {
+    return async function(req, res, next) {
+        const counterName = req.params.profile;
+        const data = await module.exports.total(counterName, { $in: ['profileUIExport', 'profileAPIExport'] });
+
         res.send(data);
     };
 };

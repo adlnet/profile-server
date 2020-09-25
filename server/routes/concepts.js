@@ -36,6 +36,8 @@ const permissionStack = [
 concepts.get('/', controller.getConcepts);
 concepts.post('/', controller.createConcept);
 
+concepts.delete('/link/:concept', ...permissionStack, lock(true), controller.unlinkConcept);
+
 concepts.get('/:concept/lock', ...permissionStack, lock());
 concepts.get('/:concept/unlock', ...permissionStack, unlock());
 

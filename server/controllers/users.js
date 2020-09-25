@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const user = require('../ODM/models.js').user;
-
+const email = require('../utils/email.js');
 const Passport = require('passport');
 const passport = new Passport.Passport();
 const LocalStrategy = require('passport-local');
@@ -42,8 +42,8 @@ exports.setupPassport = function () {
     const settings = require('../settings');
     passport.use(
         'rootSiteLogin',
-        new LocalStrategy({ passReqToCallback: true }, (req, username, password, done) => {
-            user.findOne({ email: username },
+        new LocalStrategy({ passReqToCallback: true, usernameField: 'email' }, (req, email, password, done) => {
+            user.findOne({ email: email },
                 async (err, user) => {
                     if (err) {
                         console.log(err);
@@ -113,9 +113,12 @@ exports.status = function (req, res, next) {
         success: true,
         loggedIn: !!req.user,
         user: req.user ? {
-            username: req.user.username,
+            fullname: req.user.fullname,
+            firstname: req.user.firstname,
+            lastname: req.user.lastname,
             email: req.user.email,
             type: req.user.type,
+            uuid: req.user.uuid,
         } : null,
     });
 };
@@ -139,11 +142,12 @@ exports.createUser = function (req, res, next) {
             }
 
             const newuser = new user();
-            newuser.username = request.username;
+            newuser.firstname = request.firstname;
+            newuser.lastname = request.lastname;
             // var randomSalt = CryptoJS.lib.WordArray.random(128 / 8)
             const randomSalt = crypto.randomBytes(16);
             newuser.salt = randomSalt.toString('hex');
-            newuser.passwordHash = hashPassword(newuser.username, newuser.salt, request.password);
+            newuser.passwordHash = hashPassword(newuser.email, newuser.salt, request.password);
             newuser.verifiedEmail = true;
             newuser.email = request.email;
             // newuser.verifyCode = CryptoJS.lib.WordArray.random(128 / 8).toString();
@@ -160,6 +164,7 @@ exports.createUser = function (req, res, next) {
         },
     );
 };
+
 
 exports.getUser = function (req, res, next) {
     user.findOne(
@@ -217,7 +222,7 @@ exports.login = function (req, res, next) {
         if (!user) {
             return res.status(200).send({
                 success: false,
-                err: 'Username or password is not correct',
+                err: 'User email or password is not correct',
             });
         }
         // Login fails if the user gave the right password, but email is not yet verified
@@ -312,22 +317,24 @@ exports.resendValidation = function (req, res, next) {
 };
 
 exports.resetPassword = async function (req, res, next) {
-    if (req.user.checkPassword(req.body.oldpassword) || req.user.checkResetKey(req.body.oldpassword, req.session.passwordResetKey)) {
+    const _user = await user.findOne({ passwordResetKey: req.body.key });
+    if (_user) {
         try {
-            await req.user.resetPassword(req.body.password);
+            await _user.resetPassword(req.body.password);
         } catch (e) {
-            return res.status(400).send(e.message);
+            return res.status(200).send({
+                success: false,
+                message: e.message,
+            });
         }
 
-        delete req.session.mustResetPassword;
         res.status(200).send({
             success: true,
-
         });
     } else {
-        res.status(400).send({
+        res.status(200).send({
             success: false,
-            err: 'Original password was not correct',
+            err: 'Resetkey was unknown',
         });
     }
 };
@@ -358,15 +365,15 @@ exports.forgotPassword = function (req, res, next) {
                 // Generate a new temp credential
                 await user.forgotPassword();
 
+                email.sendForgotPasswordEmail(user);
                 //    email.sendForgotPasswordEmail(user);
-                return res.status(400).send({
+                return res.status(200).send({
                     success: true,
                 });
             }
             // don't let the output allow fishing to detect existence of account. Send this if account not found.
-            return res.status(400).send({
-                success: false,
-                err: 'This address is not yet verified',
+            return res.status(200).send({
+                success: true,
             });
         },
     );
@@ -376,7 +383,7 @@ exports.forgotPassword = function (req, res, next) {
 exports.search = async function (req, res, next) {
     const query = {
         publicAccount: true, // must have allowed listing
-        $or: [{ username: new RegExp(req.query.search) }, { email: new RegExp(req.query.search) }, { uuid: new RegExp(req.query.search) }],
+        $or: [{ firstname: new RegExp(req.query.search) }, { lastname: new RegExp(req.query.search) }, { email: new RegExp(req.query.search) }, { uuid: new RegExp(req.query.search) }],
     };
 
     const users = await user
@@ -391,21 +398,36 @@ exports.search = async function (req, res, next) {
 
 
 exports.editAccount = async function (req, res) {
-    const validator = require('validator');
-    if (!validator.isEmail(req.body.email)) {
-        return res.status(400).send('Please use a valid email address.');
-    }
-    const existing = await user.findOne({ email: req.body.email });
-    if (existing && req.body.email !== req.user.email) {
-        return res.status(400).send('Another account on the system already uses this email address.');
-    }
-    req.user.email = req.body.email;
-    req.user.username = req.body.username;
-    req.user.publicAccount = req.body.publicAccount;
+    try {
+        const validator = require('validator');
+        if (!validator.isEmail(req.body.email)) {
+            return res.send({
+                success: false,
+                err: 'Please use a valid email address.',
+            });
+        }
+        const existing = await user.findOne({ email: req.body.email });
+        if (existing && req.body.email !== req.user.email) {
+            return res.send({
+                success: false,
+                err: 'Another account on the system already uses this email address.',
+            });
+        }
+        req.user.email = req.body.email;
+        req.user.firstname = req.body.firstname;
+        req.user.lastname = req.body.lastname;
 
-    await req.user.save();
-    res.send({
-
-        success: true,
-    });
+        if (req.body.password && req.body.password === req.body.password2) {
+            await req.user.resetPassword(req.body.password);
+        }
+        await req.user.save();
+        res.send({
+            success: true,
+        });
+    } catch (e) {
+        return res.send({
+            success: false,
+            err: e.message,
+        });
+    }
 };

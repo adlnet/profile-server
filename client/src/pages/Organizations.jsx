@@ -19,58 +19,38 @@ import { Formik } from 'formik';
 import * as Yup from 'yup';
 
 import { useDispatch, useSelector } from 'react-redux';
-import { getOrganizations, deleteOrganization, searchOrganizations } from '../actions/organizations';
-
-
-function RenderOrganizationLink({ uuid, name }) {
-    return (
-        <Link
-                to={'/organization/' + uuid}
-                className="usa-link button-link"
-        >
-            {name || "No Name"}
-        </Link>
-    );
-}
-
-
-function OrgTableRow(props) {
-    // let dispatch = useDispatch();
-
-    return (
-        <tr>
-            <th width="20%" scope="row">
-                <RenderOrganizationLink {...props.organization} />
-            </th>
-            <td><span className="font-sans-3xs">{props.organization.profiles.length}</span></td>
-            <td><span className="font-sans-3xs">{props.organization.members.length}</span></td>
-            <td><span className="font-sans-3xs">{(props.organization.createdOn) ? (new Date(props.organization.createdOn)).toLocaleDateString() : "Unknown"}</span></td>
-            <td>
-            {!props.organization.membership && 
-                <button
-                    className="usa-button  usa-button--unstyled"
-                >
-                    <span className="text-bold">Join</span>
-                </button>
-            }
-            </td>
-
-        </tr>
-    );
-}
+import { clearOrganizationSearchResults, getOrganizations, requestJoinOrganization, searchOrganizations } from '../actions/organizations';
+import PagingTable from '../components/PagingTable';
+import { useState } from 'react';
 
 export default function Organizations(props) {
-
-
     const dispatch = useDispatch();
     const organizations = useSelector((state) => state.organizations);
-    // const searchResults = useSelector((state) => state.searchResults.organizations);
-    
+    const searchResults = useSelector((state) => state.searchResults.organizations);
+    const user = useSelector((state) => state.userData.user);
+    const [searchterm, setSearchterm] = useState();
+    const [showModal, setShowModal] = useState(false);
+
     useEffect(() => {
         dispatch(getOrganizations());
     }, [dispatch]);
 
-    //<LoadingSpinner></LoadingSpinner>
+    let toDisplay = searchResults || organizations || [];
+
+    let data = React.useMemo(() => toDisplay, [toDisplay]);
+    let columns = React.useMemo(() => getColumns(user, (organization, user) => {
+        dispatch(requestJoinOrganization(organization.uuid, user));
+        setShowModal(true);
+        setTimeout(
+            () => setShowModal(false),
+            3000
+        )
+    }), [user]);
+
+    const clearSearch = () => {
+        dispatch(clearOrganizationSearchResults());
+        setSearchterm('')
+    }
 
     return (<>
         <main id="main-content" className="grid-container padding-bottom-4">
@@ -80,18 +60,17 @@ export default function Organizations(props) {
                 </div>
                 <div className="grid-col display-flex flex-column flex-align-end">
                     <Link
-                            to="/organization/create"
+                        to="/organization/create"
                     >
                         <button className="usa-button margin-y-2 margin-right-0">
                             <i className="fa fa-plus margin-right-05"></i>
-                            Create New Working Group
+                            Create Working Group
                         </button>
                     </Link>
                 </div>
             </div >
             <div className="grid-row bg-base-lightest">
-                <div className="grid-col-8 padding-bottom-3 padding-left-3">
-                    <div className="margin-y-1">Search for an existing working group</div>
+                <div className="grid-col-12 padding-3">
 
                     <Formik
                         initialValues={{ search: '', }}
@@ -99,8 +78,10 @@ export default function Organizations(props) {
                             search: Yup.string()
                                 .required('Required')
                         })}
-                        onSubmit={(values) => {
+                        onSubmit={(values, { resetForm }) => {
+                            setSearchterm(values.search);
                             dispatch(searchOrganizations(values.search));
+                            resetForm({ values: '' })
                         }}
                     >
                         {({
@@ -111,46 +92,138 @@ export default function Organizations(props) {
                             handleBlur,
                             handleSubmit
                         }) => (
-                                <div className="usa-search">
-                                    <div role="search" className={`usa-form-group ${errors.search && touched.search ? "usa-form-group--error" : ""}`} style={{marginTop: '0'}}>
-                                        {
-                                            errors.search && touched.search && (
-                                                <span className="usa-error-message padding-right-1" role="alert">{errors.search}</span>
-                                            )
-                                        }
-                                        <label className="usa-sr-only" htmlFor="search-field">Search</label>
-                                        <input className={`usa-input ${errors.search && touched.search ? "usa-input--error" : ""}`} id="search-field" type="search" name="search"
-                                            onChange={handleChange}
-                                            onBlur={handleBlur}
-                                            value={values.search} />
-                                        <button className="usa-button" type="submit" onClick={handleSubmit} style={{ marginTop: 0 }}>
-                                            <span className="usa-search__submit-text">Search</span>
-                                        </button>
+                                <form id="search">
+                                    <div className="usa-search usa-search--big">
+                                        <div role="search" className={`usa-form-group ${errors.search && touched.search ? "usa-form-group--error" : ""}`} style={{ marginTop: '0' }}>
+                                            {
+                                                errors.search && touched.search && (
+                                                    <span className="usa-error-message padding-right-1" role="alert">{errors.search}</span>
+                                                )
+                                            }
+                                            <label className="usa-sr-only" htmlFor="search-field">Search</label>
+                                            <input className={`usa-input ${errors.search && touched.search ? "usa-input--error" : ""}`}
+                                                id="search-field"
+                                                type="search"
+                                                name="search"
+                                                placeholder="Search for an existing working group"
+                                                style={{ maxWidth: "100%", paddingLeft: "1em" }}
+                                                onChange={handleChange}
+                                                onBlur={handleBlur}
+                                                value={values.search} />
+                                            <button className="usa-button" type="submit" onClick={handleSubmit} style={{ marginTop: 0, paddingLeft: "1em", paddingRight: "1em" }}>
+                                                <span className="usa-search__submit-text"
+                                                    style={{ whiteSpace: "nowrap", fontSize: "1.15rem", display: "flex", alignItems: "center" }}>Search Working Groups</span>
+                                            </button>
+                                        </div>
                                     </div>
-                                </div>
-
+                                </form>
                             )}
                     </Formik>
                 </div>
             </div>
+
+            {
+                showModal &&
+                <div className="grid-row">
+                    <div className="usa-alert usa-alert--info" style={{ width: "100%" }}>
+                        <div className="usa-alert__body">
+                            <h3 className="usa-alert__heading">Request Sent</h3>
+                            <p className="usa-alert__text">Your request to the working group was sent.</p>
+                        </div>
+                    </div>
+                </div>
+            }
             <div className="grid-row">
-                <table className="usa-table usa-table--borderless maxh-tablet overflow-auto" width="100%">
-                    <thead>
-                        <tr>
-                            <th width="50%" scope="col">Name</th>
-                            <th width="10%" scope="col">Profiles</th>
-                            <th width="10%" scope="col">Members</th>
-                            <th width="20%" scope="col">Date Created</th>
-                            <th width="10%" scope="col"></th>
-                        </tr>
-                    </thead>
-                    <tbody style={{ lineHeight: 3 }}>
-                        {(organizations && organizations.length > 0)
-                            ? organizations.map((organization, i) => <OrgTableRow organization={organization} key={organization.uuid} site_url={props.url} />)
-                            : <tr key={1}><td className="font-sans-xs" colSpan="6"><p>There are no organizations.  You need to create one.</p></td></tr>}
-                    </tbody>
-                </table>
+                <PagingTable
+                    columns={columns}
+                    data={data}
+                    emptyMessage="There are no organizations.  You need to create one."
+                    searchTerm={searchterm}
+                    clearSearch={clearSearch}
+                />
             </div>
         </main> </>
     );
+}
+
+function getColumns(user, joinAction) {
+    const cols = [
+        {
+            Header: 'Name',
+            id: 'name',
+            accessor: 'name',
+            Cell: function NameLink(
+                { cell: { value },
+                    cell: { row: { original: { uuid } } } }
+            ) {
+                return (
+                    <Link
+                        to={`organization/${uuid}`}
+                        className="usa-link button-link"
+                    >
+                        <span>{value}</span>
+                    </Link >
+                )
+            },
+            style: {
+                width: '45%'
+            }
+        },
+        {
+            Header: 'Profiles',
+            accessor: 'profiles.length',
+            style: {
+                width: '11%',
+                textAlign: 'center'
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
+        },
+        {
+            Header: 'Members',
+            accessor: 'members.length',
+            style: {
+                width: '11%',
+                textAlign: 'center'
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
+        },
+        {
+            Header: 'Date Created',
+            accessor: 'createdOn',
+            Cell: ({ cell: { value } }) => value ? (new Date(value)).toLocaleDateString() : "Unknown",
+            style: {
+                width: '15%',
+                textAlign: 'center'
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
+        },
+        {
+            Header: ' ',
+            id: 'remove',
+            accessor: function removeItem(rowdata) {
+                try {
+                    if (user) {
+                        const orgMember = user && rowdata.members.find(m => m.user && m.user.uuid === user.uuid);
+                        return orgMember ? <em>{`(${orgMember.level})`}</em> : <button className="usa-button  usa-button--unstyled" onClick={() => joinAction(rowdata, user)}><span className="text-bold">Join</span></button>;
+                    }
+                } catch (e) { }
+                return "";
+            },
+            style: {
+                width: '11%',
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
+        }
+
+    ];
+
+    return cols;
 }

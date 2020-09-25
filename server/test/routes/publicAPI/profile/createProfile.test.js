@@ -31,19 +31,20 @@ describe('Create Profile', () => {
     jest.setTimeout(10000);
 
     let key;
-    beforeAll(async () => {
+    beforeEach(async () => {
         const dburi = await mongoServer.getUri();
         await mongoose.connect(dburi, { useNewUrlParser: true, useUnifiedTopology: true });
 
         const wg = new organization({ name: 'wg_name' });
         await wg.save();
-        const maker = new user({ username: 'test_name' });
+        const maker = new user({ email: 'test_name@test.com' });
         await maker.save();
         key = new apiKey({ scope: 'organization', scopeObject: wg, createdBy: maker, updatedBy: maker });
         await key.save();
     });
 
-    afterAll(async () => {
+    afterEach(async () => {
+        await mongoose.disconnect();
         await mongoServer.stop();
     });
 
@@ -54,7 +55,9 @@ describe('Create Profile', () => {
             .set('Content-Type', 'application/json')
             .set('x-api-key', key.uuid)
             .send({
-                status: 'draft',
+                status: {
+                    published: false,
+                },
                 profile: goodProfile1,
             });
         expect(res.status).toEqual(200);
@@ -111,7 +114,9 @@ describe('Create Profile', () => {
             .post('/api/profile')
             .set('Content-Type', 'application/json')
             .set('x-api-key', key.uuid)
-            .send(goodProfile1);
+            .send({
+                profile: goodProfile1,
+            });
 
         const profileModel = await profile.findOne({ iri: goodProfile1.id });
         expect(profileModel).toBeTruthy();
@@ -122,7 +127,9 @@ describe('Create Profile', () => {
         const res = await request(app)
             .post('/api/profile')
             .set('Content-Type', 'application/json')
-            .send(goodProfile1);
+            .send({
+                profile: goodProfile1,
+            });
         expect(res.status).toEqual(401);
     });
 });

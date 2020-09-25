@@ -15,22 +15,23 @@
 **************************************************************** */
 import React from 'react';
 import { useSelector } from 'react-redux';
+import { Link } from 'react-router-dom';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
 
-export default function TemplateDetail({ onEditClick, isMember }) {
+export default function TemplateDetail({ onEditClick, isMember, isCurrentVersion, belongsToAnotherProfile }) {
     let template = useSelector((state) => state.application.selectedTemplate)
 
     return (
         <div className="grid-row">
             <div className="desktop:grid-col-8">
-                <Detail title="id">
+                <Detail title="id" subtitle="The IRI used to identify this in an xAPI statement.">
                     {template.iri}
                 </Detail>
-                <Detail title="statement template name">
+                <Detail title="statement template name" subtitle="English (en)">
                     {template.name}
                 </Detail>
-                <Detail title="description">
+                <Detail title="description" subtitle="English (en)">
                     {template.description}
                 </Detail>
                 <Detail title="translations">
@@ -41,7 +42,7 @@ export default function TemplateDetail({ onEditClick, isMember }) {
                 </Detail>
             </div>
             <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
-                {isMember &&
+                {isMember && isCurrentVersion && !belongsToAnotherProfile &&
                     <button
                         className="usa-button padding-x-105 margin-bottom-2 margin-right-0"
                         onClick={onEditClick}
@@ -55,10 +56,15 @@ export default function TemplateDetail({ onEditClick, isMember }) {
                         {(template.updatedOn) ? (new Date(template.updatedOn)).toLocaleDateString() : "Unknown"}
                     </Detail>
                     <Detail title="parent profile" >
-                        {template.parentProfile && template.parentProfile.name}
+                        {(template.parentProfile && template.parentProfile.name) ?
+                            belongsToAnotherProfile ?
+                                <Link to={`/profile/${template.parentProfile.uuid}`}>{template.parentProfile.name}</Link>
+                                : template.parentProfile.name
+                            : 'Unknown'}
                     </Detail>
                     <Detail title="author" >
-                        {(template.parentProfile && template.parentProfile.organization.name) || 'Unknown'}
+                        {(template.parentProfile && template.parentProfile.organization.name) ?
+                            <Link to={`/organization/${template.parentProfile.organization.uuid}`}>{template.parentProfile.organization.name}</Link> : 'Unknown'}
                     </Detail>
                 </div>
             </div>

@@ -27,10 +27,17 @@ const validationError = require('../../errorTypes/validationError');
 const getWasRevisionOfModels = require('./getWasRevisionOfModels');
 
 exports.VersionLayer = function (profileLayer) {
+    // versionStatus = <new | draft | undefined>
+    //  new - this is creating new version of an existing profile
+    //  draft - this is updating a current version (draft) of an existing profile
+    //  undefined - this is creating a new version of a new profile
+    //
     const jsonLdToModel = new JsonLdToModel();
     const versionDocument = profileLayer.versionDocument;
+    const draftVersionModel = profileLayer.draftVersionModel;
+    const versionStatus = profileLayer.versionStatus;
     const currentVersion = versionDocument.versions[0];
-    const model = new ProfileVersionModel({
+    let model = new ProfileVersionModel({
         organization: profileLayer.profileModel.organization,
         parentProfile: profileLayer.profileModel,
         iri: currentVersion.id,
@@ -42,6 +49,9 @@ exports.VersionLayer = function (profileLayer) {
         moreInformation: versionDocument.seeAlso,
         state: profileLayer.published ? 'published' : 'draft',
         version: profileLayer.previousVersionModels.length + 1,
+        verificationRequest: profileLayer.verificationRequest,
+        createdBy: profileLayer.profileModel.updatedBy,
+        updatedBy: profileLayer.profileModel.updatedBy,
     });
     const conceptDocuments = versionDocument.concepts || [];
     const templateDocuments = versionDocument.templates || [];
@@ -49,14 +59,27 @@ exports.VersionLayer = function (profileLayer) {
 
     return {
         scanVersionLayer: async function () {
-            const exists = await ProfileVersionModel.findOne(
-                { iri: currentVersion.id },
-            );
-            if (exists) {
-                throw new conflictError(
-                    `Profile version ${currentVersion.id} already exists.`,
-                );
+            let exists;
+            // if there is a draftVersionModel, then we are updating that model, here
+            if (draftVersionModel) {
+                exists = draftVersionModel;
+                const thisModel = model.toObject();
+                delete thisModel._id;
+                delete thisModel.createdOn;
+                delete thisModel.uuid;
+                delete thisModel.createdBy;
+                exists.set(thisModel);
+                model = exists;
+            } else {
+                exists = await ProfileVersionModel.findOne({ iri: currentVersion.id });
             }
+
+            // IF we not updating a draft version, then this version cannot exist yet.
+            if (exists && versionStatus !== 'draft') {
+                throw new conflictError(`Profile version ${currentVersion.id} already exists.`);
+            }
+
+            // make sure there are no duplicate component references.
             [
                 { documents: conceptDocuments.map(c => c.id), type: 'concepts' },
                 { documents: templateDocuments.map(c => c.id), type: 'templates' },
@@ -69,13 +92,15 @@ exports.VersionLayer = function (profileLayer) {
                 }
             });
 
+            // build this version's wasRevisionOf property.
             let wasRevisionOf;
             if (currentVersion.wasRevisionOf) {
                 wasRevisionOf = await getWasRevisionOfModels(
-                    profileLayer.previousVersionModels, currentVersion.wasRevisionOf,
+                    profileLayer.previousVersionModels,
+                    currentVersion.wasRevisionOf.filter(w => w !== versionDocument.id),
                 );
             }
-            model.wasRevisionOf = wasRevisionOf;
+            if (wasRevisionOf) model.wasRevisionOf = wasRevisionOf;
 
             const conceptLayers = conceptDocuments.map(
                 c => ConceptLayerFactory({
@@ -93,8 +118,9 @@ exports.VersionLayer = function (profileLayer) {
                 }),
             );
 
+            await model.validate();
+
             return new ProfileComponentLayer({
-                versionStatus: profileLayer.versionStatus,
                 conceptLayers: conceptLayers,
                 templateLayers: templateLayers,
                 patternLayers: patternLayers,

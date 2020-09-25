@@ -20,15 +20,31 @@ import * as Yup from 'yup';
 import BaseConceptFields from './BaseConceptFields';
 import ErrorValidation from '../controls/errorValidation';
 import Schemas from '../fields/Schemas';
+import { Detail } from '../DetailComponents';
+import { useSelector } from 'react-redux';
 
-export default function DocumentConcept({ initialValues, onCreate, onCancel }) {
+export default function DocumentConcept({ initialValues, onCreate, onCancel, isPublished }) {
+    const currentProfileVersion = useSelector(state => state.application.selectedProfile);
+
+    const generatedIRIBase = currentProfileVersion.iri + "/document/";
+
+    let startingValues;
+    if (initialValues) {
+        // it's possible that the iri was external and still match, but this is what 
+        // the system will use to generate the base of the concept iri, so we'll call it 
+        // generated
+        startingValues = { ...initialValues };
+        startingValues.iriType = initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
+        startingValues.iri = initialValues.iri.replace(generatedIRIBase, "");
+    }
+
     return (
         <Formik
-            initialValues={ initialValues || {
+            initialValues={startingValues || {
                 conceptType: 'Document',
                 type: '',
                 iri: '',
-                hasIRI: false,
+                iriType: "external-iri",
                 name: '',
                 description: '',
                 mediaType: '',
@@ -38,11 +54,7 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel }) {
             }}
             validationSchema={Yup.object({
                 iri: Yup.string()
-                    .when('hasIRI', {
-                        is: true,
-                        then: Yup.string()
-                            .required('Required'),
-                    }),
+                    .required('Required'),
                 name: Yup.string()
                     .required('Required'),
                 description: Yup.string()
@@ -65,68 +77,92 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel }) {
                     }),
             })}
             onSubmit={values => {
+                if (values.iriType === 'generated-iri')
+                    values.iri = `${generatedIRIBase}${values.iri}`;
                 onCreate(values);
             }}
         >
             {(props) => (<>
                 <div className="grid-container border-1px border-base-lighter padding-bottom-4 padding-left-4 margin-bottom-2">
                     <div className="grid-row">
-                        <h3 className="grid-col-5">Define Document Details</h3>
+                        <h2 className="grid-col-5">Define Document Details</h2>
                         <div className="grid-col">
                             <div className="margin-top-3">
                                 <span className="text-secondary">*</span> <span className="text-thin text-base font-sans-3xs">indicates required field</span>
                             </div>
                         </div>
                     </div>
-                    <form className="usa-form">
-                        <BaseConceptFields {...props} />
+                    <form className="usa-form" style={{ maxWidth: "none" }}>
+                        <BaseConceptFields {...props} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
 
                         <div className="grid-row">
                             <div className="grid-col-6">
-                                <ErrorValidation name="type" type="input">
-                                    <label className="usa-label" htmlFor="type"><span className="text-secondary">*</span>
-                                        <span className="details-label">Document Resource Type</span>
-                                    </label>
-                                    <Field
-                                        name="type" component="select" value={props.values.type} onChange={props.handleChange} rows="3"
-                                        className="usa-select" id="type" aria-required="true"
-                                    >
-                                        <option value="" disabled defaultValue>- Select Type -</option>
-                                        <option value="StateResource">StateResource</option>
-                                        <option value="AgentProfileResource">AgentProfileResource</option>
-                                        <option value="ActivityProfileResource">ActivityProfileResource</option>
-                                    </Field>
-                                </ErrorValidation>
-
-                                <ErrorValidation name="mediaType" type="input">
-                                    <label className="usa-label" htmlFor="mediaType"><span className="text-secondary">*</span>
-                                        <span className="details-label">Media Type</span>
-                                    </label>
-                                    <Field
-                                        name="mediaType" component="select" value={props.values.mediaType} onChange={props.handleChange} rows="3"
-                                        className="usa-select" id="mediaType" aria-required="true"
-                                    >
-                                        <option value="" disabled defaultValue>- Select Media Type -</option>
-                                        <option value="JSON">application</option>
-                                        <option value="Text">image</option>
-                                        <option value="audio">audio</option>
-                                        <option value="video">video</option>
-                                        <option value="multipart">multipart</option>
-                                    </Field>
-                                </ErrorValidation>
+                                {
+                                    isPublished ?
+                                        <Detail title='Document Resource Type' className='usa-label'>
+                                            {props.values.type}
+                                        </Detail>
+                                        :
+                                        <ErrorValidation name="type" type="input">
+                                            <label className="usa-label" htmlFor="type"><span className="text-secondary">*</span>
+                                                <span className="details-label">Document Resource Type</span>
+                                            </label>
+                                            <Field
+                                                name="type" component="select" value={props.values.type} onChange={props.handleChange} rows="3"
+                                                className="usa-select" id="type" aria-required="true"
+                                            >
+                                                <option value="" disabled defaultValue>- Select Type -</option>
+                                                <option value="StateResource">StateResource</option>
+                                                <option value="AgentProfileResource">AgentProfileResource</option>
+                                                <option value="ActivityProfileResource">ActivityProfileResource</option>
+                                            </Field>
+                                        </ErrorValidation>
+                                }
+                                {
+                                    isPublished ?
+                                        <Detail title='Media Type'>
+                                            {props.values.mediaType}
+                                        </Detail>
+                                        :
+                                        <ErrorValidation name="mediaType" type="input">
+                                            <label className="usa-label" htmlFor="mediaType"><span className="text-secondary">*</span>
+                                                <span className="details-label">Media Type</span>
+                                            </label>
+                                            <Field
+                                                name="mediaType" component="select" value={props.values.mediaType} onChange={props.handleChange} rows="3"
+                                                className="usa-select" id="mediaType" aria-required="true"
+                                            >
+                                                <option value="" disabled defaultValue>- Select Media Type -</option>
+                                                <option value="JSON">JSON</option>
+                                                <option value="Text">text</option>
+                                                <option value="audio">audio</option>
+                                                <option value="video">video</option>
+                                                <option value="multipart">multipart</option>
+                                            </Field>
+                                        </ErrorValidation>
+                                }
                             </div>
                         </div>
+                        {
+                            isPublished ?
+                                <Detail title='context iri'>
+                                    {props.values.contextIri}
+                                </Detail>
+                                :
+                                <>
+                                    <label className="usa-label" htmlFor="contextIri">
+                                        <span className="details-label">context iri</span>
+                                    </label>
+                                    <Field name="contextIri" type="text" className="usa-input" id="contextIri" aria-required="true" />
+                                </>
+                        }
 
-                        <label className="usa-label" htmlFor="contextIri">
-                            <span className="details-label">context iri</span>
-                        </label>
-                        <Field name="contextIri" type="text" className="usa-input" id="contextIri" aria-required="true" />
-                        
-                        <Schemas isRequired={true} {...props} />
+                        <Schemas isRequired={true} {...props} isPublished={isPublished} />
+
                     </form>
                 </div>
                 <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
-                    { initialValues ? 'Save Changes' : 'Add to Profile' }
+                    {initialValues ? 'Save Changes' : 'Add to Profile'}
                 </button>
                 <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
             </>)}

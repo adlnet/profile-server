@@ -15,22 +15,23 @@
 **************************************************************** */
 import React, { useEffect } from 'react';
 import MemberTableRow from "./MemberTableRow";
-export default function MemberTable({members})
-{
+export default function MemberTable({ members }) {
     return <div className="grid-row">
-    <table className="usa-table usa-table--borderless" width="100%">
-        <thead>
-            <tr>
-                <th width="50%" scope="col">Name</th>
-                <th width="20%" scope="col">Permission Level</th>
-                <th width="10%" scope="col"></th>
-            </tr>
-        </thead>
-        <tbody style={{ lineHeight: 3 }}>
-            {(members && members.length > 0)
-                ? members.map((member) => <MemberTableRow member={member} key={member.uuid}/>)
-                : <tr key={1}><td className="font-sans-xs" colSpan="6">There are no members in this organization.\</td></tr>}
-        </tbody>
-    </table>
-</div>
+        <table className="usa-table usa-table--borderless" width="100%">
+            <thead>
+                <tr>
+                    <th width="20%" scope="col">Name</th>
+                    <th width="30%" scope="col">Email</th>
+                    <th width="20%" scope="col">Role</th>
+                    <th width="20%" scope="col">Date Joined</th>
+                    <th width="10%" scope="col"></th>
+                </tr>
+            </thead>
+            <tbody style={{ lineHeight: 3 }}>
+                {(members && members.length > 0)
+                    ? members.map((member, i) => <MemberTableRow member={member} key={member.id} />)
+                    : <tr key={1}><td className="font-sans-xs" colSpan="6">There are no members in this organization.</td></tr>}
+            </tbody>
+        </table>
+    </div>
 }

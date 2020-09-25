@@ -16,7 +16,7 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 
-export default function OrganizationHeader({ organization, url, isMember }) {
+export default function OrganizationHeader({ organization, url, isMember, user, joinAction }) {
     return (
         <header className={" usa-header usa-header--extended"}>
             <div className="usa-navbar bg-base-lightest margin-top-3 padding-y-2">
@@ -28,8 +28,8 @@ export default function OrganizationHeader({ organization, url, isMember }) {
             <nav aria-label="Primary navigation" className="usa-nav">
                 <div className="usa-nav__inner">
                     <button className="usa-nav__close"><i className="fa fa-close"></i></button>
-                    <ul className="usa-nav__primary usa-accordion" style={{marginBottom: '-.15rem'}}>
-                    <li className={`usa-nav__primary-item`}>
+                    <ul className="usa-nav__primary usa-accordion" style={{ marginBottom: '-.15rem' }}>
+                        <li className={`usa-nav__primary-item`}>
                             <NavLink to={`${url}/about`}
                                 className="usa-nav__link"
                                 activeClassName="usa-current">
@@ -39,7 +39,7 @@ export default function OrganizationHeader({ organization, url, isMember }) {
                         </li>
                         {isMember && (<>
                             <li className={`usa-nav__primary-item`}>
-                                <NavLink 
+                                <NavLink
                                     to={url}
                                     className="usa-nav__link"
                                     exact
@@ -63,10 +63,14 @@ export default function OrganizationHeader({ organization, url, isMember }) {
                                     <span className="text-bold">{`API Keys (${organization.apiKeys ? organization.apiKeys.length : '0'})`}</span>
                                 </NavLink>
                             </li>
+
                         </>)}
                     </ul>
-                    {!isMember &&  <div className="usa-nav__secondary">
-                        <button className="usa-button usa-button--outline bg-white pull-right margin-right-0">
+                    {!isMember && <div className="usa-nav__secondary">
+                        <button className="usa-button usa-button--outline bg-white pull-right margin-right-0"
+                            onClick={() => {
+                                joinAction(organization, user)
+                            }}>
                             <i className="fa fa-users margin-right-05"></i>
                             Join Working Group
                         </button>

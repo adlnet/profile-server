@@ -13,12 +13,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Route, Switch, useRouteMatch, useHistory, useParams } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { createProfile } from "../actions/profiles";
-import { selectOrganization } from "../actions/organizations";
+import { requestJoinOrganization, selectOrganization } from "../actions/organizations";
 import LoadingSpinner from '../components/LoadingSpinner';
 import CreateProfile from './CreateProfile';
 import CreateProfileForm from '../components/profiles/CreateProfileForm';
@@ -31,6 +31,8 @@ import ApiKeys from '../components/api-keys/ApiKeys';
 import About from '../components/organizations/About';
 import EditOrganization from '../components/organizations/EditOrganization';
 import Lock from '../components/users/lock';
+import WebHooks from "../components/webhooks/Webhooks"
+
 
 export default function Organization() {
 
@@ -38,11 +40,10 @@ export default function Organization() {
     const history = useHistory();
     const { path, url } = useRouteMatch();
     const { organizationId } = useParams();
+    const [showModal, setShowModal] = useState(false);
 
     const organization = useSelector((state) => state.application.selectedOrganization);
-    // const user = useSelector((state) => state.userData.user);
-
-    
+    const user = useSelector((state) => state.userData.user);
 
     useEffect(() => {
         dispatch(selectOrganization(organizationId));
@@ -52,7 +53,7 @@ export default function Organization() {
         return '';
     }
     //A org with empty members means you're not part of it. 
-    let isMember = organization.membership ;
+    let isMember = organization.membership;
 
     function handleProfileCreate(values) {
         dispatch(createProfile(organizationId, values));
@@ -63,6 +64,14 @@ export default function Organization() {
         history.push(url);
     }
 
+    async function joinAction() {
+        dispatch(requestJoinOrganization(organization.uuid, user));
+        setShowModal(true);
+        setTimeout(
+            () => setShowModal(false),
+            3000
+        )
+    }
 
 
     return (<>
@@ -77,11 +86,22 @@ export default function Organization() {
                 <Profile rootUrl={url} />
             </Route>
             <Route path={path}>
-                <OrganizationHeader organization={organization} url={url} isMember={isMember}></OrganizationHeader>
-                <main id="main-content" className={(!isMember ? "disabled" : "") +  " grid-container  padding-bottom-4"}>
+                <OrganizationHeader organization={organization} url={url} isMember={isMember} joinAction={joinAction}></OrganizationHeader>
+                {
+                    showModal &&
+                    <div className="grid-row">
+                        <div className="usa-alert usa-alert--info" style={{ width: "100%" }}>
+                            <div className="usa-alert__body">
+                                <h3 className="usa-alert__heading">Request Sent</h3>
+                                <p className="usa-alert__text">Your request to the working group was sent.</p>
+                            </div>
+                        </div>
+                    </div>
+                }
+                <main id="main-content" className={"grid-container  padding-bottom-4"}>
                     <Switch>
                         <Route exact path={`${path}/about`}>
-                            <About organization ={organization} rootUrl={url} />
+                            <About organization={organization} rootUrl={url} />
                         </Route>
                         <Route exact path={`${path}/edit`}>
                             <Lock resourceUrl={`/org/${organizationId}`}>
@@ -98,13 +118,14 @@ export default function Organization() {
                             <ApiKeys />
                         </Route>
 
+
                         <Route>
                             <ErrorPage />
                         </Route>
                     </Switch>
                 </main>
             </Route>
-            
+
             <Route>
                 <ErrorPage />
             </Route>

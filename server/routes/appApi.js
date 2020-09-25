@@ -28,7 +28,7 @@ router.use(cookieSession({
     maxAge: 0,
 }));
 
-const users = require('../routes/users');
+const users = require('./users');
 require('../controllers/users').setupPassport();
 router.use(require('../controllers/users').passport.initialize());
 router.use(require('../controllers/users').passport.session());
@@ -36,6 +36,7 @@ router.use('/user', users);
 
 const organizations = require('./organizations');
 router.use('/org', organizations);
+
 
 const concepts = require('./concepts');
 router.use('/concept', concepts);
@@ -65,75 +66,78 @@ function setRegex(column, searchArray) {
     return searchArray.map(s => ({ [column]: { $regex: new RegExp(s, 'i') } }));
 }
 
-router.get('/concept', async (req, res, next) => {
-    let search = req.query.search;
-    let query = {};
+// router.get('/concept', async (req, res, next) => {
+//     console.log('in appAPI - /concept?search');
+//     let search = req.query.search;
+//     let query = {};
 
-    if (search) {
-        search = search.split(' ')
-            .map(s => s.trim())
-            .filter(s => s);
-        query = {
-            $or: [
-                { $or: setRegex('name', search) },
-                { $or: setRegex('description', search) },
-                { $or: setRegex('uuid', search) },
-                { $or: setRegex('iri', search) },
-            ],
-        };
-    }
-    const results = await models.concept.find(query);
-    res.send({
-        success: true,
-        concepts: results,
-    });
-});
+//     if (search) {
+//         search = search.split(' ')
+//             .map(s => s.trim())
+//             .filter(s => s);
+//         query = {
+//             $or: [
+//                 { $or: setRegex('name', search) },
+//                 { $or: setRegex('description', search) },
+//                 { $or: setRegex('uuid', search) },
+//                 { $or: setRegex('iri', search) },
+//             ],
+//         };
+//     }
+//     const results = await models.concept.find(query);
+//     res.send({
+//         success: true,
+//         concepts: results,
+//     });
+// });
 
-router.get('/profile', async (req, res, next) => {
-    let search = req.query.search;
-    let query = {};
-    if (search) {
-        search = search.split(' ')
-            .map(s => s.trim())
-            .filter(s => s);
-        query = {
-            $or: [
-                { $or: setRegex('name', search) },
-                { $or: setRegex('description', search) },
-                { $or: setRegex('uuid', search) },
-                { $or: setRegex('iri', search) },
-            ],
-        };
-    }
-    const results = await models.profile.find(query);
-    res.send({
-        success: true,
-        profiles: results,
-    });
-});
+// router.get('/profile', async (req, res, next) => {
+//     console.log('in appAPI - /profile?search');
+//     let search = req.query.search;
+//     let query = {};
+//     if (search) {
+//         search = search.split(' ')
+//             .map(s => s.trim())
+//             .filter(s => s);
+//         query = {
+//             $or: [
+//                 { $or: setRegex('name', search) },
+//                 { $or: setRegex('description', search) },
+//                 { $or: setRegex('uuid', search) },
+//                 { $or: setRegex('iri', search) },
+//             ],
+//         };
+//     }
+//     const results = await models.profile.find(query);
+//     res.send({
+//         success: true,
+//         profiles: results,
+//     });
+// });
 
-router.get('/organization', async (req, res, next) => {
-    let search = req.query.search;
-    let query = {};
-    if (search) {
-        search = search.split(' ')
-            .map(s => s.trim())
-            .filter(s => s);
-        query = {
-            $or: [
-                { $or: setRegex('name', search) },
-                { $or: setRegex('uuid', search) },
-            ],
-        };
-    }
+// router.get('/organization', async (req, res, next) => {
+//     console.log('in appAPI - /organization?search');
+//     let search = req.query.search;
+//     let query = {};
+//     if (search) {
+//         search = search.split(' ')
+//             .map(s => s.trim())
+//             .filter(s => s);
+//         query = {
+//             $or: [
+//                 { $or: setRegex('name', search) },
+//                 { $or: setRegex('uuid', search) },
+//             ],
+//         };
+//     }
 
-    const results = await models.organization.find(query);
-    console.log('results', JSON.stringify(results));
-    res.send({
-        success: true,
-        profiles: results,
-    });
-});
+//     const results = await models.organization.find(query);
+//     console.log('results', JSON.stringify(results));
+//     res.send({
+//         success: true,
+//         profiles: results,
+//     });
+// });
 
 router.get('/user', async (req, res, next) => {
     let search = req.query.search;
@@ -144,14 +148,14 @@ router.get('/user', async (req, res, next) => {
             .filter(s => s);
         query = {
             $or: [
-                { username: new RegExp(search, 'ig') },
+                { firstname: new RegExp(search, 'ig') },
+                { lastname: new RegExp(search, 'ig') },
                 { email: new RegExp(search, 'ig') },
-                { uuid: new RegExp(search, 'ig') },
             ],
         };
     }
 
-    const results = await models.user.find(query).select('username email uuid');
+    const results = await models.user.find(query).select('firstname lastname fullname email uuid');
     console.log('results', JSON.stringify(results));
     res.send({
         success: true,
@@ -160,6 +164,18 @@ router.get('/user', async (req, res, next) => {
 });
 
 router.use('/search', require('./search'));
+
+router.use('/metrics/mostViewed', require('../controllers/metrics').mostViewed);
+router.use('/metrics/mostExported', require('../controllers/metrics').mostExported);
+router.use('/metrics/profile/:profile/usageOverTime', require('../controllers/metrics').serveProfileSparkline());
+router.use('/metrics/profile/:profile/viewTotal', require('../controllers/metrics').serveProfileViewTotal());
+router.use('/metrics/profile/:profile/exportTotal', require('../controllers/metrics').serveProfileExportTotal());
+
+router.get('/rootProfileIRI', (req, res, next) => {
+    const settings = require('../settings');
+    res.send({ success: true, iri: settings.profileRootIRI });
+});
+
 
 router.use((err, req, res, next) => {
     // Change in prod mode.

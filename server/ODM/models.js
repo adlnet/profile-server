@@ -22,6 +22,7 @@ const profile = require('./profile');
 const profileVersion = require('./profileVersion');
 const user = require('./user');
 const apiKey = require('./apiKey');
+const hook = require('./hook.js');
 const mongoSanitize = require('mongo-sanitize');
 const mongoose = require('mongoose');
 
@@ -35,4 +36,5 @@ module.exports = {
     user: mongoose.model('user', user),
     apiKey: mongoose.model('apiKey', apiKey),
     patternComponent: mongoose.model('patternComponent', patternComponent),
+    hook: mongoose.model('hook', hook),
 };

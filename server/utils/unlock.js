@@ -13,14 +13,21 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+
+const authorizationError = require('../errorTypes/authorizationError');
+
 /**
  * Called to unlock a resource
  * @param {boolean} _continue Used as middleware and should call next
+ * @param {boolean} publicApi Used to send public api errors
  */
-module.exports = function unlock(_continue = false) {
+module.exports = function unlock(_continue = false, publicApi = false) {
     return async function (req, res, next) {
         console.log('unlocking');
-        if (!req.user) throw new Error('anonymous cannot lock');
+        if (!req.user) {
+            if (publicApi) res.status(401).send({ success: false, message: 'User was not found' });
+            else throw new Error('anonymous cannot lock');
+        }
         if (!req.resource) throw new Error('resource not found');
 
         if (!req.resource.locked && !_continue) {

@@ -45,13 +45,13 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
     const [infoPanelConcept, setInfoPanelConcept] = useState();
     const [hasFlyoutOnPrevious, setHasFlyoutOnPrevious] = useState(false);
 
-    function handleAddToProfileClick() {
+    async function handleAddToProfileClick() {
         if (selectedResults) {
             const newProfileVersion = Object.assign({}, profileVersion);
             newProfileVersion.templates = [...newProfileVersion.templates, ...selectedResults];
 
             if (profileVersion.state === 'draft') {
-                dispatch(editProfileVersion(newProfileVersion));
+                await dispatch(editProfileVersion(newProfileVersion));
             } else if (profileVersion.state === 'published') {
                 // if editing the published profile, we need to clean up 
                 // the values param since we create a new draft from the published version.
@@ -70,10 +70,10 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                 };
                 // Need to verify iri is a new one, not the original published version (profileVersion)
                 if (newVersion.iri === profileVersion.iri) delete newVersion.iri;
-                dispatch(createNewProfileDraft(newVersion));
+                await dispatch(createNewProfileDraft(newVersion));
             }
 
-            dispatch(loadProfileTemplates(versionId));
+            await dispatch(loadProfileTemplates(versionId));
             history.push(rootUrl);
         }
     }
@@ -111,17 +111,15 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
         <div>
             <div className="grid-row margin-top-3 margin-bottom-3">
                 <div className="grid-col">
-                    <h2>Add Statement Template</h2>
-                </div>
-                <div className="grid-col">
-                    <Link to={"create"}><button className="usa-button pin-right bottom-2"><i className="fa fa-plus"></i> Create New</button></Link>
+                    <Link to={rootUrl}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right"></i>
+                    <h2 className="margin-y-05">Add Statement Templates</h2>
                 </div>
             </div>
 
             <SearchSelectComponent
                 searchFunction={(searchValues) => dispatch(searchTemplates(searchValues))}
                 clearSearchFunction={() => dispatch(clearTemplateResults())}
-                searchMessage="Search for existing statement templates"
+                searchMessage="Search for existing statement templates to link to this profile before creating a new one."
                 searchResults={templateResults && templateResults.filter(t => templateResultsFilter(t))}
                 selectResultFunction={(template) => dispatch(selectTemplateResult(template))}
                 removeSelectedResultFunction={(template) => dispatch(deselectTemplateResult(template))}
@@ -131,6 +129,7 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                 oneSelectionOnlyMessage={"Only one template may be selected for this profile."}
                 selectionMessage={`Selected Template${isOneTemplateOnly ? '' : 's'}`}
                 resultView={<TemplateResultView onViewDetailsClick={onViewDetailsClick} />}
+                placeholderText={`Search for statement templates`}
             />
 
             <div className="grid-row">
@@ -138,13 +137,18 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                     <button className="usa-button usa-button--unstyled padding-y-105" onClick={handleCancel}><b>Cancel</b></button>
                 </div>
                 <div className="grid-col">
-                    <button
-                        onClick={handleAddToProfileClick}
-                        className="usa-button margin-right-0 pin-right"
-                        disabled={!(selectedResults && selectedResults.length > 0)}
-                    >
-                        Add to Profile
+                    <div className="pin-right">
+
+                        <Link to={"create"}><button className="usa-button"><i className="fa fa-plus"></i> Create New</button></Link>
+
+                        <button
+                            onClick={handleAddToProfileClick}
+                            className="usa-button margin-right-0"
+                            disabled={!(selectedResults && selectedResults.length > 0)}
+                        >
+                            Add Selected to Profile
                     </button>
+                    </div>
                 </div>
             </div>
             <Flyout

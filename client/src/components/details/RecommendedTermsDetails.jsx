@@ -30,21 +30,22 @@ export default function RecommendedTermsDetails({ recommendedTerms, linkable }) 
     return (
         <div>
             {
-                recommendedTerms.map(
-                    (recommendedTerm, key) =>
-                        <div key={key} className="margin-bottom-05">
-                            {
-                                linkable ? 
-                                    <span
-                                        className="usa-link button-link"
+                recommendedTerms.length ?
+                    recommendedTerms.map(
+                        (recommendedTerm, key) =>
+                            <div key={key} className="margin-bottom-05">
+                                {
+                                    linkable ?
+                                        <span
+                                            className="usa-link button-link"
                                         // onClick={() => onConceptClick(recommendedTerm)}
-                                    >
-                                        {recommendedTerm.name || recommendedTerm.iri}
-                                    </span> :
-                                    <span>{recommendedTerm.name || recommendedTerm.iri}</span>
-                            }
-                        </div>
-                )
+                                        >
+                                            {recommendedTerm.name || recommendedTerm.iri}
+                                        </span> :
+                                        <span>{recommendedTerm.name || recommendedTerm.iri}</span>
+                                }
+                            </div>
+                    ) : "None provided"
             }
 
             {/* <Flyout show={showConceptInfopanel} onClose={() => setShowConceptInfopanel(false)}>

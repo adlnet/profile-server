@@ -23,24 +23,22 @@ import CreateExtensionConcept from './CreateExtensionConcept';
 import CreateActivityConcept from './CreateActivityConcept';
 import ErrorPage from '../errors/ErrorPage';
 
-export default function EditConcept({ initialValues, onCancel, onCreate }) {
+export default function EditConcept({ initialValues, onCancel, onCreate, isPublished }) {
     const { path } = useRouteMatch();
 
-    return(<>
-        <h2>{initialValues && initialValues.name}</h2>
-
+    return (<>
         <Switch>
             <Route exact path={`${path}/document`}>
-                <CreateDocumentConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} />
+                <CreateDocumentConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
             </Route>
             <Route exact path={`${path}/extension`}>
-                <CreateExtensionConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} />
+                <CreateExtensionConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
             </Route>
             <Route exact path={`${path}/activity`}>
-                <CreateActivityConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} />
+                <CreateActivityConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
             </Route>
             <Route exact path={`${path}/:conceptType(Verb|ActivityType|AttachmentUsageType)?`}>
-                <CreateSemanticallyRelatableConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} />
+                <CreateSemanticallyRelatableConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
             </Route>
             <Route>
                 <ErrorPage />

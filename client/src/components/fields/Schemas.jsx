@@ -46,17 +46,17 @@ export default function Schemas(props) {
                 <div className={`usa-form-group ${(props.touched.inlineSchema && props.errors.inlineSchema) || (props.touched.schemaString && props.errors.schemaString) ? "usa-form-group--error" : ""}`} >
                     <label className={`usa-label ${(props.touched.inlineSchema && props.errors.inlineSchema) || (props.touched.schemaString && props.errors.schemaString) ? "usa-label--error" : ""}`}>
                         {
-                            props.isRequired &&
-                                <span className="text-secondary">*</span>
-                        }   
+                            props.isRequired && !props.isPublished &&
+                            <span className="text-secondary">*</span>
+                        }
                         <span className="details-label">Schema</span>
                     </label>
-                    {   
-                        ((props.touched.inlineSchema && props.errors.inlineSchema) || (props.touched.schemaString && props.errors.schemaString))  &&
-                            <span className="usa-error-message" id="input-error-message" role="alert">{props.errors.inlineSchema || props.errors.schemaString}</span>
+                    {
+                        ((props.touched.inlineSchema && props.errors.inlineSchema) || (props.touched.schemaString && props.errors.schemaString)) &&
+                        <span className="usa-error-message" id="input-error-message" role="alert">{props.errors.inlineSchema || props.errors.schemaString}</span>
                     }
                     <div className="usa-radio ">
-                        <input 
+                        <input
                             className="usa-radio__input"
                             id="iriString"
                             type="radio"
@@ -73,7 +73,7 @@ export default function Schemas(props) {
                                 type="text"
                                 id="inlineSchema"
                                 className={
-                                    `description ${props.values.schemaType === "inlineSchema" ? "usa-input" : "usa-input disabled"} 
+                                    `description ${props.values.schemaType === "inlineSchema" && !props.isPublished ? "usa-input" : "usa-input disabled"} 
                                     ${(props.touched.inlineSchema && props.errors.inlineSchema && props.values.schemaType === 'inlineSchema') ?
                                         "usa-input--error" : ""}`
                                 }
@@ -99,7 +99,7 @@ export default function Schemas(props) {
                                 component="textarea"
                                 id="schemaString"
                                 className={
-                                    `description ${props.values.schemaType === "schemaString" ? "usa-textarea" : "usa-textarea disabled"} 
+                                    `description ${props.values.schemaType === "schemaString" && !props.isPublished ? "usa-textarea" : "usa-textarea disabled"} 
                                     ${(props.touched.schemaString && props.errors.schemaString && props.values.schemaType === 'schemaString') ?
                                         "usa-input--error" : ""}`}
                                 value={props.values.schemaString}

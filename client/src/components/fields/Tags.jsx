@@ -41,7 +41,9 @@ export default function Tags(props) {
     }
 
     return (<>
-        <div className="grid-row">
+        {
+            !props.isPublished &&
+            <div className="grid-row">
                 <Field
                     name="tags"
                     type="text"
@@ -60,7 +62,8 @@ export default function Tags(props) {
                 >
                     Add
                 </button>
-        </div>
+            </div>
+        }
         <div className="margin-top-1 margin-bottom-5">
             {
                 tags.map((tag, index) => {
@@ -71,7 +74,7 @@ export default function Tags(props) {
                             style={{ marginTop: '.5em' }}
                         >
                             <span className="margin-05">{tag}</span>
-                            <span className="margin-05"><span className="fa fa-icon fa-close" onClick={() => handleRemoveTagButtonClick(index)} /></span>
+                            {!props.isPublished && <span className="margin-05"><span className="fa fa-icon fa-close" onClick={() => handleRemoveTagButtonClick(index)} /></span>}
                         </span>
                     );
                 })

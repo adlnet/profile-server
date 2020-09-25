@@ -20,23 +20,25 @@ import { Detail } from '../DetailComponents';
 
 export default function About({ organization, rootUrl }) {
     return (<>
-        <div className="grid-row">
+        <div className="grid-row margin-top-2">
             <div className="desktop:grid-col-8">
                 <h2>About this Working Group</h2>
                 <Detail title="name">
                     {organization.name}
                 </Detail>
-                <Detail title="description">
-                    {organization.description}
-                </Detail>
+                {organization && organization.description &&
+                    <Detail title="description">
+                        {organization.description}
+                    </Detail>
+                }
                 <Detail title="link to collaborate">
                     {organization.collaborationLink}
                 </Detail>
             </div>
             <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
                 <Link
-                        to={`${rootUrl}/edit`}
-                        className="usa-button padding-x-105 margin-top-2 margin-right-0 "
+                    to={`${rootUrl}/edit`}
+                    className="usa-button padding-x-105 margin-top-2 margin-right-0 "
                 >
                     <span className="fa fa-pencil fa-lg margin-right-1"></span>
                     Edit Working Group Details
@@ -46,11 +48,11 @@ export default function About({ organization, rootUrl }) {
                         {(organization.createdOn) ? (new Date(organization.createdOn)).toLocaleDateString() : "Unknown"}
                     </Detail>
                     <Detail title="created by">
-                        {organization.createdBy.username}
+                        {organization.createdBy.fullname}
                     </Detail>
                 </div>
             </div>
-            
+
         </div>
     </>)
 }
