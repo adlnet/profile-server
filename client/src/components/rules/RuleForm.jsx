@@ -23,12 +23,17 @@ import { useState } from 'react';
 import ruleSchema from './data/ruleSchema.json';
 import { useDispatch, useSelector } from 'react-redux';
 import { editTemplate, selectTemplate } from '../../actions/templates';
+import CancelButton from '../controls/cancelButton';
+import { CREATED, EDITED } from '../../actions/successAlert';
+import { validateRuleContent } from '../../utils/ruleContentValidation';
 
-export default function RuleForm({ rule, jsonPath, returnTo, isEditable, isPublished }) {
+export default function RuleForm({ rule, jsonPath, returnTo, isEditable, isPublished, isEditing }) {
     const history = useHistory();
     const [errorText, setErrorText] = useState('');
     const [successText, setSuccessText] = useState('');
+    const [validated, setValidated] = useState(false);
     const template = useSelector((state) => state.application.selectedTemplate);
+    const determiningProperties = useSelector((state) => state.application.selectedDeterminingProperties);
     const dispatch = useDispatch();
 
     let newrule = rule ? rule : jsonPath ? { location: jsonPath.join('.') } : {};
@@ -52,12 +57,14 @@ export default function RuleForm({ rule, jsonPath, returnTo, isEditable, isPubli
         try {
             let ruleObject = JSON.parse(`{${rule}}`);
             validate(ruleObject, ruleSchema, { throwError: true });
-
+            validateRuleContent(determiningProperties, ruleObject);
+            setValidated(true);
             if (manualValidation) {
-                setSuccessText('This rule validated successfully.')
+                setSuccessText('JSON format and properties are valid.')
                 setTimeout(() => setSuccessText(''), 2000);
             }
         } catch (e) {
+            setValidated(false)
             setErrorText(e.message)
             errors.rule = e.message;
         }
@@ -84,11 +91,10 @@ export default function RuleForm({ rule, jsonPath, returnTo, isEditable, isPubli
                     updatedTemplate.rules = [value];
                 }
 
-                await dispatch(editTemplate(updatedTemplate));
+                await dispatch(editTemplate(updatedTemplate, isEditing ? EDITED : CREATED, "Rule"));
                 await dispatch(selectTemplate(updatedTemplate.uuid));
                 history.push(returnTo);
             }}
-            validate={(values) => validateRule(values.rule)}
         >
             {props =>
                 <>
@@ -154,9 +160,9 @@ export default function RuleForm({ rule, jsonPath, returnTo, isEditable, isPubli
                     <div className="grid-row margin-top-2">
                         <div className="grid-col">
                             <div className="">
-                                <button className="usa-button margin-right-3" onClick={() => validateRule(props.values.rule, true)}>Validate Rule</button>
-                                <button className="usa-button margin-right-3" onClick={props.handleSubmit}>{rule ? 'Save' : 'Add'} Rule</button>
-                                <button className="usa-button usa-button--unstyled" onClick={() => history.push(returnTo)}><b>Cancel</b></button>
+                                <button className="usa-button margin-right-3" onClick={() => validateRule(props.values.rule, true)}>Check JSON Format</button>
+                                <button className="usa-button margin-right-3" disabled={!validated} onClick={props.handleSubmit}>{rule ? 'Save' : 'Add'} Rule</button>
+                                <CancelButton className="usa-button usa-button--unstyled" type="button" cancelAction={() => history.push(returnTo)} />
                             </div>
                         </div>
                     </div>

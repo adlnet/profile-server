@@ -14,14 +14,16 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useState } from 'react';
-import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import ScopeNote from '../fields/ScopeNote';
 
 export default function Rule({ templateName, url, belongsToAnotherProfile }) {
-    const match = useRouteMatch();
+    const params = useParams();
     const location = useLocation();
     const rule = location.state && location.state.rule;
     const [jsonPath, setJSONPath] = useState(rule && rule.location.split('.') || ['$']);
+    // if the org id isn't present then this was hit through the public urls
+    const isPublicView = !params.organizationId;
 
     // remove any empty arrays or strings, and remove anything that isn't part of a rule
     let rulesString = Object.fromEntries(Object.entries(rule).map(([key, value]) => {
@@ -34,8 +36,10 @@ export default function Rule({ templateName, url, belongsToAnotherProfile }) {
     rulesString = JSON.stringify(rulesString, null, 2).slice(1, -1);
 
 
-    const pathToTemplates = `/organization/${match.params.organizationId}/profile/${match.params.profileId}/version/${match.params.versionId}/templates`;
-    const pathToCurrentTemplate = `/organization/${match.params.organizationId}/profile/${match.params.profileId}/version/${match.params.versionId}/templates/${match.params.templateId}`;
+    const pathToTemplates = !isPublicView ? `/organization/${params.organizationId}/profile/${params.profileId}/version/${params.versionId}/templates`
+        : `/profile/${params.profileId}/templates`;
+    const pathToCurrentTemplate = !isPublicView ? `/organization/${params.organizationId}/profile/${params.profileId}/version/${params.versionId}/templates/${params.templateId}`
+        : `/profile/${params.profileId}/templates/${params.templateId}`;
 
     return (<>
         <div className="grid-row">
@@ -48,7 +52,7 @@ export default function Rule({ templateName, url, belongsToAnotherProfile }) {
             </div>
             <div className="display-flex flex-column flex-align-right">
                 <div className="padding-top-5">
-                    {!belongsToAnotherProfile &&
+                    {!belongsToAnotherProfile && !isPublicView &&
                         <Link className="usa-button" to={{ pathname: `${url}/edit`, state: { rule: rule } }}>
                             <i className="fa fa-pencil margin-right-1"></i> Edit Rule
                     </Link>

@@ -17,6 +17,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function ProfileTableRow({ profile, site_url, isMember }) {
+    if (!isMember && profile && !profile.currentPublishedVersion) return <></>;
     return (
         <tr>
             <th width="20%" scope="row">
@@ -41,9 +42,11 @@ export default function ProfileTableRow({ profile, site_url, isMember }) {
                                 className="usa-link button-link"
                             >
                                 {profile.currentPublishedVersion.name}
+                                {profile.currentPublishedVersion.isVerified && <img className="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />}
                             </Link>
                 }
             </th>
+            <td>{profile.currentDraftVersion && isMember ? 'Draft' : profile.currentPublishedVersion && profile.currentPublishedVersion.isVerified ? 'Verified' : 'Published'}</td>
             <td><span className="font-sans-3xs">{(profile.updatedOn) ? (new Date(profile.updatedOn)).toLocaleDateString() : 'Unknown'}</span></td>
 
 

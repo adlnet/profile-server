@@ -38,8 +38,9 @@ export default function MostViewedGraph(props) {
     let func = async function () {
 
       let _data = await api.getJSON("/app/metrics/mostViewed?days=" + days);
-      _data = _data.map((i, j) => { i.x = i.name; return i });
-      console.log(_data);
+      // names aren't unique
+      _data = _data.map((i, j) => { i.x = i._id; return i });
+      // console.log(_data);
       setData(_data)
     };
     func();
@@ -48,15 +49,14 @@ export default function MostViewedGraph(props) {
   function forgetSelected() {
     setSelected(null);
   }
-  async function _setDays(d)
-  {
+  async function _setDays(d) {
     let _data = await api.getJSON("/app/metrics/mostViewed?days=" + d);
     setDays(d);
-    _data = _data.map((i, j) => { i.x = i.name; return i });
-    
+    _data = _data.map((i, j) => { i.x = i._id; return i });
+
     setData(_data)
   }
-  
+
   const axisStyle = {
     ticks: {
       fontSize: '12px',
@@ -69,47 +69,47 @@ export default function MostViewedGraph(props) {
   };
 
   if (!data) return ""
-  return <div className={"leadGraph " + (props.a?"a":"b")}> 
-  
-  <div className="graphHead">
-    <h3>Most Viewed</h3>
-    <select name="language" rows="3" className="usa-select" id="days" aria-required="true" value={days} onChange={(e)=>_setDays(e.target.value)}><option value="30" disabled="">last 30 days</option><option value="365">last 12 months</option></select>
-  </div>
-  <XYPlot width={440} height={300} xType="ordinal">
+  // console.log(data.map(i=>i.name.substr(0,Math.min(15,i.name.length-1))))
+  return <div className={"leadGraph " + (props.a ? "a" : "b")}>
 
-    <HorizontalGridLines />
+    <div className="graphHead">
+      <h3>Most Viewed {props.wide ? " Profiles" : ""} </h3>
+      <select name="language" rows="3" className="usa-select" id="days" aria-required="true" value={days} onChange={(e) => _setDays(e.target.value)}><option value="30" disabled="">last 30 days</option><option value="365">last 12 months</option></select>
+    </div>
+    <XYPlot width={props.wide ? 880 : 440} height={props.wide ? 400 : 300} xType="ordinal">
 
-
-
-    <YAxis style={axisStyle}
-    labelValues={[0,1000]}
-    />
-    <XAxis
+      <HorizontalGridLines />
 
 
-      labelFormat={v => `Value is ${v}`}
-      labelValues={[]}
-      tickValues={[]}
 
-    />
+      <YAxis style={axisStyle}
+        labelValues={[0, 1000]}
+      />
+      <XAxis
+        tickFormat={v => {
+          if (!props.wide) return ''
+          let ret = data.find(d => d.x === v)
+          return ret ? ret.name.substr(0, Math.min(15, ret.name.length)) : ''
+        }}
+      />
 
-    <VerticalBarSeries
-      onValueMouseOver={setSelected}
-      onValueMouseOut={forgetSelected} data={data}
-      color="rgba(204, 101, 254, 0.498039215686275)"
-      style={{
-        stroke: 'rgba(204, 101, 254, 1)',
-        strokeLinejoin: 'round'
-      }}
-    />
+      <VerticalBarSeries
+        onValueMouseOver={setSelected}
+        onValueMouseOut={forgetSelected} data={data}
+        color="rgba(204, 101, 254, 0.498039215686275)"
+        style={{
+          stroke: 'rgba(204, 101, 254, 1)',
+          strokeLinejoin: 'round'
+        }}
+      />
 
-    {selected ? (
-      <Hint
-        value={selected}
-        align={{ horizontal: Hint.ALIGN.CENTER, vertical: Hint.ALIGN.CENTER }}
-      >
-        <div className="rv-hint__content">{`(${selected.x}, ${selected.y})`}</div>
-      </Hint>
-    ) : null}
-  </XYPlot> </div>
+      {selected ? (
+        <Hint
+          value={selected}
+          align={{ horizontal: Hint.ALIGN.CENTER, vertical: Hint.ALIGN.CENTER }}
+        >
+          <div className="rv-hint__content">{`(${selected.name}, ${selected.y})`}</div>
+        </Hint>
+      ) : null}
+    </XYPlot> </div>
 }

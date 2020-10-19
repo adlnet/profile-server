@@ -23,22 +23,22 @@ import CreateExtensionConcept from './CreateExtensionConcept';
 import CreateActivityConcept from './CreateActivityConcept';
 import ErrorPage from '../errors/ErrorPage';
 
-export default function EditConcept({ initialValues, onCancel, onCreate, isPublished }) {
+export default function EditConcept({ initialValues, onCancel, onCreate, isPublished, setIsEditing, onDeprecate }) {
     const { path } = useRouteMatch();
-
+    setIsEditing(true);
     return (<>
         <Switch>
             <Route exact path={`${path}/document`}>
-                <CreateDocumentConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
+                <CreateDocumentConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
             </Route>
             <Route exact path={`${path}/extension`}>
-                <CreateExtensionConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
+                <CreateExtensionConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
             </Route>
             <Route exact path={`${path}/activity`}>
-                <CreateActivityConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
+                <CreateActivityConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
             </Route>
             <Route exact path={`${path}/:conceptType(Verb|ActivityType|AttachmentUsageType)?`}>
-                <CreateSemanticallyRelatableConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} />
+                <CreateSemanticallyRelatableConcept startingValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
             </Route>
             <Route>
                 <ErrorPage />

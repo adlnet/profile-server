@@ -23,21 +23,21 @@ export default function ErrorBoundary() {
     function dismissError(error) {
         dispatch({ type: 'CLEAR_ERROR', error: error })
     }
-        
+
     return (
         (errors && errors.length > 0) ?
-            errors.map((error, i) =>  
-                <div key={error.uuid || i} className="usa-alert usa-alert--error margin-top-2" role="alert">
+            errors.map((error, i) =>
+                <div key={error.uuid || i} className="usa-alert usa-alert--error usa-alert--slim" role="alert">
                     <div className="usa-alert__body">
                         <h3 className="usa-alert__heading">{`${error.errorType} Error`}</h3>
                         <p className="usa-alert__text">{error.type} {error.error}</p>
                         <p>Click <button
-                                className="usa-button usa-button--unstyled display-inline"
-                                onClick={() => dismissError(error)}
-                            >here</button> to dismiss.</p>
+                            className="usa-button usa-button--unstyled display-inline"
+                            onClick={() => dismissError(error)}
+                        >here</button> to dismiss.</p>
                     </div>
-                </div> 
-            ): ''
+                </div>
+            ) : ''
     );
 }
 

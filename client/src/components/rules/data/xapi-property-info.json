@@ -18,6 +18,10 @@
                 "name": ".name",
                 "description": "an actor name"
             },
+            "member": {
+                "name": ".member",
+                "description": "an actor member list"
+            },
             "mbox": {
                 "name": ".mbox",
                 "description": "an email address as an actor identifier"
@@ -33,6 +37,14 @@
             "account": {
                 "name": ".account",
                 "description": "an account as an actor identifier"
+            },
+            "account.homePage": {
+                "name": ".account.homePage",
+                "description": "an account homePage as part of an actor identifier"
+            },
+            "account.name": {
+                "name": ".account.name",
+                "description": "an account name as part of an actor identifier"
             }
         }
     },
@@ -41,13 +53,8 @@
         "description": "a specific verb"
     },
     "object": {
-        "name": "Object >",
-        "subprops": {
-            "objectType": {
-                "name": ".objectType",
-                "description": "an object type"
-            }
-        }
+        "name": "Object",
+        "description": "an object"
     },
     "result": {
         "name": "Result >",
@@ -55,6 +62,22 @@
             "score": {
                 "name": ".score",
                 "description": "a score"
+            },
+            "score.scaled": {
+                "name": ".score.scaled",
+                "description": "a scaled score"
+            },
+            "score.raw": {
+                "name": ".score.raw",
+                "description": "a raw score"
+            },
+            "score.min": {
+                "name": ".score.min",
+                "description": "a min score"
+            },
+            "score.max": {
+                "name": ".score.max",
+                "description": "a max score"
             },
             "success": {
                 "name": ".success",
@@ -93,19 +116,19 @@
                 "name": ".team",
                 "description": "a team as context"
             },
-            "contextActivitiesParent": {
+            "contextActivities.parent": {
                 "name": ".contextActivities.parent",
                 "description": "context activity parent objects"
             },
-            "contextActivitiesGrouping": {
+            "contextActivities.grouping": {
                 "name": ".contextActivities.grouping",
                 "description": "context activity grouping objects"
             },
-            "contextActivitiesCategory": {
+            "contextActivities.category": {
                 "name": ".contextActivities.category",
                 "description": "context activity category objects"
             },
-            "contextActivitiesOther": {
+            "contextActivities.other": {
                 "name": ".contextActivities.other",
                 "description": "context activity other objects"
             },
@@ -128,15 +151,6 @@
             "extensions": {
                 "name": ".extensions",
                 "description": "extensions as context"
-            }
-        }
-    },
-    "authority": {
-        "name": "Authority >",
-        "subprops": {
-            "objectType": {
-                "name": ".objectType",
-                "description": "an authority object type"
             }
         }
     },

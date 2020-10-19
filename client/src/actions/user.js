@@ -19,7 +19,7 @@ import { batch } from 'react-redux';
 
 export const START_LOGIN = 'START_LOGIN';
 export const FINISH_LOGIN = 'FINISH_LOGIN';
-export const ERROR_LOGIN = 'ERROR_LOGIN';
+export const LOGIN_FAILED = 'LOGIN_FAILED';
 
 export const START_LOGOUT = 'START_LOGOUT';
 export const FINISH_LOGOUT = 'FINISH_LOGOUT';
@@ -39,13 +39,21 @@ export function logout() {
         dispatch({
             type: START_LOGOUT,
         });
+        try {
+            await API.logout();
+        } catch (err) {
+            dispatch({
+                type: ERROR_LOGOUT,
+                error: "error logging out",
+                errorType: 'user',
+            });
+        } finally {
+            dispatch({
+                type: FINISH_LOGOUT,
+            });
+            window.location.reload();
+        }
 
-        await API.logout();
-
-        dispatch({
-            type: FINISH_LOGOUT,
-        });
-        window.location.reload();
         //checkStatus()(dispatch);
     };
 }
@@ -55,12 +63,22 @@ export function checkStatus() {
             type: START_CHECK,
         });
 
-        let user = await API.getUserStatus();
+        let user;
+        try {
+            user = await API.getUserStatus();
+        } catch (err) {
+            dispatch({
+                type: ERROR_CHECK,
+                error: err.message,
+                errorType: 'user',
+            });
+        } finally {
+            dispatch({
+                type: FINISH_CHECK,
+                user: user.user,
+            });
+        }
 
-        dispatch({
-            type: FINISH_CHECK,
-            user: user.user,
-        });
         return user.loggedIn;
     };
 }
@@ -71,21 +89,32 @@ export function login(loginRequest, redirectto) {
             type: START_LOGIN,
         });
 
-        let loginResult = await API.login(loginRequest);
-        if (!loginResult.success) {
-            return batch(() => {
-                dispatch({
-                    type: ERROR_LOGIN,
-                    err: loginResult.err,
-                });
+        let loginResult;
+        let loggedIn
+        try {
+            loginResult = await API.login(loginRequest);
 
-                dispatch({
-                    type: FINISH_LOGIN,
+
+            if (!loginResult.success) {
+                return batch(() => {
+                    dispatch({
+                        type: LOGIN_FAILED,
+                        error: loginResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_LOGIN,
+                    });
                 });
+            }
+            loggedIn = await checkStatus()(dispatch);
+        } catch (err) {
+            dispatch({
+                type: LOGIN_FAILED,
+                error: err.message,
+                errorType: 'user'
             });
         }
-        let loggedIn = await checkStatus()(dispatch);
-
         if (loggedIn) {
             history.push(redirectto.originurl || '/')
             dispatch({
@@ -94,8 +123,8 @@ export function login(loginRequest, redirectto) {
         }
         else
             return dispatch({
-                type: ERROR_LOGIN,
-                err: "Somehow, the cookie is not set",
+                type: LOGIN_FAILED,
+                error: "Somehow, the cookie is not set",
             });
 
     };
@@ -109,12 +138,27 @@ export function createAccount(createRequest) {
             type: START_CREATE,
         });
 
-        let createResult = await API.createUser(createRequest);
-        if (!createResult.success) {
+        let createResult;
+        try {
+            createResult = await API.createUser(createRequest);
+            if (!createResult.success) {
+                return batch(() => {
+                    dispatch({
+                        type: ERROR_CREATE,
+                        error: createResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_CREATE,
+                    });
+                });
+            }
+        } catch (err) {
             return batch(() => {
                 dispatch({
                     type: ERROR_CREATE,
-                    err: createResult.err,
+                    error: err.message,
+                    errorType: 'Create Account'
                 });
 
                 dispatch({

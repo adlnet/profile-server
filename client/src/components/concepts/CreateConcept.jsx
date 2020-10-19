@@ -22,31 +22,33 @@ import CreateDocumentConcept from './CreateDocumentConcept';
 import CreateExtensionConcept from './CreateExtensionConcept';
 import CreateActivityConcept from './CreateActivityConcept';
 import ErrorPage from '../errors/ErrorPage';
+import Breadcrumb from '../controls/breadcrumbs';
 
-export default function CreateConcept({ onCancel, onCreate }) {
+export default function CreateConcept({ rootUrl, onCancel, onCreate, importedConcept }) {
     const history = useHistory();
     const { url, path } = useRouteMatch();
 
     return (<>
-        <div className="usa-layout-docs usa-layout-docs__main usa-prose">
+        <div className="usa-layout-docs usa-layout-docs__main usa-prose margin-top-3">
             <header>
-                <h2 className="site-page-title">Create New Concept</h2>
+                <Breadcrumb breadcrumbs={[{ to: rootUrl, crumb: 'concepts' }]} />
+                <h2 className="site-page-title margin-y-05">Create New Concept</h2>
             </header>
             <Switch>
                 <Route exact path={path}>
                     <ChooseConceptType onCreate={onCreate} onCancel={onCancel} />
                 </Route>
                 <Route exact path={`${path}/Document`}>
-                    <CreateDocumentConcept onCreate={onCreate} onCancel={() => history.push(url)} />
+                    <CreateDocumentConcept onCreate={onCreate} onCancel={onCancel} importedConcept={importedConcept}/>
                 </Route>
                 <Route exact path={`${path}/Extension`}>
-                    <CreateExtensionConcept onCreate={onCreate} onCancel={() => history.push(url)} />
+                    <CreateExtensionConcept onCreate={onCreate} onCancel={onCancel} importedConcept={importedConcept}/>
                 </Route>
                 <Route exact path={`${path}/Activity`}>
-                    <CreateActivityConcept onCreate={onCreate} onCancel={() => history.push(url)} />
+                    <CreateActivityConcept onCreate={onCreate} onCancel={onCancel} importedConcept={importedConcept}/>
                 </Route>
                 <Route exact path={`${path}/:conceptType(Verb|ActivityType|AttachmentUsageType)?`}>
-                    <CreateSemanticallyRelatableConcept onCreate={onCreate} onCancel={() => history.push(url)} />
+                    <CreateSemanticallyRelatableConcept onCreate={onCreate} onCancel={onCancel} importedConcept={importedConcept}/>
                 </Route>
                 <Route>
                     <ErrorPage />

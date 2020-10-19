@@ -27,7 +27,7 @@ const CardListItem = ({ ctaText, to, keyName, keyValue }) => {
               to={to}
               className="font-sans-md"
             >
-              {ctaText}
+              <span style={{display:'flex', alignItems:'center'}}dangerouslySetInnerHTML={{__html:ctaText}}></span>
             </NavLink>
             <div className="font-sans-md card-list-sub">
               <span>{keyName}:</span> {keyValue}

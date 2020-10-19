@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Formik } from 'formik';
 import * as Yup from 'yup';
@@ -22,6 +22,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import { clearOrganizationSearchResults, getOrganizations, requestJoinOrganization, searchOrganizations } from '../actions/organizations';
 import PagingTable from '../components/PagingTable';
 import { useState } from 'react';
+import { checkStatus } from '../actions/user';
 
 export default function Organizations(props) {
     const dispatch = useDispatch();
@@ -33,17 +34,19 @@ export default function Organizations(props) {
 
     useEffect(() => {
         dispatch(getOrganizations());
+        dispatch(checkStatus());
     }, [dispatch]);
 
     let toDisplay = searchResults || organizations || [];
 
-    let data = React.useMemo(() => toDisplay, [toDisplay]);
-    let columns = React.useMemo(() => getColumns(user, (organization, user) => {
-        dispatch(requestJoinOrganization(organization.uuid, user));
+    let data = useMemo(() => toDisplay, [toDisplay]);
+    let columns = useMemo(() => getColumns(user, async (organization, user) => {
+        await dispatch(requestJoinOrganization(organization.uuid, user));
+        await dispatch(getOrganizations());
         setShowModal(true);
         setTimeout(
             () => setShowModal(false),
-            3000
+            5000
         )
     }), [user]);
 
@@ -53,7 +56,7 @@ export default function Organizations(props) {
     }
 
     return (<>
-        <main id="main-content" className="grid-container padding-bottom-4">
+        <main id="main-content" className="grid-container padding-bottom-4 margin-top-4">
             <div className="grid-row display-flex flex-row flex-align-end">
                 <div className="grid-col">
                     <h1>Working Groups</h1>
@@ -152,19 +155,7 @@ function getColumns(user, joinAction) {
             Header: 'Name',
             id: 'name',
             accessor: 'name',
-            Cell: function NameLink(
-                { cell: { value },
-                    cell: { row: { original: { uuid } } } }
-            ) {
-                return (
-                    <Link
-                        to={`organization/${uuid}`}
-                        className="usa-link button-link"
-                    >
-                        <span>{value}</span>
-                    </Link >
-                )
-            },
+            Cell: NameLink,
             style: {
                 width: '45%'
             }
@@ -206,15 +197,7 @@ function getColumns(user, joinAction) {
         {
             Header: ' ',
             id: 'remove',
-            accessor: function removeItem(rowdata) {
-                try {
-                    if (user) {
-                        const orgMember = user && rowdata.members.find(m => m.user && m.user.uuid === user.uuid);
-                        return orgMember ? <em>{`(${orgMember.level})`}</em> : <button className="usa-button  usa-button--unstyled" onClick={() => joinAction(rowdata, user)}><span className="text-bold">Join</span></button>;
-                    }
-                } catch (e) { }
-                return "";
-            },
+            Cell: JoinButton(user, joinAction),
             style: {
                 width: '11%',
             },
@@ -226,4 +209,35 @@ function getColumns(user, joinAction) {
     ];
 
     return cols;
+}
+
+function JoinButton(user, joinAction) {
+    return function JoinCell({ cell: { row: { original } } }) {
+        try {
+            if (user) {
+                const orgMember = user && original.members && original.members.find(m => m.user && m.user.uuid === user.uuid);
+                const pendingMember = user && original.memberRequests && original.memberRequests.find(m => m.user && m.user.uuid === user.uuid);
+                return orgMember
+                    ? <em>{`(${orgMember.level})`}</em>
+                    : (pendingMember)
+                        ? <em>Membership Requested</em>
+                        : <button className="usa-button  usa-button--unstyled" onClick={() => joinAction(original, user)}><span className="text-bold">Join</span></button>;
+            }
+        } catch (e) { console.log(e) }
+        return <div></div>;
+    }
+}
+
+function NameLink(
+    { cell: { value },
+        cell: { row: { original: { uuid } } } }
+) {
+    return (
+        <Link
+            to={`organization/${uuid}`}
+            className="usa-link button-link"
+        >
+            <span>{value}</span>
+        </Link >
+    )
 }

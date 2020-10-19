@@ -18,10 +18,12 @@ import { useState, useEffect } from 'react';
 import api from '../../api';
 export default function Lock({ children = [], resourceUrl }) {
     let [haveLock, setLock] = useState(false);
+    let [timedOut, setTimedOut] = useState(false);
     let [lockMessage, setLockMessage] = useState("");
 
     let func = async function () {
 
+        setTimedOut(false);
         if (haveLock)
             return;
         let lockState = await api.getJSON("/app" + resourceUrl + "/lock");
@@ -31,6 +33,12 @@ export default function Lock({ children = [], resourceUrl }) {
         }
         if (lockState.success == true) {
             setLock(true); setLockMessage(lockState.message);
+            setTimeout(()=>{
+               
+                setTimedOut(true);
+                haveLock = false;
+                setLock(false)
+            },lockState.timeout)
         }
 
     };
@@ -43,9 +51,13 @@ export default function Lock({ children = [], resourceUrl }) {
             api.getJSON("/app" + resourceUrl + "/unlock");
         }
     }, [])
-    if (!haveLock) return <div>
+    if (!haveLock && !timedOut) return <div>
         <div><p>{lockMessage || "Trying to obtain write lock."}</p></div>
         <div className="usa-button" onClick={() => func()}> Retry </div>
+    </div>
+    if (!haveLock && timedOut) return <div>
+        <div><p>{"Your lock on this resource has timed out"}</p></div>
+        <div className="usa-button" onClick={() => func()}> Try to reestablish lock </div>
     </div>
     else
         return children;

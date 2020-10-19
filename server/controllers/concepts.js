@@ -30,19 +30,19 @@ async function getVersionConcepts(versionUuid) {
             .findByUuid(versionUuid)
             .populate({
                 path: 'concepts',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn updatedBy isDeprecated',
                 populate: {
                     path: 'parentProfile',
-                    select: 'uuid iri name',
+                    select: 'uuid iri name state',
                     populate: { path: 'parentProfile', select: 'uuid name' },
                 },
             })
             .populate({
                 path: 'externalConcepts',
-                select: 'uuid iri name conceptType updatedOn',
+                select: 'uuid iri name conceptType updatedOn updatedBy isDeprecated',
                 populate: {
                     path: 'parentProfile',
-                    select: 'uuid iri name',
+                    select: 'uuid iri name state',
                     populate: { path: 'parentProfile', select: 'uuid name' },
                 },
             });
@@ -66,7 +66,7 @@ async function getAllConcepts() {
     let concepts;
     try {
         concepts = await conceptModel
-            .find({ parentProfile: { $ne: null } }, 'uuid iri name description conceptType updatedOn')
+            .find({ parentProfile: { $ne: null } }, 'uuid iri name description conceptType updatedOn updatedBy')
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name state',
@@ -98,6 +98,7 @@ async function searchConcepts(search, limit, page, sort, filter) {
         const profileVersion = await profileVersionModel.findByUuid(searchFilter.parentProfile);
         query.parentProfile = profileVersion._id;
     }
+
     let results = conceptModel.find(query);
     if (!results) return [];
     if (limit) {
@@ -111,8 +112,8 @@ async function searchConcepts(search, limit, page, sort, filter) {
 
     results = results.populate({
         path: 'parentProfile',
-        select: 'uuid iri name',
-        populate: { path: 'organization', select: 'uuid name' },
+        select: 'uuid iri name state',
+        populate: { path: 'organization parentProfile', select: 'uuid name' },
     })
         .populate({ path: 'similarTerms.concept', select: 'uuid name iri' })
         .populate({ path: 'recommendedTerms', select: 'uuid name iri' });
@@ -217,8 +218,12 @@ exports.getConcept = async function (req, res) {
                     { path: 'parentProfile', select: 'uuid iri name' },
                 ],
             })
-            .populate('similarTerms.concept')
-            .populate('recommendedTerms');
+            .populate({
+                path: 'similarTerms.concept',
+                populate: { path: 'parentProfile', populate: { path: 'parentProfile' } },
+            })
+            .populate('recommendedTerms')
+            .populate('updatedBy', 'firstname lastname email uuid');
 
         if (!concept) {
             return res.status(404).send({
@@ -240,7 +245,7 @@ exports.getConcept = async function (req, res) {
     });
 };
 
-exports.onlyCreateConcept = async function (orguuid, versionuuid, conceptBody) {
+exports.onlyCreateConcept = async function (orguuid, versionuuid, conceptBody, user) {
     const organization = await organizationModel.findByUuid(orguuid);
     const profileVersion = await profileVersionModel.findByUuid(versionuuid);
 
@@ -260,6 +265,7 @@ exports.onlyCreateConcept = async function (orguuid, versionuuid, conceptBody) {
     await concept.save();
     profileVersion.concepts.push(concept);
     profileVersion.updatedOn = new Date();
+    profileVersion.updatedBy = user;
     await profileVersion.save();
     return concept;
 };
@@ -267,9 +273,15 @@ exports.onlyCreateConcept = async function (orguuid, versionuuid, conceptBody) {
 exports.createConcept = async function (req, res) {
     let concept;
     try {
-        concept = await exports.onlyCreateConcept(req.params.org, req.params.version, req.body);
+        concept = await exports.onlyCreateConcept(req.params.org, req.params.version, req.body, req.user);
     } catch (err) {
         console.error(err);
+        if (err instanceof require('mongoose').Error.ValidationError) {
+            return res.status(400).send({
+                success: false,
+                message: err.message,
+            });
+        }
         return res.status(500).send({
             success: false,
             message: err.message,
@@ -294,7 +306,7 @@ exports.updateConcept = async function (req, res) {
             });
         }
 
-        Object.assign(concept, req.body, { updatedOn: new Date() });
+        Object.assign(concept, req.body, { updatedOn: new Date(), updatedBy: req.user });
         await concept.save();
     } catch (err) {
         console.error(err);

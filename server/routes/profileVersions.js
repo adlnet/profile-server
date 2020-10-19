@@ -14,7 +14,10 @@
 * limitations under the License.
 **************************************************************** */
 const Express = require('express');
+const multer = require('multer');
 const profileVersions = Express.Router({ mergeParams: true });
+const ProfileVersionModel = require('../ODM/models').profileVersion;
+const HarvestDataModel = require('../ODM/models').harvestData;
 const controller = require('../controllers/profileVersions');
 // Protected by parent router
 
@@ -47,11 +50,48 @@ const profilePermissionStack = [
     deny,
 ];
 
+const validateProfile = require('../controllers/profiles').validateProfile;
+const upload = multer({ storage: multer.memoryStorage() });
+const assignUpload = (param) => (req, res, next) => {
+    req.body[param] = JSON.parse(String(req.file.buffer));
+    req.body.fileName = req.file.originalname;
+    next();
+};
+
+const harvestStack = [
+    upload.single('statement'),
+    assignUpload('statement'),
+    getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
+    controller.getStatementHarvestData,
+];
+
+const updateHarvestStack = [
+    getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
+    getResource(HarvestDataModel, 'harvest', 'uuid', true, 'harvest'),
+    controller.updateStatementHarvestData,
+]
+
+const deleteHarvestStack = [
+    getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
+    getResource(HarvestDataModel, 'harvest', 'uuid', true, 'harvest'),
+    controller.deleteStatementHarvestData,
+];
+
+const exportStack = [
+    getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
+    controller.getProfileVersionExportData,
+];
+
 profileVersions.post('/', ...profilePermissionStack, controller.createProfileVersion);
+
 profileVersions.get('/:version', controller.getProfileVersion);
 profileVersions.get('/:version/lock', ...permissionStack, lock());
 profileVersions.get('/:version/unlock', ...permissionStack, unlock());
+profileVersions.get('/:version/export', ...exportStack);
 profileVersions.put('/:version', ...permissionStack, unlock(true), controller.updateProfileVersion);
+profileVersions.post('/:version/harvest', ...harvestStack);
+profileVersions.put('/:version/harvest/:harvest', ...updateHarvestStack);
+profileVersions.delete('/:version/harvest/:harvest', ...deleteHarvestStack);
 
 const concepts = require('./concepts');
 profileVersions.use('/:version/concept', concepts);
@@ -60,6 +100,7 @@ const templates = require('./templates');
 profileVersions.use('/:version/template', templates);
 
 const patterns = require('./patterns');
+const profileVersion = require('../ODM/profileVersion');
 profileVersions.use('/:version/pattern', patterns);
 
 module.exports = profileVersions;

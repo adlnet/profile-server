@@ -32,6 +32,8 @@ export default function ArrangeOrder(props) {
     const [infoPanelPattern, setInfoPanelPattern] = useState();
 
     const updateComponentLocation = result => {
+        // make sure the user didn't just drag if out of the drag zone
+        if (!(result.destination && result.source)) return;
         let newOrder = [...selectedResults];
         let comp = newOrder.splice(result.source.index, 1);
         newOrder.splice(result.destination.index, 0, ...comp);
@@ -51,21 +53,9 @@ export default function ArrangeOrder(props) {
     }
 
     return (<>
-        <div className="grid-row">
+        <div className="grid-row padding-left-3">
             <div className="grid-col">
                 <h2>Arrange Order for {props.type}</h2>
-            </div>
-            <div className="grid-col">
-                {
-                    (props.touched && Object.keys(props.errors).length > 0) ? (<>
-                        <span className="usa-error-message" id="input-error-message" role="alert">
-                            The following field errors were found:
-                        </span>
-                        <span className="usa-error-message" id="input-error-message" role="alert">
-                            {`    ${Object.keys(props.errors).join(', ')}`}
-                        </span>
-                    </>) : ""
-                }
             </div>
         </div>
 
@@ -73,7 +63,7 @@ export default function ArrangeOrder(props) {
             <div className="grid-row minh-mobile-lg">
                 <Droppable droppableId="droppable">
                     {provided => (
-                        <div className="grid-col margin-right-2"
+                        <div className="grid-col margin-x-2"
                             {...provided.droppableProps}
                             ref={provided.innerRef}>
                             {
@@ -102,13 +92,13 @@ export default function ArrangeOrder(props) {
         </DragDropContext>
 
         <Flyout show={showInfoPanel} onClose={() => setShowInfoPanel(false)}>
-        { 
-                (showInfoPanel && infoPanelPattern)  &&
-                    <PatternInfoPanel infoPanelPattern={infoPanelPattern} />
+            {
+                (showInfoPanel && infoPanelPattern) &&
+                <PatternInfoPanel infoPanelPattern={infoPanelPattern} />
             }
             {
                 (showInfoPanel && infoPanelTemplate) &&
-                    <StatementTemplateInfoPanel infoPanelTemplate={infoPanelTemplate} />
+                <StatementTemplateInfoPanel infoPanelTemplate={infoPanelTemplate} />
             }
         </Flyout>
     </>)
@@ -137,20 +127,20 @@ function Result(props) {
             </div >
             <div className="grid-col-2 text-center">
                 <button
-                        type="button"
-                        className={`usa-button ${props.styles} `}
-                        style={{ marginTop: 0, marginRight: 0 }}
-                        onClick={() => dispatch(deselectComponent(props.component))}
+                    type="button"
+                    className={`usa-button ${props.styles} `}
+                    style={{ marginTop: 0, marginRight: 0 }}
+                    onClick={() => dispatch(deselectComponent(props.component))}
                 >
                     Remove
                 </button>
                 <button
-                        type="button"
-                        className="usa-button usa-button--unstyled"
-                        style={{ marginTop: ".75rem" }}
-                        onClick={props.onViewDetailsClick}
+                    type="button"
+                    className="usa-button usa-button--unstyled"
+                    style={{ marginTop: ".75rem" }}
+                    onClick={props.onViewDetailsClick}
                 >
-                    View Details
+                    View Info
                 </button>
             </div>
         </div >
@@ -160,12 +150,12 @@ function Result(props) {
 function SecondaryInfo(props) {
     let info = [props.component.componentType];
     if (props.component.componentType === "pattern") info.push(props.component.primary ? "Primary" : "Secondary");
-    if (props.component.parentProfile) info.push(props.component.parentProfile.name);
     return (
         <span
             className="font-sans-3xs text-base-light"
             style={{ textTransform: 'capitalize' }}>
             {info.join(' | ')}
+            {props.component.parentProfile && <> | <span className="text-bold">Profile:</span> {props.component.parentProfile.name}</>}
         </span>
     )
 } 

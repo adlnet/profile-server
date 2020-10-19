@@ -17,10 +17,13 @@ import React, { useState } from 'react';
 import { Formik, Form, ErrorMessage } from 'formik';
 
 import { CodeEditorField } from '../controls/codeEditor';
+import CancelButton from '../controls/cancelButton';
+import { CREATED, EDITED } from '../../actions/successAlert';
 
 
 export default function CreateStatementExample({ initialValues, onSubmit, onCancelClick }) {
     const [codeErrors, setCodeErrors] = useState();
+
     return (<>
         <Formik
             initialValues={initialValues ? { statementExample: initialValues } : { statementExample: "" }}
@@ -49,7 +52,7 @@ export default function CreateStatementExample({ initialValues, onSubmit, onCanc
                     // didn't parse to JSON, set to empty string
                     values.statementExample = "";
                 }
-                onSubmit(values);
+                onSubmit(values, initialValues ? EDITED : CREATED);
             }}
         >
             <Form>
@@ -61,13 +64,7 @@ export default function CreateStatementExample({ initialValues, onSubmit, onCanc
                     </div>
                     <div className="grid-col display-flex flex-column flex-align-end">
                         <div>
-                            <button
-                                className="usa-button usa-button--unstyled margin-105"
-                                type="button"
-                                onClick={onCancelClick}
-                            >
-                                <b>Cancel</b>
-                            </button>
+                            <CancelButton className="usa-button usa-button--unstyled margin-105" type="button" cancelAction={onCancelClick} />
                             <button
                                 className="usa-button margin-top-2" style={{ margin: '0' }}
                                 type="submit"

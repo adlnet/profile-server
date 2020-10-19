@@ -23,6 +23,7 @@ const fs = require('fs');
 
 templateCache.verifyEmail = fs.readFileSync(__dirname + '/emails/verifyEmail.html.txt', 'utf8');
 templateCache.forgotPassword = fs.readFileSync(__dirname + '/emails/forgotPassword.html.txt', 'utf8');
+templateCache.profileVerificationStatus = fs.readFileSync(__dirname + '/emails/profileVerificationStatus.html.txt', 'utf8');
 
 
 for (const i in templateCache) {
@@ -97,6 +98,40 @@ exports.sendAccountValidateEmail = function (user, done) {
         from: config.system_email_from, // sender address
         to: user.email, // list of receivers
         subject: 'Verify Email Account', // Subject line
+        text: message, // plaintext body
+        html: message, // html body
+    };
+
+    send(mailOptions);
+};
+
+/**
+ * Sends an email to the user who requested their profile be verified
+ * about the result of the verification review.
+ *
+ * @param {profileVersionModel} profileVersion the profile version
+ */
+exports.sendProfileVerificationResponse = function (profileVersion, revoked) {
+    console.log(`${profileVersion.name} v ${profileVersion.version} was ${profileVersion.isVerified ? 'verified' : revoked ? 'revoked' : 'denied'}`);
+    const user = profileVersion.verificationRequestedBy;
+    // debugger;
+    let reason;
+    if (!profileVersion.isVerified) {
+        reason = { text: profileVersion.verificationDenyReason };
+    }
+
+    const message = Mustache.render(templateCache.profileVerificationStatus, {
+        email: user.email,
+        profilename: profileVersion.name,
+        profileversion: profileVersion.version,
+        approvalstatus: profileVersion.isVerified ? 'approved' : revoked ? 'revoked' : 'denied',
+        reason: reason,
+    });
+
+    const mailOptions = {
+        from: config.system_email_from, // sender address
+        to: user.email, // list of receivers
+        subject: `Your profile verification request has been ${profileVersion.isVerified ? 'approved' : revoked ? 'revoked' : 'denied'}`, // Subject line
         text: message, // plaintext body
         html: message, // html body
     };

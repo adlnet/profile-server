@@ -20,6 +20,8 @@ const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
 const { authorizationError, notFoundError } = require('../errorTypes/errors');
 const mongoSanitize = require('mongo-sanitize');
+const metrics = require('./metrics');
+
 exports.getApiKeys = async function (req, res, next) {
     let apiKeys;
     try {
@@ -116,6 +118,14 @@ exports.middleware = {
             try {
                 const storedKey = await apiKeyModel.findByUuid(apiKey)
                     .populate('scopeObject').populate('updatedBy');
+
+                if (storedKey) {
+                    if (req.method === 'POST' || req.method === 'PUT') {
+                        await metrics.recordMetric('profileAPIWrite', storedKey.uuid, req);
+                    } else if (req.method === 'GET') {
+                        await metrics.recordMetric('profileAPIRead', storedKey.uuid, req);
+                    }
+                }
 
                 if (resource === 'organization') {
                     if (!apiKey || !storedKey) {

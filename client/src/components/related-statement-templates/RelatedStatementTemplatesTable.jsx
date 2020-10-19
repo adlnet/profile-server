@@ -15,9 +15,10 @@
 **************************************************************** */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import RemoveButton from '../controls/removeButton';
 
 
-export default function RelatedStatementTemplatesTable({ objectStatementRefTemplates, contextStatementRefTemplates, rootUrl, url, isMember, isCurrentVersion, isPublished, belongsToAnotherProfile, removeRelatedTemplate }) {
+export default function RelatedStatementTemplatesTable({ objectStatementRefTemplates, contextStatementRefTemplates, rootUrl, url, isMember, isCurrentVersion, isPublished, belongsToAnotherProfile, removeRelatedTemplate, isEditable }) {
     return (<>
         <div className="grid-row">
             <div className="grid-col">
@@ -39,14 +40,14 @@ export default function RelatedStatementTemplatesTable({ objectStatementRefTempl
                     <td>{contextStatementRefTemplates && contextStatementRefTemplates.length ?
                         <TemplateReferenceCell templateRefs={contextStatementRefTemplates} url={url} rootUrl={rootUrl} />
                         :
-                        !isMember || !isCurrentVersion || isPublished || belongsToAnotherProfile ?
+                        !isMember || !isCurrentVersion || isPublished || belongsToAnotherProfile || !isEditable ?
                             <span className="text-base font-ui-2xs text-italic">(none)</span> :
                             <Link to={`${url}/context/create`}>
                                 <button className="usa-button">Add Statement Template Reference</button>
                             </Link>
                     }
                     </td>
-                    {isMember && isCurrentVersion && !isPublished && contextStatementRefTemplates.length ?
+                    {isMember && isCurrentVersion && !isPublished && contextStatementRefTemplates.length && isEditable ?
                         <>
                             <td>
                                 <Link
@@ -57,12 +58,12 @@ export default function RelatedStatementTemplatesTable({ objectStatementRefTempl
                                 </Link>
                             </td>
                             <td>
-                                <button
+                                <RemoveButton
                                     className="usa-button  usa-button--unstyled"
                                     onClick={() => removeRelatedTemplate('context')}
-                                >
-                                    <span className="text-bold">Remove</span>
-                                </button>
+                                    item="Context statement template reference"
+                                    object="template"
+                                />
                             </td>
                         </>
                         :
@@ -77,14 +78,14 @@ export default function RelatedStatementTemplatesTable({ objectStatementRefTempl
                     <td>{objectStatementRefTemplates && objectStatementRefTemplates.length ?
                         <TemplateReferenceCell templateRefs={objectStatementRefTemplates} url={url} rootUrl={rootUrl} />
                         :
-                        !isMember || !isCurrentVersion || isPublished || belongsToAnotherProfile ?
+                        !isMember || !isCurrentVersion || isPublished || belongsToAnotherProfile || !isEditable ?
                             <span className="text-base font-ui-2xs text-italic">(none)</span> :
                             <Link to={`${url}/object/create`}>
                                 <button className="usa-button">Add Statement Template Reference</button>
                             </Link>
                     }
                     </td>
-                    {isMember && isCurrentVersion && !isPublished && objectStatementRefTemplates.length ?
+                    {isMember && isCurrentVersion && !isPublished && objectStatementRefTemplates.length && isEditable ?
                         <>
                             <td>
                                 <Link
@@ -95,12 +96,12 @@ export default function RelatedStatementTemplatesTable({ objectStatementRefTempl
                                 </Link>
                             </td>
                             <td>
-                                <button
+                                <RemoveButton
                                     className="usa-button  usa-button--unstyled"
                                     onClick={() => removeRelatedTemplate('object')}
-                                >
-                                    <span className="text-bold">Remove</span>
-                                </button>
+                                    item="Object statement template reference"
+                                    object="template"
+                                />
                             </td>
                         </>
                         :

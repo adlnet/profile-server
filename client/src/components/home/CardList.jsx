@@ -16,7 +16,7 @@
 
 import React, { useState } from "react";
 
-import { NavLink } from "react-router-dom";
+import { Link } from "react-router-dom";
 
 import SvgArrow from "../icons/SvgArrow";
 
@@ -24,37 +24,46 @@ import CardListItem from "./CardListItem";
 
 const CardList = ({ header, items, cta, keyName, to, children }) => {
   const [mouseOver, setMouseOver] = useState(false);
+
   const onMouseOver = (e) => {
     setMouseOver(true);
   };
   const onMouseLeave = (e) => {
     setMouseOver(false);
   };
+
   return (
     <div className="card-list">
       <header className="font-sans-lg">{header}</header>
-      {items.map((item, index) => (
-        <CardListItem
-          key={item.uuid}
-          ctaText={item.name}
-          keyName={keyName}
-          keyValue={item.subName}
-          to={item.url}
-        />
-      ))}
-      {children && children}
-      {cta && (
-        <NavLink
-          exact
-          to={cta.linkTo}
-          className="font-sans-sm usa-link card-cta card-cta-container"
-          onMouseOver={onMouseOver}
-          onMouseLeave={onMouseLeave}
-        >
-          {cta.text}
-          <SvgArrow hover={mouseOver} />
-        </NavLink>
-      )}
+        {items.map((item, index) => (
+          <CardListItem
+            key={item.uuid}
+            ctaText={
+              `<span>${item.name}</span>${item.isVerified ? '<img class="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />' : ''}`
+            }
+            keyName={keyName}
+            keyValue={item.subName}
+            to={item.url}
+          />
+        ))}
+        {children && children}
+        {cta && (
+          <Link
+            to={{
+              pathname: cta.linkTo,
+              state:{
+                search:'',
+                category: to
+              }             
+            }}
+            className="font-sans-sm usa-link card-cta card-cta-container"
+            onMouseOver={onMouseOver}
+            onMouseLeave={onMouseLeave}
+          >
+            {cta.text}
+            <SvgArrow hover={mouseOver} />
+          </Link>
+        )}
     </div>
   );
 };

@@ -15,6 +15,7 @@
 **************************************************************** */
 import API from '../api';
 import history from '../history';
+import { added, created, edited, removed } from './successAlert';
 
 export const START_GET_ORG = 'START_GET_ORG';
 export const START_GET_MEMBERS = 'START_GET_MEMBERS';
@@ -64,6 +65,8 @@ export const FINISH_SEARCH_USERS = "FINISH_SEARCH_USERS";
 export const CLEAR_USER_RESULTS = "CLEAR_USER_RESULTS";
 export const SELECT_USER_RESULT = "SELECT_USER_RESULT";
 export const DESELECT_USER_RESULT = "DESELECT_USER_RESULT";
+export const ERROR_SEARCH_ORG = 'ERROR_SEARCH_ORG';
+export const ERROR_SEARCH_USERS = 'ERROR_SEARCH_USERS';
 
 export function clearOrganizationError() {
     return function (dispatch) {
@@ -117,6 +120,7 @@ export function createOrganization(org) {
 
             dispatch(selectOrganization(neworg.uuid));
             dispatch(getOrganizations());
+            dispatch(created(org.name))
 
             history.push(`/organization/${neworg.uuid}`);
         } catch (err) {
@@ -144,6 +148,7 @@ export function editOrganization(organization) {
             editedOrganization = await API.editOrganization(organization);
 
             dispatch(selectOrganization(editedOrganization.uuid));
+            dispatch(edited());
         } catch (err) {
             dispatch({
                 type: ERROR_UPDATE_ORG,
@@ -299,6 +304,7 @@ export function removeMember(memberId, orgId) {
         let members;
         try {
             members = await API.removeMember(organizationId, memberId);
+            dispatch(removed('member'))
         } catch (err) {
             dispatch({
                 type: ERROR_GET_MEMBERS,
@@ -328,6 +334,7 @@ export function updateMember(member, role) {
                 user: { id: member._id },
                 level: role
             });
+            dispatch(edited());
         } catch (err) {
             dispatch({
                 type: ERROR_GET_MEMBERS,
@@ -360,6 +367,10 @@ export function addMember(member, role) {
                     user: { id: member[i]._id },
                     level: role,
                 });
+                console.log(member, members)
+                let alertText = 'Member'
+                if (members && members.length > 0 && members.find(m => m.user._id === member[i]._id)) alertText = members.find(m => m.user._id === member[i]._id).user.email;
+                dispatch(added(alertText))
             } catch (err) {
                 dispatch({
                     type: ERROR_GET_MEMBERS,
@@ -436,12 +447,21 @@ export function searchOrganizations(search, limit, page, sort) {
             type: START_SEARCH_ORGS,
         });
 
-        const orgs = await API.searchOrganizations(search, limit, page, sort);
-
-        dispatch({
-            type: FINISH_SEARCH_ORGS,
-            organizations: orgs,
-        })
+        let orgs
+        try {
+            orgs = await API.searchOrganizations(search, limit, page, sort);
+        } catch (err) {
+            dispatch({
+                type: ERROR_SEARCH_ORG,
+                errorType: 'organizations',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_SEARCH_ORGS,
+                organizations: orgs,
+            })
+        }
     }
 }
 
@@ -453,12 +473,22 @@ export function searchUsers(search) {
             type: START_SEARCH_USERS,
         });
 
-        const users = await API.searchUsers(search);
+        let users;
+        try {
+            users = await API.searchUsers(search);
+        } catch (err) {
+            dispatch({
+                type: ERROR_SEARCH_USERS,
+                errorType: 'users',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_SEARCH_USERS,
+                users: users,
+            });
+        }
 
-        dispatch({
-            type: FINISH_SEARCH_USERS,
-            users: users,
-        });
     };
 }
 

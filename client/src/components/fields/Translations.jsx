@@ -24,7 +24,13 @@ import ErrorValidation from '../controls/errorValidation';
 import { Autocomplete, TextField } from '@cmsgov/design-system';
 
 import languages from './data/languages.json';
+import CancelButton from '../controls/cancelButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
+/**
+ * Translations widget.. Shows a button/form and table of translations for the current component
+ * @param {*} props 
+ */
 export default function Translations(props) {
     const [translations, setTranslations] = useState((props.field ? props.field.value : []) || []);
     const [showModal, setShowModal] = useState(false);
@@ -120,11 +126,12 @@ export default function Translations(props) {
             <RemoveTranslationConfirmation selectedLang={removing} onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
         </ModalBoxWithoutClose>
 
-        <ModalBox show={showModal} onClose={() => setShowModal(false)}>
+        <ModalBox show={showModal} onClose={() => setShowModal(false)} isForm={true}>
             <TranslationForm
                 onSubmit={(values) => onFormSubmit(values)}
                 onCancel={onCancel}
                 initialValue={editing ? editing.translation : null}
+                existingTranslations={translations}
             />
         </ModalBox>
     </>)
@@ -132,76 +139,96 @@ export default function Translations(props) {
 
 function TranslationForm(props) {
     let nonEnLangs = languages.filter(val => (val.id !== "en"));
+    nonEnLangs = nonEnLangs.filter(val => !props.existingTranslations.find(et => et.language === val.id))
 
     const [langs, setLangs] = useState(nonEnLangs);
+    // maintain out of formik the actual field values for language
+    const [languageFieldValue, setLanguageFieldValue] = useState(props.initialValue ? { id: props.initialValue.language, name: props.initialValue.languageName } : { id: '', name: '' });
 
-    return (
+
+    return (<>
         <Formik
             initialValues={props.initialValue || { translationName: '', translationDesc: '', language: '', languageName: '' }}
-            validationSchema={Yup.object({
-                language: Yup.string()
-                    .required('Required'),
-                languageName: Yup.string(),
-                translationName: Yup.string()
-                    .required('Required'),
-                translationDesc: Yup.string()
-                    .required('Required')
-            })}
+            validate={(values) => {
+                let errors = {};
+                if (!(languageFieldValue && languageFieldValue.id)) errors.language = 'Required';
+                if (!(values && values.translationName)) errors.translationName = 'Required';
+                if (!(values && values.translationDesc)) errors.translationDesc = 'Required';
+
+                return errors;
+            }}
             onSubmit={(values) => {
-                const lang = nonEnLangs.find(lang => lang.language === values.language);
+                const lang = nonEnLangs.find(lang => lang.language === languageFieldValue.id);
                 if (lang)
                     values.languageName = lang.languageName;
                 props.onSubmit(values)
             }}
         >
-            {({ values, handleSubmit, setFieldValue }) => (
+            {(formikProps) => (
                 <div className="usa-form translation-form">
-                    <h2 style={{ margin: '0' }}>Add Translation</h2>
+                    <h2 style={{ margin: '0 0 1em 0' }}>Add Translation</h2>
                     <div className="grid-row">
                         <div className="grid-col-6" >
-                            <ErrorValidation name="language" type="input">
+                            <div style={{ marginTop: '0' }}>
                                 <Autocomplete
                                     items={langs}
                                     loadingMessage="Loading"
                                     noResultsMessage="No results found"
-                                    initialSelectedItem={values.language ? { id: values.language, name: values.languageName } : null}
+                                    initialSelectedItem={formikProps.values.language ? { id: formikProps.values.language, name: formikProps.values.languageName } : null}
                                     clearSearchButton={false}
-                                    onChange={(selectedItem) => {
-                                        setFieldValue('language', selectedItem.id);
-                                        setFieldValue('languageName', selectedItem.name);
+                                    onChange={async (selectedItem) => {
+                                        await setLanguageFieldValue(selectedItem)
+                                        formikProps.setFieldValue('language', selectedItem.id);
+                                        formikProps.setFieldValue('languageName', selectedItem.name);
+                                        formikProps.setFieldTouched('language', true, true)
+                                        formikProps.handleBlur('language')
                                     }}
-                                    onInputValueChange={(val) => setLangs(nonEnLangs.filter(lang => lang.id.startsWith(val) || lang.name.match(new RegExp(`.*${val}.*`, 'i'))))}
+                                    onInputValueChange={(val) => {
+                                        formikProps.setFieldTouched('language', true, true)
+                                        setLangs(nonEnLangs.filter(lang => lang.id.toLocaleLowerCase().startsWith(val.trim().toLowerCase()) || lang.name.match(new RegExp(`.*${val.trim()}.*`, 'i'))))
+                                    }
+                                    }
                                 >
                                     <TextField
-                                        label={<label className="usa-label" htmlFor="language"><span className="text-secondary">*</span>Language</label>}
+                                        className={`${formikProps.errors.language ? "usa-form-group--error" : ""}`}
+                                        fieldClassName={`${formikProps.errors.language ? "usa-input--error" : ""}`}
+                                        labelClassName={`details-label margin-top-0`}
+                                        label={<>
+                                            <span className="text-secondary">*</span>
+                                                Language
+                                                {
+                                                formikProps.errors.language && (<>
+                                                    <br /><span className="usa-error-message padding-right-1" id="input-error-message" role="alert">{formikProps.errors.language}</span>
+                                                </>)
+                                            }
+                                        </>}
                                         name="language"
-                                        style={{ border: "1px solid #000000", borderRadius: "0" }}
+                                        style={{ border: "1px solid #000000", borderRadius: "0", fontFamily: "Source Sans Pro Web,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif, FontAwesome" }}
+                                        placeholder="&#xf002; Search languages"
                                     />
                                 </Autocomplete>
-                            </ErrorValidation>
+                            </div>
                         </div>
                     </div>
 
                     <ErrorValidation name="translationName" type="input">
-                        <label className="usa-label" htmlFor="translationName"><span className="text-secondary">*</span>Name</label>
+                        <label className="usa-label details-label" htmlFor="translationName"><span className="text-secondary">*</span>Name</label>
                         <Field name="translationName" component="input" rows="3" className="usa-input" id="translationName" aria-required="true" >
                         </Field>
                     </ErrorValidation>
 
                     <ErrorValidation name="translationDesc" type="input">
-                        <label className="usa-label" htmlFor="translationDesc"><span className="text-secondary">*</span>Description</label>
+                        <label className="usa-label details-label" htmlFor="translationDesc"><span className="text-secondary">*</span>Description</label>
                         <Field name="translationDesc" component="textarea" rows="3" className="usa-textarea" id="translationDesc" aria-required="true" >
                         </Field>
                     </ErrorValidation>
 
-                    <button className="usa-button submit-button" type="button" onClick={handleSubmit}>Save Language</button>
-                    <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}>
-                        <span className="text-bold">Cancel</span>
-                    </button>
+                    <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>Save Language</ValidationControlledSubmitButton>
+                    <CancelButton className="usa-button usa-button--unstyled" type="button" cancelAction={props.onCancel} />
                 </div>)
             }
         </Formik>
-    );
+    </>)
 }
 
 function RemoveTranslationConfirmation(props) {

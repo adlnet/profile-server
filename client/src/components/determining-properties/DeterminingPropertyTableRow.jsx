@@ -15,6 +15,7 @@
 **************************************************************** */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import RemoveButton from '../controls/removeButton';
 
 export default function DeterminingPropertyTableRow({ determiningProperty, removeDeterminingProperty, onPropertyClick, url, isMember, isCurrentVersion, isPublished }) {
 
@@ -62,12 +63,13 @@ export default function DeterminingPropertyTableRow({ determiningProperty, remov
                         </Link>
                     </td>
                     <td>
-                        <button
-                            className="usa-button  usa-button--unstyled"
+                        <RemoveButton
                             onClick={() => removeDeterminingProperty(determiningProperty.propertyType)}
-                        >
-                            <span className="text-bold">Remove</span>
-                        </button>
+                            className="usa-button  usa-button--unstyled"
+                            item="Determining property"
+                            object="statement template"
+                        />
+
                     </td>
                 </>
                 :

@@ -19,12 +19,15 @@ import { useDispatch, useSelector } from 'react-redux';
 import { Detail, Translations } from '../DetailComponents';
 import ConceptTypeDetailExtension from '../concepts/ConceptTypeDetailExtension';
 import { selectInfopanelConcept } from '../../actions/concepts';
+import { Link } from 'react-router-dom';
+import DeprecatedAlert from '../controls/deprecatedAlert';
 
 export default function ConceptInfoPanel({ infoPanelConcept }) {
     const dispatch = useDispatch()
 
     useEffect(() => {
-        dispatch(selectInfopanelConcept(infoPanelConcept.uuid))
+        if (infoPanelConcept)
+            dispatch(selectInfopanelConcept(infoPanelConcept.uuid))
     }, [infoPanelConcept]);
 
     const concept = useSelector((state) => state.application.infopanelConcept);
@@ -34,18 +37,23 @@ export default function ConceptInfoPanel({ infoPanelConcept }) {
     return (
         <div>
             <div className="padding-top-4 padding-left-4">
-                <span className="border-2px padding-05 text-uppercase text-thin text-base font-sans-3xs">concept</span>
+                <span className="border-1px padding-05 text-uppercase text-thin text-ink font-sans-3xs">concept</span>
+                {concept && concept.isDeprecated && <span className="border-1px margin-left-1 padding-05 text-uppercase text-thin bg-base-lighter text-ink font-sans-3xs">deprecated</span>}
                 <h2>{concept && concept.name}</h2><br />
             </div>
             <div className="infopanel margin-right-2">
                 <div className="margin-left-4">
+                    {concept && concept.isDeprecated ?
+                        <DeprecatedAlert component={concept} componentType="concept" infoPanel={true} />
+                        : ''
+                    }
                     <Detail title="concept type">
                         {concept && concept.conceptType}
                     </Detail>
                     <Detail title="iri">
                         <span className="field-word-break">{concept && concept.iri}</span>
                     </Detail>
-                    <Detail title="description">
+                    <Detail title="description" subtitle="English (en)">
                         {concept && concept.description}
                     </Detail>
                     <Detail title="translations">
@@ -55,13 +63,16 @@ export default function ConceptInfoPanel({ infoPanelConcept }) {
                 </div>
                 <div className="bg-base-lightest padding-left-4 padding-y-4">
                     <Detail title="updated" >
-                    {(concept && concept.updatedOn) ? (new Date(concept.updatedOn)).toLocaleDateString() : "Unknown"}
+                        {(concept && concept.updatedOn) ? (new Date(concept.updatedOn)).toLocaleDateString() : "Unknown"}
                     </Detail>
                     <Detail title="parent profile" >
-                        {concept && concept.parentProfile && concept.parentProfile.name}
+                        {(concept && concept.parentProfile && concept.parentProfile.name) ?
+                            <Link to={`/profile/${concept.parentProfile.uuid}`}>{concept.parentProfile.name}</Link>
+                            : 'Unknown'}
                     </Detail>
                     <Detail title="author" >
-                        {(concept && concept.parentProfile && concept.parentProfile.organization.name) || 'Unknown'}
+                        {(concept && concept.parentProfile && concept.parentProfile.organization.name) ?
+                            <Link to={`/organization/${concept.parentProfile.organization.uuid}`}>{concept.parentProfile.organization.name}</Link> : 'Unknown'}
                     </Detail>
                 </div>
             </div>

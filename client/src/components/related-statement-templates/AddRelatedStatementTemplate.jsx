@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link, useHistory, useParams } from 'react-router-dom';
 import { useSelector, useDispatch } from "react-redux";
 
@@ -24,7 +24,8 @@ import TemplateResultView from '../templates/TemplateResultView';
 import Flyout from '../controls/flyout';
 import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
 import StatementTemplateInfoPanel from '../infopanels/StatementTemplateInfoPanel';
-import { useEffect } from 'react';
+import CancelButton from '../controls/cancelButton';
+import { ADDED, EDITED } from '../../actions/successAlert';
 
 /**
  * Want to add a template reference to a statement template (context or object)
@@ -64,7 +65,7 @@ export default function AddRelatedStatementTemplate({ isEditing, breadcrumbs }) 
     const renderBreadcrumbs = () => {
         if (breadcrumbs) {
             return breadcrumbs.map((b, i) => (
-                <span key={i}><Link to={b.to}><span className="details-label">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
+                <span key={i}><Link to={b.to}><span className="breadcrumb">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
             ))
         }
         return <></>;
@@ -80,7 +81,7 @@ export default function AddRelatedStatementTemplate({ isEditing, breadcrumbs }) 
             else
                 propertyValue['contextStatementRefTemplate'] = selectedResults
 
-            await dispatch(editTemplate(Object.assign({}, template, propertyValue)));
+            await dispatch(editTemplate(Object.assign({}, template, propertyValue), isEditing ? EDITED : ADDED, `${templatereftype === 'object' ? 'Object' : 'Context'} template reference`));
             await dispatch(loadProfileTemplates(profileVersion.uuid));
 
             returnToTemplate();
@@ -128,7 +129,7 @@ export default function AddRelatedStatementTemplate({ isEditing, breadcrumbs }) 
                 </div>
             </div>
         </div>
-        <h2 className="margin-top-1">Add Statement Template Reference: <span className="text-primary-dark">{templatereftype}</span></h2>
+        <h2 className="margin-top-1">{isEditing ? 'Edit' : 'Add'} Statement Template Reference: <span className="text-primary-dark">{templatereftype}</span></h2>
 
 
         <SearchSelectComponent
@@ -150,7 +151,7 @@ export default function AddRelatedStatementTemplate({ isEditing, breadcrumbs }) 
 
         <div className="grid-row">
             <div className="grid-col display flex flew-row flex-align-center">
-                <button className="usa-button usa-button--unstyled" type="button" onClick={returnToTemplate}><b>Cancel</b></button>
+                <CancelButton className="usa-button usa-button--unstyled" type="button" cancelAction={returnToTemplate} />
             </div>
             <div className="grid-col display-flex flex-column flex-align-end">
                 <button

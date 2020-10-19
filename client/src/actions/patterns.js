@@ -15,6 +15,7 @@
 **************************************************************** */
 import API from '../api';
 import history from '../history';
+import { created, deprecated, DEPRECATED, EDITED, edited } from './successAlert';
 
 import { CLEAR_TEMPLATE_RESULTS } from './templates';
 import { selectProfile, selectProfileVersion } from './profiles';
@@ -57,6 +58,7 @@ export const CLEAR_PATTERN_RESULTS = 'CLEAR_PATTERN_RESULTS';
 export const CLEAR_SELECTED_COMPONENTS = 'CLEAR_SELECTED_COMPONENTS';
 
 export const SELECT_INFOPANEL_PATTERN = 'SELECT_INFOPANEL_PATTERN';
+export const ERROR_SEARCH_PATTERN = 'ERROR_SEARCH_PATTERN';
 
 
 export function loadProfilePatterns(profileVersionId) {
@@ -124,8 +126,7 @@ export function createPattern(pattern) {
             dispatch(selectProfile(organizationId, profileId));
             dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
             dispatch(loadProfilePatterns(profileVersionId));
-
-            history.push(`../${newPattern.uuid}`)
+            dispatch(created(pattern.name));
         } catch (err) {
             dispatch({
                 type: ERROR_CREATE_PATTERN,
@@ -199,7 +200,7 @@ export function selectInfopanelPattern(patternId) {
     }
 }
 
-export function editPattern(pattern) {
+export function editPattern(pattern, actualAction) {
     return async function (dispatch, getState) {
         let state = getState();
         const organizationId = state.application.selectedOrganizationId;
@@ -214,6 +215,11 @@ export function editPattern(pattern) {
             const newPattern = await API.editPattern(organizationId, profileId, profileVersionId, pattern);
 
             dispatch(selectPattern(newPattern.uuid));
+            if (!actualAction || actualAction === EDITED) {
+                dispatch(edited());
+            } else if (actualAction === DEPRECATED) {
+                dispatch(deprecated(pattern.name));
+            }
         } catch (err) {
             dispatch({
                 type: ERROR_EDIT_PATTERN,
@@ -282,12 +288,21 @@ export function searchPatterns(search) {
             type: START_SEARCH_PATTERNS,
         });
 
-        const patterns = await API.searchPatterns(search);
-
-        dispatch({
-            type: FINISH_SEARCH_PATTERNS,
-            patterns: patterns,
-        });
+        let patterns;
+        try {
+            patterns = await API.searchPatterns(search);
+        } catch (err) {
+            dispatch({
+                type: ERROR_SEARCH_PATTERN,
+                errorType: 'patterns',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_SEARCH_PATTERNS,
+                patterns: patterns,
+            });
+        }
     };
 }
 

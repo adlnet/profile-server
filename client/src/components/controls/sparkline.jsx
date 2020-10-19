@@ -16,7 +16,8 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../api';
 import { Chart } from 'react-charts'
-import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries } from 'react-vis';
+import { XYPlot, XAxis, YAxis, HorizontalGridLines, VerticalGridLines, LineSeries, AreaSeries, Hint } from 'react-vis';
+import { selectPattern } from '../../actions/patterns';
 
 let axes = [
   {
@@ -30,18 +31,28 @@ let axes = [
 let series = {
   showPoints: false
 }
-export default function Sparkline({ url }) {
+export default function Sparkline({ url, setCount, setDate }) {
   let [data, setData] = useState([]);
   useEffect(() => {
     let func = async function () {
 
       let _data = await api.getJSON("/app" + url);
 
-      setData(_data)
+      await setData(_data)
+      setCountToTotal(_data);
     };
     func();
   }, [url])
 
+  const setCountToTotal = async (knowndata) => {
+    let values = knowndata || data;
+    let count = values.reduce((p, c) => {
+
+      return p + c.value;
+    }, 0)
+
+    await setCount(count);
+  }
 
   if (!data) return ""
   return <XYPlot
@@ -51,14 +62,19 @@ export default function Sparkline({ url }) {
     getX={d => d._id}
     getY={d => d.value}
     xType="time"
-    padding={30}
-    style={{ width: "100%", height: "100%" }}
+    onMouseLeave={() => { setCountToTotal(); setDate() }}
   >
+    <AreaSeries
+      color="none"
+      fill="#e6b2fe"
+      curve="curveNatural"
+      onNearestX={(v, d) => { setCount(v.value); setDate(v._id) }}
+      data={data} />
     <LineSeries
-      color="#0fbd66"
+      color="#cc65fe"
       fill="none"
+      curve="curveNatural"
       data={data} />
 
-    
   </XYPlot>
 }

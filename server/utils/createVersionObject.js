@@ -22,10 +22,10 @@ const profile = require('../ODM/profile');
  *
  * @param {array} profileVersions Array of profile version objects
  */
-module.exports = function (profileVersions) {
+module.exports = function (profileVersions, maxVersion) {
     if (!profileVersions) return;
 
-    const sigh = profileVersions.map((v) => ({
+    const sigh = profileVersions.filter(v => v.version <= maxVersion).map((v) => ({
         id: v.iri,
         wasRevisionOf: v.wasRevisionOf.length > 0 ? v.wasRevisionOf.map(v => v.iri) : undefined,
         generatedAtTime: v.createdOn,

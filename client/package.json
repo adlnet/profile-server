@@ -8,6 +8,7 @@
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
     "ace-builds": "^1.4.12",
+    "copy-to-clipboard": "^3.3.1",
     "cross-fetch": "^3.0.4",
     "debounce-promise": "^3.1.2",
     "dotenv": "^8.2.0",
@@ -35,8 +36,12 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "test": "react-scripts test",
+    "test": "jest --forceExit",
     "eject": "react-scripts eject"
+  },
+  "jest": {
+    "testEnvironment": "node",
+    "verbose": true
   },
   "browserslist": {
     "production": [

@@ -19,12 +19,12 @@ import Flyout from '../controls/flyout';
 import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
 
 export default function SimilarTermsDetails({ similarTerms, linkable }) {
-    // const [showConceptInfopanel, setShowConceptInfopanel] = useState(false);
+    const [showConceptInfopanel, setShowConceptInfopanel] = useState(false);
     // const [infoPanelConcept, setInfoPanelConcept] = useState();
 
     // function onConceptClick(concept) {
-    //     setInfoPanelConcept(concept);
-    //     setShowConceptInfopanel(true);
+    //     // setInfoPanelConcept(concept);
+    //     setShowConceptInfopanel(concept);
     // }
 
     return (
@@ -38,7 +38,7 @@ export default function SimilarTermsDetails({ similarTerms, linkable }) {
                                     linkable ?
                                         <span
                                             className="usa-link button-link"
-                                        // onClick={() => onConceptClick(similarTerm.concept)}
+                                            onClick={() => setShowConceptInfopanel(similarTerm.concept)}
                                         >
                                             {similarTerm.concept.name || similarTerm.concept.iri}
                                         </span> :
@@ -48,10 +48,11 @@ export default function SimilarTermsDetails({ similarTerms, linkable }) {
                             </div>
                     ) : "None provided"
             }
-
-            {/* <Flyout show={showConceptInfopanel} onClose={() => setShowConceptInfopanel(false)}>
-                <ConceptInfoPanel concept={infoPanelConcept} />
-            </Flyout> */}
+            {showConceptInfopanel &&
+                <Flyout show={showConceptInfopanel} onClose={() => setShowConceptInfopanel(false)}>
+                    <ConceptInfoPanel infoPanelConcept={showConceptInfopanel} />
+                </Flyout>
+            }
         </div>
     )
 }

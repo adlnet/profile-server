@@ -91,7 +91,7 @@ export default function SortingTable({
                                                 <td key={`${i}-body-td`}
                                                     {...cell.getCellProps([
                                                         {
-                                                            className: cidx > 0 ? "font-sans-3xs" : "",
+                                                            className: "font-sans-3xs",
                                                             style: { padding: '1.5rem 0' },
                                                         },
                                                         {

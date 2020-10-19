@@ -52,7 +52,7 @@ export function Tags(props) {
                         key={index}
                         className="usa-tag display-inline-flex bg-accent-cool-lighter text-base-darkest padding-y-05 margin-right-1"
                     >
-                        <span className="margin-05">{tag}</span>
+                        <span className="">{tag}</span>
                     </span>
                 );
             }
@@ -100,7 +100,7 @@ export function Translations(props) {
 function TranslationView({ langObj }) {
     return (
         <div className="translation-form">
-            <h2>View Translations</h2>
+            <h2 style={{ marginTop: '0.2em' }}>View Translation</h2>
             <div className="grid-row">
                 <div className="grid-col-6">
                     <Detail title="language">

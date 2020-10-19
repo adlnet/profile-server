@@ -14,7 +14,6 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-// import CreateProfileForm from '../components/profiles/CreateProfileForm';
 
 function CreateProfile({ children }) {
 

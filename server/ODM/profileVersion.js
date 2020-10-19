@@ -29,6 +29,7 @@ const profileVersion = new mongoose.Schema({
     iri: {
         type: String,
         unique: true,
+        index: true,
     },
     parentProfile: {
         type: mongoose.Schema.Types.ObjectId,
@@ -109,15 +110,20 @@ const profileVersion = new mongoose.Schema({
     },
     state: {
         type: String,
-        enum: ['draft', 'published', 'revised'],
+        enum: ['draft', 'published'],
         default: 'draft',
     },
     isVerified: {
         type: Boolean,
         default: false,
     },
+    verificationDenyReason: String,
     verificationRequest: {
         type: Date,
+    },
+    verificationRequestedBy: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
     },
     isShallowVersion: {
         type: Boolean,
@@ -126,6 +132,13 @@ const profileVersion = new mongoose.Schema({
 }, { toJSON: { virtuals: true } });
 
 profileVersion.plugin(uniqueValidator);
+
+profileVersion.virtual('harvestDatas', {
+    ref: 'harvestData',
+    localField: '_id',
+    foreignField: 'parentProfile',
+    justOne: false,
+});
 
 profileVersion.virtual('url')
     .get(function () { return createAPIURL.profile(this.uuid); });
@@ -148,7 +161,7 @@ profileVersion.methods.deleteDraft = async function () {
     await mongoose.model('profileVersion', profileVersion).findByIdAndDelete(this._id);
 };
 
-profileVersion.methods.publish = async function (user) {
+profileVersion.methods.publish = async function (user, parentiri) {
     if (this.state !== 'draft') throw new errors.notAllowedError('Not Allowed: Only drafts can be published.');
     const updated = new Date();
     this.state = 'published';
@@ -156,6 +169,26 @@ profileVersion.methods.publish = async function (user) {
     if (user) this.updatedBy = user._id;
 
     const parent = (await this.populate('parentProfile').execPopulate()).parentProfile;
+    if (parentiri && this.version === 1) {
+        if (this.iri.startsWith(parent.iri)) this.iri = this.iri.replace(parent.iri, parentiri);
+
+        await this.populate('concepts').populate('templates').populate('patterns').execPopulate();
+
+        this.concepts.forEach(doc => {
+            doc.iri = doc.iri.replace(parent.iri, parentiri);
+            doc.save();
+        });
+        this.templates.forEach(doc => {
+            doc.iri = doc.iri.replace(parent.iri, parentiri);
+            doc.save();
+        });
+        this.patterns.forEach(doc => {
+            doc.iri = doc.iri.replace(parent.iri, parentiri);
+            doc.save();
+        });
+
+        parent.iri = parentiri;
+    }
     parent.currentDraftVersion = null;
     parent.currentPublishedVersion = this._id;
     parent.updatedOn = updated;
@@ -167,12 +200,13 @@ profileVersion.methods.publish = async function (user) {
 
 profileVersion.methods.getMetadata = async function () {
     const parent = (await this.populate('parentProfile').execPopulate()).parentProfile;
-    const org = (await this.populate({ path: 'organization', select: 'name collaborationLink' }).execPopulate()).organization;
+    const org = (await this.populate({ path: 'organization', select: 'name collaborationLink uuid' }).execPopulate()).organization;
     return {
         profile_url: parent.url,
         profile_id: parent.iri,
         version_url: this.url,
         version_id: this.iri,
+        version_uuid: this.uuid,
         name: this.name,
         version: this.version,
         template_count: this.templates.length,
@@ -182,6 +216,7 @@ profileVersion.methods.getMetadata = async function () {
         working_group: {
             name: this.organization.name,
             url: this.organization.collaborationLink,
+            uuid: this.organization.uuid,
         },
         status: {
             published: this.state === 'published',

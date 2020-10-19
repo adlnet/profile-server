@@ -17,11 +17,20 @@ import React from 'react';
 import { NavLink } from 'react-router-dom';
 
 export default function OrganizationHeader({ organization, url, isMember, user, joinAction }) {
+    const profilecount = (profiles) => {
+        if (!profiles) return "0";
+        if (isMember) return profiles.length;
+        return profiles.reduce((count, profile) => {
+            if (profile.currentPublishedVersion) return count + 1;
+            return count;
+        }, 0);
+    }
+
     return (
         <header className={" usa-header usa-header--extended"}>
-            <div className="usa-navbar bg-base-lightest margin-top-3 padding-y-2">
+            <div className="usa-navbar bg-base-lightest margin-top-5 padding-y-2">
                 <div className="usa-logo" id="extended-logo">
-                    <em className="usa-logo__text"><a href="/" title="Home" aria-label="Home">{organization.name}</a></em>
+                    <em className="usa-logo__text"><a href={`${url}/about`} title="Home" aria-label="Home">{organization.name}</a></em>
                 </div>
                 <button className="usa-menu-btn">Menu</button>
             </div>
@@ -37,17 +46,17 @@ export default function OrganizationHeader({ organization, url, isMember, user, 
                             </NavLink>
 
                         </li>
-                        {isMember && (<>
-                            <li className={`usa-nav__primary-item`}>
-                                <NavLink
-                                    to={url}
-                                    className="usa-nav__link"
-                                    exact
-                                    activeClassName="usa-current">
-                                    <span className="text-bold">{`Profiles (${organization.profiles ? organization.profiles.length : '0'})`}</span>
-                                </NavLink>
+                        <li className={`usa-nav__primary-item`}>
+                            <NavLink
+                                to={url}
+                                className="usa-nav__link"
+                                exact
+                                activeClassName="usa-current">
+                                <span className="text-bold">{`Profiles (${profilecount(organization.profiles)})`}</span>
+                            </NavLink>
 
-                            </li>
+                        </li>
+                        {isMember && (<>
                             <li className={`usa-nav__primary-item`}>
                                 <NavLink to={`${url}/members`}
                                     className="usa-nav__link"
@@ -56,17 +65,18 @@ export default function OrganizationHeader({ organization, url, isMember, user, 
                                 </NavLink>
 
                             </li>
-                            <li className={`usa-nav__primary-item`}>
-                                <NavLink to={`${url}/apiKeys`}
-                                    className="usa-nav__link"
-                                    activeClassName="usa-current">
-                                    <span className="text-bold">{`API Keys (${organization.apiKeys ? organization.apiKeys.length : '0'})`}</span>
-                                </NavLink>
-                            </li>
-
+                            {isMember === 'admin' &&
+                                <li className={`usa-nav__primary-item`}>
+                                    <NavLink to={`${url}/apiKeys`}
+                                        className="usa-nav__link"
+                                        activeClassName="usa-current">
+                                        <span className="text-bold">{`API Keys (${organization.apiKeys ? organization.apiKeys.length : '0'})`}</span>
+                                    </NavLink>
+                                </li>
+                            }
                         </>)}
                     </ul>
-                    {!isMember && <div className="usa-nav__secondary">
+                    {!isMember && user && <div className="usa-nav__secondary">
                         <button className="usa-button usa-button--outline bg-white pull-right margin-right-0"
                             onClick={() => {
                                 joinAction(organization, user)

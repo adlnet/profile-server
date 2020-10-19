@@ -18,6 +18,7 @@ import { Formik, Field } from 'formik';
 import * as Yup from 'yup';
 
 import ErrorValidation from '../controls/errorValidation';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
 export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel, onRemove }) {
     function handlePermissionChange(setFieldTouched, handleChange, event) {
@@ -53,6 +54,7 @@ export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel, on
                         )
                     }
                 )}
+            validateOnMount={true}
             onSubmit={(values) => {
                 onSubmit(values);
             }}
@@ -123,14 +125,15 @@ export default function CreateApiKeyForm({ initialValues, onSubmit, onCancel, on
                         </div>
                     </form>
                 </div>
-                <button
+                <ValidationControlledSubmitButton
+                    errors={formikProps.errors}
                     className="usa-button submit-button"
                     type="button"
                     onClick={formikProps.handleSubmit}>
                     {
                         initialValues ? "Save Changes" : "Create API Key"
                     }
-                </button>
+                </ValidationControlledSubmitButton>
                 <button onClick={onCancel} className="usa-button usa-button--unstyled" type="reset"><b>Cancel</b></button>
                 { initialValues &&
                     <button type="button" className="usa-button usa-button--unstyled pin-right text-secondary-darker" onClick={() => onRemove(initialValues.uuid)} style={{ margin: "2em 0em 2em 2em" }}><b>Remove API Key</b></button>

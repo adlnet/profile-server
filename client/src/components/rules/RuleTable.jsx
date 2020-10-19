@@ -16,7 +16,7 @@
 import React from 'react';
 import RuleTableRow from './RuleTableRow';
 
-export default function RuleTable({ rules, onAddRule, isMember, isCurrentVersion, isPublished, removeRule, url, belongsToAnotherProfile }) {
+export default function RuleTable({ rules, onAddRule, isMember, isCurrentVersion, isPublished, removeRule, url, belongsToAnotherProfile, isEditable }) {
     return (<>
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
@@ -24,7 +24,7 @@ export default function RuleTable({ rules, onAddRule, isMember, isCurrentVersion
                     <th width="90%" scope="col" colSpan={2}><span className="text-normal text-base font-ui-2xs">Rules are the restrictions on value(s) for specific locations within statements that must be met to conform to this template.</span></th>
                 </tr>
             </thead>
-            <tbody style={{ lineHeight: 3 }}>
+            <tbody>
                 {(rules && rules.length > 0) ?
                     rules.map((rule, key) => <RuleTableRow key={key} rule={rule} url={url} isMember={isMember} isCurrentVersion={isCurrentVersion} isPublished={isPublished} removeRule={removeRule} belongsToAnotherProfile={belongsToAnotherProfile} />) :
                     <tr key={1}><td className="font-sans-xs" colSpan="4" style={{ paddingLeft: '0px' }}>
@@ -33,7 +33,7 @@ export default function RuleTable({ rules, onAddRule, isMember, isCurrentVersion
                 }
             </tbody>
         </table>
-        {isMember && isCurrentVersion && !isPublished && !belongsToAnotherProfile &&
+        {isMember && isCurrentVersion && !isPublished && !belongsToAnotherProfile && isEditable &&
             <button className="usa-button padding-x-4" onClick={onAddRule}>Add Rule</button>
         }
     </>);

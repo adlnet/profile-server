@@ -16,10 +16,10 @@
 import React from 'react';
 import { CodeEditor } from '../controls/codeEditor';
 
-export default function StatementExample({ statementExample, onAddClick, onEditClick, isMember, isCurrentVersion, belongsToAnotherProfile }) {
+export default function StatementExample({ statementExample, onAddClick, onEditClick, isMember, isCurrentVersion, belongsToAnotherProfile, isEditable }) {
     if (belongsToAnotherProfile) return <div className="grid-row">There is no example statement for this template.</div>
     return (<>
-        {!statementExample && isMember && isCurrentVersion ? <>
+        {!statementExample && isMember && isCurrentVersion && isEditable ? <>
             <div className="grid-row">
                 <span className="font-sans-3xs text-base-light">
                     It is highly recommended that an example be added to this template for...
@@ -34,7 +34,7 @@ export default function StatementExample({ statementExample, onAddClick, onEditC
                     </button>
             </div>
         </> : <>
-                {isMember && isCurrentVersion ?
+                {isMember && isCurrentVersion && isEditable ?
                     <div className="grid-row">
                         <div className="grid-col display-flex flex-align-center">
                             <span className="font-sans-3xs text-base-light">

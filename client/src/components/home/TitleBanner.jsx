@@ -30,8 +30,9 @@ export default function TitleBanner() {
         dispatch(loadProfileRootIRI())
     }, [])
     function search(e) {
-        history.push("/search?search=" + (searchString || ""));
+        history.push({pathname: "/search", state:{search:searchString}});
         e.preventDefault();
+        setSearchString("");
         return false;
     }
     return (<>
@@ -52,7 +53,7 @@ export default function TitleBanner() {
                     </button>
                     <ul className="usa-nav__primary usa-accordion">
                         <li className="usa-nav__primary-item">
-                            <NavLink exact to="/profiles"
+                            <NavLink to="/profiles"
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current"
                             >
@@ -60,7 +61,7 @@ export default function TitleBanner() {
                             </NavLink>
                         </li>
                         <li className="usa-nav__primary-item">
-                            <NavLink exact to="/organization"
+                            <NavLink to="/organization"
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current"
                             >
@@ -68,7 +69,7 @@ export default function TitleBanner() {
                             </NavLink>
                         </li>
                         <li className="usa-nav__primary-item">
-                            <NavLink exact to="/api-info"
+                            <NavLink to="/api-info"
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current">
                                 <span className="text-bold">API Info</span>
@@ -76,26 +77,26 @@ export default function TitleBanner() {
                         </li>
                         {userData && userData.user && userData.user.type === 'admin' &&
                             <li className="usa-nav__primary-item">
-                                <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-two">
+                                <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin">
                                     <span className="text-bold">Admin</span>
                                 </button>
-                                <ul id="basic-nav-section-two" className="usa-nav__submenu" hidden>
+                                <ul id="basic-nav-section-admin" className="usa-nav__submenu" hidden>
                                     <li className="usa-nav__submenu-item">
-                                        <NavLink exact to="/"
+                                        <NavLink exact to="/admin/users"
                                             className="usa-link"
                                         >
                                             Manage Users
                                         </NavLink>
                                     </li>
                                     <li className="usa-nav__submenu-item">
-                                        <NavLink exact to="/"
+                                        <NavLink exact to="/admin/verification"
                                             className="usa-link"
                                         >
                                             Verify Profiles
                                         </NavLink>
                                     </li>
                                     <li className="usa-nav__submenu-item">
-                                        <NavLink exact to="/"
+                                        <NavLink exact to="/admin/analytics"
                                             className="usa-link"
                                         >
                                             Analytics
@@ -111,7 +112,7 @@ export default function TitleBanner() {
                     <div className="usa-nav__secondary">
                         <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
                             <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
-                            <input className="usa-input" id="extended-search-field-small" onChange={e => setSearchString(e.target.value)} type="search" name="search" />
+                            <input className="usa-input" id="extended-search-field-small" value={searchString}onChange={e => setSearchString(e.target.value)} type="search" name="search" />
                             <button id="site-search" className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
                         </form>
                     </div>

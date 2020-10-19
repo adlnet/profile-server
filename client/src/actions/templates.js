@@ -13,6 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
+import { added, created, edited, removed, deprecated } from './successAlert';
+import { ADDED, CREATED, EDITED, REMOVED, DEPRECATED } from './successAlert';
 import API from '../api';
 import history from '../history'
 import { selectProfileVersion, selectProfile } from './profiles';
@@ -133,6 +135,8 @@ export function createTemplate(template) {
                 state.application.selectedOrganizationId, state.application.selectedProfileId, profileVersionId));
             dispatch(loadProfileTemplates(profileVersionId));
 
+            dispatch(created(template.name));
+
             history.push(`../../${profileVersionId}/templates/${newTemplate.uuid}`);
         } catch (err) {
             dispatch({
@@ -148,7 +152,7 @@ export function createTemplate(template) {
     };
 }
 
-export function editTemplate(template) {
+export function editTemplate(template, actualAction, actualThing) {
     return async function (dispatch, getState) {
         let state = getState();
         dispatch({
@@ -161,6 +165,24 @@ export function editTemplate(template) {
                 state.application.selectedProfileVersionId, template);
 
             dispatch(selectTemplate(newTemplate.uuid));
+            if (actualAction === EDITED) {
+                dispatch(edited());
+            }
+            if (actualAction === CREATED) {
+                dispatch(created(actualThing));
+            }
+            if (actualAction === ADDED) {
+                dispatch(added(actualThing));
+            }
+            if (actualAction === REMOVED) {
+                dispatch(removed(actualThing));
+            }
+            if (actualAction === DEPRECATED) {
+                dispatch(deprecated(template.name));
+            }
+            if (actualAction === ADDED) {
+                dispatch(added(actualThing));
+            }
         } catch (err) {
             dispatch({
                 type: ERROR_EDIT_TEMPLATE,

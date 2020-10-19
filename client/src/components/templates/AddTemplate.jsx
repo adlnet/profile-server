@@ -24,15 +24,14 @@ import Flyout from '../controls/flyout';
 import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
 import SearchSelectComponent from '../controls/search-select/searchSelectComponent';
 import TemplateResultView from './TemplateResultView';
+import Breadcrumb from '../controls/breadcrumbs';
+import CancelButton from '../controls/cancelButton';
+import { ADDED } from '../../actions/successAlert';
 
 export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
     const { versionId } = useParams();
     const dispatch = useDispatch();
     const history = useHistory();
-
-    useEffect(() => {
-        dispatch(loadProfileTemplates(versionId));
-    }, []);
 
     const templateResults = useSelector((state) => state.searchResults.templates)
     const selectedResults = useSelector((state) => state.searchResults.selectedTemplates)
@@ -45,13 +44,17 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
     const [infoPanelConcept, setInfoPanelConcept] = useState();
     const [hasFlyoutOnPrevious, setHasFlyoutOnPrevious] = useState(false);
 
+    useEffect(() => {
+        dispatch(loadProfileTemplates(profileVersion.uuid));
+    }, [profileVersion.uuid]);
+
     async function handleAddToProfileClick() {
         if (selectedResults) {
             const newProfileVersion = Object.assign({}, profileVersion);
             newProfileVersion.templates = [...newProfileVersion.templates, ...selectedResults];
 
             if (profileVersion.state === 'draft') {
-                await dispatch(editProfileVersion(newProfileVersion));
+                await dispatch(editProfileVersion(newProfileVersion, ADDED, 'Statement template'));
             } else if (profileVersion.state === 'published') {
                 // if editing the published profile, we need to clean up 
                 // the values param since we create a new draft from the published version.
@@ -73,13 +76,9 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
                 await dispatch(createNewProfileDraft(newVersion));
             }
 
-            await dispatch(loadProfileTemplates(versionId));
+            await dispatch(loadProfileTemplates(profileVersion.uuid));
             history.push(rootUrl);
         }
-    }
-
-    function handleCancel() {
-        history.goBack();
     }
 
     function onViewDetailsClick(template) {
@@ -104,6 +103,7 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
     }
 
     function templateResultsFilter(result) {
+        if (result.parentProfile && result.parentProfile.state === 'draft' && result.parentProfile.parentProfile.uuid !== profileVersion.parentProfile.uuid) return false;
         return !profileTemplates.map(t => t.uuid).includes(result.uuid);
     }
 
@@ -111,7 +111,7 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
         <div>
             <div className="grid-row margin-top-3 margin-bottom-3">
                 <div className="grid-col">
-                    <Link to={rootUrl}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right"></i>
+                    <Breadcrumb breadcrumbs={[{ to: rootUrl, crumb: 'statement templates' }]} />
                     <h2 className="margin-y-05">Add Statement Templates</h2>
                 </div>
             </div>
@@ -134,7 +134,7 @@ export default function AddTemplate({ isOneTemplateOnly, rootUrl }) {
 
             <div className="grid-row">
                 <div className="grid-col">
-                    <button className="usa-button usa-button--unstyled padding-y-105" onClick={handleCancel}><b>Cancel</b></button>
+                    <CancelButton className="usa-button usa-button--unstyled padding-y-105" type="button" cancelAction={() => history.goBack()} />
                 </div>
                 <div className="grid-col">
                     <div className="pin-right">

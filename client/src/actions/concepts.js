@@ -16,6 +16,8 @@
 import API from '../api';
 import history from '../history'
 import { selectProfile, selectProfileVersion } from './profiles';
+import { created, deprecated, DEPRECATED, EDITED, edited } from './successAlert';
+
 
 
 export const SELECT_CONCEPT = 'SELECT_CONCEPT';
@@ -32,6 +34,7 @@ export const FINISH_GET_CONCEPTS = 'FINISH_GET_CONCEPTS';
 export const ERROR_GET_CONCEPTS = 'ERROR_GET_CONCEPTS';
 
 export const START_SEARCH_CONCEPTS = 'START_SEARCH_CONCEPTS';
+export const ERROR_SEARCH_CONCEPT = 'ERROR_SEARCH_CONCEPT';
 export const FINISH_SEARCH_CONCEPTS = 'FINISH_SEARCH_CONCEPTS';
 
 export const SELECT_CONCEPT_RESULT = 'SELECT_CONCEPT_RESULT';
@@ -117,8 +120,7 @@ export function createConcept(concept) {
             dispatch(selectProfile(organizationId, profileId));
             dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
             dispatch(loadProfileConcepts(profileVersionId));
-
-            history.push(`./concepts/${newConcept.uuid}`)
+            dispatch(created(concept.name));
         } catch (err) {
             dispatch({
                 type: ERROR_CREATE_CONCEPT,
@@ -133,7 +135,7 @@ export function createConcept(concept) {
     };
 }
 
-export function editConcept(concept) {
+export function editConcept(concept, actualAction) {
     return async function (dispatch, getState) {
         let state = getState();
         dispatch({
@@ -150,6 +152,11 @@ export function editConcept(concept) {
                 state.application.selectedOrganizationId, state.application.selectedProfileId,
                 state.application.selectedProfileVersion.uuid, newConcept.uuid)
             );
+            if (!actualAction || actualAction === EDITED) {
+                dispatch(edited());
+            } else if (actualAction === DEPRECATED) {
+                dispatch(deprecated(concept.name));
+            }
         } catch (err) {
             dispatch({
                 type: ERROR_EDIT_CONCEPT,
@@ -273,8 +280,17 @@ export function searchConcepts(search, limit, page, sort, filter) {
         dispatch({
             type: START_SEARCH_CONCEPTS,
         });
+        let concepts;
+        try {
+            concepts = await API.searchConcepts(search, limit, page, sort, filter);
+        } catch (err) {
+            dispatch({
+                type: ERROR_SEARCH_CONCEPT,
+                errorType: 'concepts',
+                error: err.message,
+            });
+        }
 
-        const concepts = await API.searchConcepts(search, limit, page, sort, filter);
 
         dispatch({
             type: FINISH_SEARCH_CONCEPTS,

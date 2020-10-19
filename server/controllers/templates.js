@@ -31,7 +31,7 @@ async function getVersionTemplates(versionUuid) {
                 parentProfile: { $ne: null },
                 populate: {
                     path: 'parentProfile concepts verb objectActivityType contextCategoryActivityType contextGroupingActivityType contextOtherActivityType contextParentActivityType attachmentUsageType',
-                    select: 'name uuid',
+                    select: 'name uuid state',
                     populate: { path: 'parentProfile', select: 'uuid', populate: { path: 'parentProfile organization', select: 'uuid' } },
                 },
             });
@@ -66,7 +66,7 @@ async function searchTemplates(search, limit, page, sort) {
     results.populate({
         path: 'parentProfile',
         select: 'uuid iri name state',
-        populate: { path: 'organization', select: 'uuid name' },
+        populate: { path: 'organization parentProfile', select: 'uuid name' },
     })
         .populate({
             path: 'verb',
@@ -106,7 +106,7 @@ async function getAllTemplates() {
     let templates;
     try {
         templates = await templateModel
-            .find({ parentProfile: { $ne: null } }, 'uuid iri name description updatedOn ')
+            .find({ parentProfile: { $ne: null } }, 'uuid iri name description updatedOn updatedBy')
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name state',
@@ -164,6 +164,7 @@ exports.createTemplate = async function (req, res) {
             req.body.iri = createIRI.template(profileiri, req.body.name);
         }
         req.body.parentProfile = profileVersion._id;
+        req.body.updatedBy = req.user;
 
         template = new templateModel();
         Object.assign(template, req.body);
@@ -171,6 +172,7 @@ exports.createTemplate = async function (req, res) {
         await template.save();
         profileVersion.templates.push(template);
         profileVersion.updatedOn = new Date();
+        profileVersion.updatedBy = req.user;
         await profileVersion.save();
     } catch (err) {
         console.error(err);
@@ -242,6 +244,10 @@ exports.getTemplate = async function (req, res) {
                 path: 'contextStatementRefTemplate',
                 select: 'uuid iri name updatedOn description',
                 populate: { path: 'parentProfile', select: 'uuid name' },
+            })
+            .populate({
+                path: 'updatedBy',
+                select: 'email firstname lastname uuid',
             });
 
         if (!template) {
@@ -276,7 +282,7 @@ exports.updateTemplate = async function (req, res) {
             });
         }
 
-        Object.assign(template, req.body, { updatedOn: new Date() });
+        Object.assign(template, req.body, { updatedOn: new Date(), updatedBy: req.user });
         await template.save();
     } catch (err) {
         console.error(err);
@@ -310,6 +316,7 @@ exports.deleteTemplate = async function (req, res) {
 
         profileVersion.templates = [...profileVersion.templates].filter(t => !t.equals(template._id));
         profileVersion.updatedOn = new Date();
+        profileVersion.updatedBy = req.user;
         await profileVersion.save();
     } catch (err) {
         console.error(err);

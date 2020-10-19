@@ -14,16 +14,23 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { Formik, Field, Form } from 'formik';
+import { Formik, Field } from 'formik';
 import * as Yup from 'yup';
 
 import Translations from '../../components/fields/Translations';
 import Tags from '../../components/fields/Tags';
 import ErrorValidation from '../controls/errorValidation';
-import Iri from '../fields/Iri';
 import { Detail } from '../DetailComponents';
+import { useSelector } from 'react-redux';
+import CancelButton from '../controls/cancelButton';
+import DeprecateButton from '../controls/deprecateButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
-export default function EditTemplateDetails({ initialValues, onSubmit, onCancel, isPublished }) {
+export default function EditTemplateDetails({ initialValues, onSubmit, onCancel, isPublished, onDeprecate }) {
+    const currentProfileVersion = useSelector(state => state.application.selectedProfile);
+    const generatedIRIBase = `${currentProfileVersion.iri}/templates/`;
+
+
     return (<>
         <div className="display-inline padding-right-5">
             <b>Edit Statement Template Details</b>
@@ -31,21 +38,26 @@ export default function EditTemplateDetails({ initialValues, onSubmit, onCancel,
         <span className="text-secondary">*</span><span className="usa-hint text-lowercase text-thin font-sans-3xs"> indicates required field</span>
 
         <Formik
-            initialValues={initialValues ? initialValues : {} || {}}
+            initialValues={initialValues || { name: '', description: '', 'more-information': '', tags: [], iriType: "external-iri", iri: '' }}
             validationSchema={Yup.object({
                 name: Yup.string()
                     .required('Required'),
                 description: Yup.string()
                     .required('Required')
             })}
+            validateOnMount={true}
             onSubmit={(values) => {
+                if (values.iriType === 'generated-iri')
+                    values.iri = `${generatedIRIBase}${values.iri}`;
                 onSubmit(values);
             }}
         >
             {(formikProps) => (
-                <form className="usa-form"> {/*style={{maxWidth: 'inherit'}}>*/}
+                <form className="usa-form" style={{ maxWidth: 'inherit' }}>
                     <fieldset className="usa-fieldset">
-                        <Iri message="This statement template already has an IRI used in xAPI statments" {...formikProps} isPublished={isPublished} />
+                        <Detail title='IRI' subtitle="The IRI used to identify this in an xAPI statement.">
+                            {formikProps.values.iri}
+                        </Detail>
                         {
                             isPublished ?
                                 <Detail title='statement template name'>
@@ -80,10 +92,24 @@ export default function EditTemplateDetails({ initialValues, onSubmit, onCancel,
                         </label>
                         <Field name="tags" component={Tags} id="tags" isPublished={isPublished} />
 
+                        <div className="grid-row">
+                            <div className="grid-col-2">
 
-                        <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>Save Changes</button>
-                        <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
-                        {/* <button className="usa-button usa-button--unstyled" type="reset" onClick={handleCancel}>Deprecate Statement Template</button> */}
+                                <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" style={{ margin: 0 }} type="button" onClick={formikProps.handleSubmit}>Save Changes</ValidationControlledSubmitButton>
+                            </div>
+                            <div className="grid-col">
+                                <CancelButton className="usa-button usa-button--unstyled" style={{ marginLeft: "2em", marginTop: "0.6em" }} type="reset" cancelAction={onCancel} />
+                            </div>
+                            <div className="grid-col display-flex flex-column flex-align-end">
+                                <DeprecateButton
+                                    className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                    style={{ marginTop: "0.6em" }}
+                                    type="reset"
+                                    onClick={onDeprecate}
+                                    componentType="statement template"
+                                />
+                            </div>
+                        </div>
                     </fieldset>
                 </form>
             )}

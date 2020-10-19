@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { Route, Switch, useRouteMatch, Link, Redirect } from 'react-router-dom';
+import { Route, Switch, useRouteMatch, NavLink, Link, Redirect } from 'react-router-dom';
 import { useDispatch } from 'react-redux';
 
 import { deletePattern, loadProfilePatterns } from './../../actions/patterns';
@@ -30,14 +30,17 @@ export default function Patterns(props) {
     const dispatch = useDispatch();
     const { path, url } = useRouteMatch();
     const { selectedProfileVersionId } = useSelector(state => state.application);
-    const patterns = useSelector((state) => state.patterns);
+    let patterns = useSelector((state) => state.patterns);
+
+    // filter out draft components if the viewer is not a member of the wg
+    if (!props.isMember && patterns) patterns = patterns.filter(p => p.parentProfile && p.parentProfile.state !== 'draft');
 
     useEffect(() => {
         dispatch(loadProfilePatterns(selectedProfileVersionId));
     }, [selectedProfileVersionId])
 
     let data = React.useMemo(() => patterns, [patterns]);
-    let columns = React.useMemo(() => getColumns(dispatch, props.isMember, props.isCurrentVersion), [props.isMember, props.isCurrentVersion]);
+    let columns = React.useMemo(() => getColumns(dispatch, props.isMember, props.isCurrentVersion, selectedProfileVersionId), [props.isMember, props.isCurrentVersion, selectedProfileVersionId]);
 
     return (<>
         <ErrorBoundary errorType="patterns" />
@@ -47,6 +50,15 @@ export default function Patterns(props) {
                     <div className="desktop:grid-col">
                         <h2 style={{ marginBottom: 0 }}>Patterns</h2>
                     </div>
+                    {props.isMember && props.isCurrentVersion &&
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <NavLink exact
+                                to={`${url}/add`}
+                                className="usa-button margin-top-2 margin-right-0">
+                                <i className="fa fa-plus margin-right-05"></i> <span> Add Pattern</span>
+                            </NavLink>
+                        </div>
+                    }
                 </div>
                 <div className="grid-row">
                     <SortingTable
@@ -55,13 +67,6 @@ export default function Patterns(props) {
                         data={data}
                         emptyMessage="There are no patterns associated with this profile. Add a pattern to define relationships between your xAPI statements." />
                 </div>
-                {props.isMember && props.isCurrentVersion &&
-                    <div className="grid-row padding-top-2">
-                        <div className="desktop:grid-col-3">
-                            <Link to={`${url}/add`} className="usa-button">Add Pattern</Link>
-                        </div>
-                    </div>
-                }
             </Route>
             <Route exact path={`${path}/add`}>
                 {(props.isMember && props.isCurrentVersion) ?
@@ -76,15 +81,33 @@ export default function Patterns(props) {
                 }
             </Route>
             <Route path={`${path}/:patternId`}>
-                <PatternDetail {...props} />
+                <PatternDetail {...props} root_url={url} />
             </Route>
             {/* <Redirect from="/" to="" /> */}
         </Switch>
     </>);
 }
 
-function getColumns(dispatch, isMember, isCurrentVersion) {
+function getColumns(dispatch, isMember, isCurrentVersion, selectedProfileVersionId) {
     const cols = [
+        {
+            Header: 'Primary',
+            accessor: 'primary',
+            Cell: ({ cell: { value } }) => (value) ? 'Primary' : 'Secondary',
+            style: {
+                width: '12%'
+            }
+        },
+        {
+            Header: 'Type',
+            accessor: 'type',
+            style: {
+                width: '15%'
+            },
+            cellStyle: {
+                textTransform: 'capitalize'
+            }
+        },
         {
             Header: 'Name',
             id: 'name',
@@ -107,28 +130,22 @@ function getColumns(dispatch, isMember, isCurrentVersion) {
             }
         },
         {
-            Header: 'Primary',
-            accessor: 'primary',
-            Cell: ({ cell: { value } }) => (value) ? 'Primary' : 'Secondary',
-            style: {
-                width: '12%'
-            }
-        },
-        {
-            Header: 'Type',
-            accessor: 'type',
-            style: {
-                width: '15%'
-            },
-            cellStyle: {
-                textTransform: 'capitalize'
-            }
-        },
-        {
             Header: 'Profile',
             accessor: 'parentProfile.name',
             style: {
                 width: '18%'
+            }
+        },
+        {
+            Header: 'Status',
+            accessor: (orow, rowidx, row) => {
+                return row.original.isDeprecated ? 'Deprecated' : row.original.parentProfile.state === 'draft' ? 'Unpublished' : 'Published';
+            },
+            Cell: function Status({ cell: { value } }) {
+                return value
+            },
+            style: {
+                width: '15%'
             }
         },
         {
@@ -140,16 +157,16 @@ function getColumns(dispatch, isMember, isCurrentVersion) {
             }
         }
     ]
-    if (isMember && isCurrentVersion) {
-        cols.push({
-            Header: ' ',
-            id: 'remove',
-            disableSortBy: true,
-            accessor: function removeItem(rowdata) {
-                return <button className="usa-button  usa-button--unstyled" onClick={() => dispatch(deletePattern(rowdata))}><span className="text-bold">Remove</span></button>
-            }
-        });
-    }
+    // if (isMember && isCurrentVersion) {
+    //     cols.push({
+    //         Header: ' ',
+    //         id: 'remove',
+    //         disableSortBy: true,
+    //         accessor: function removeItem(rowdata) {
+    //             return <button className="usa-button  usa-button--unstyled" onClick={() => dispatch(deletePattern(rowdata))}><span className="text-bold">Remove</span></button>
+    //         }
+    //     });
+    // }
 
     return cols;
 }

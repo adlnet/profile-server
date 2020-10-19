@@ -14,19 +14,19 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
-import { useSelector, useDispatch } from "react-redux";
+import { useSelector } from "react-redux";
 import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
 import history from '../../history';
 
-import { createPattern, editPattern } from '../../actions/patterns';
 import { Sequence, Step } from '../../components/sequence';
 import DefinePattern from './DefinePattern';
 import AddComponents from './AddComponents';
+import CancelButton from '../controls/cancelButton';
+import { isValidIRI } from '../fields/Iri';
+import DeprecateButton from '../controls/deprecateButton';
 
 export default function CreateAlternatePattern(props) {
-    const dispatch = useDispatch();
-    const { isPublished } = props;
+    const { isPublished, root_url, onDeprecate } = props;
 
     props.updateType && props.updateType('alternates');
 
@@ -37,19 +37,46 @@ export default function CreateAlternatePattern(props) {
 
     let startingValues;
     if (props.pattern) {
-        // it's possible that the iri was external and still match, but this is what 
-        // the system will use to generate the base of the concept iri, so we'll call it 
-        // generated
         startingValues = { ...props.pattern };
         startingValues.primaryorsecondary = props.pattern.primary ? 'primary' : 'secondary';
         startingValues.componenttype = props.pattern.type;
-        startingValues.iriType = props.pattern.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
-        startingValues.iri = props.pattern.iri.replace(generatedIRIBase, "");
+        startingValues.component = props.components && props.components.map(c => c.component) || [];
     }
 
-    return (
+    if (props.importedPattern) {
+        startingValues = { ...props.importedPattern.model }
+        startingValues.iriType = 'external-iri';
+        startingValues.extiri = startingValues.iri;
+        startingValues.geniri = '';
+        startingValues.primaryorsecondary = startingValues.primary ? 'primary' : 'secondary';
+    }
+
+    const formValidation = (values) => {
+        const errors = {};
+        if (!values.name) errors.name = 'Required';
+        if (!values.description) errors.description = 'Required';
+
+        if (!props.pattern || !props.pattern.iri) {
+            if (values.iriType === 'external-iri') {
+                if (!values.extiri.trim()) errors.extiri = 'Required';
+                if (!isValidIRI(values.extiri)) errors.extiri = 'IRI did not match expected format.';
+            } else {
+                if (!values.geniri.trim()) errors.geniri = 'Required';
+                const geniri = generatedIRIBase + values.geniri;
+                if (!isValidIRI(geniri)) errors.geniri = 'IRI did not match expected format.';
+            }
+        }
+        return errors;
+    }
+
+    function getCancelButton() {
+        return <CancelButton className="usa-button usa-button--unstyled margin-left-4" cancelAction={() => history.push(root_url)} preventDefault={true} />
+    }
+
+    return (<>
         <Formik
             enableReinitialize={true}
+            validateOnMount={true}
             initialValues={startingValues || {
                 name: '',
                 description: '',
@@ -59,22 +86,17 @@ export default function CreateAlternatePattern(props) {
                 component: '',
                 componenttype: '',
                 iri: '',
+                extiri: '',
+                geniri: '',
                 iriType: "external-iri",
             }}
-            validationSchema={Yup.object({
-                name: Yup.string()
-                    .required('Required'),
-                description: Yup.string()
-                    .required('Required'),
-                iri: Yup.string()
-                    .when('hasIRI', {
-                        is: true,
-                        then: Yup.string().required('Required'),
-                    }),
-            })}
+            validate={formValidation}
             onSubmit={(values) => {
-                if (values.iriType === 'generated-iri')
-                    values.iri = `${generatedIRIBase}${values.iri}`;
+                if (!values.iri) {
+                    values.iri = values.extiri.trim();
+                    if (values.iriType === 'generated-iri')
+                        values.iri = `${generatedIRIBase}${values.geniri.trim()}`;
+                }
 
                 if (selectedResults) {
                     let pattern = {
@@ -91,15 +113,22 @@ export default function CreateAlternatePattern(props) {
             }}
         >
             {(props) => (<>
-                { !isPublished ?
-                    <Sequence>
-                        <div className="profile-form-frame">
+                {!isPublished ?
+                    <Sequence
+                        isNotValidated={!!Object.keys(props.errors).length}
+                    >
+                        <div className="padding-x-2">
                             <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
                                 <fieldset className="usa-fieldset">
-                                    <Step title="Define Pattern">
+                                    <Step
+                                        title="Define Pattern"
+                                        isNotValidated={!!Object.keys(props.errors).length}
+                                        cancel={getCancelButton()}
+                                        deprecateButton={startingValues && <DeprecateButton className="usa-button usa-button--unstyled text-secondary-dark text-bold" style={{ marginTop: "2em" }} type="reset" onClick={onDeprecate} componentType="pattern" />}
+                                    >
                                         <DefinePattern {...props} isEditing={!!props.values.uuid} generatedIRIBase={generatedIRIBase} />
                                     </Step>
-                                    <Step title="Add Components" button={<button className="usa-button" type="submit" onClick={props.handleSubmit}>Add to Profile</button>}>
+                                    <Step title="Add Components" button={<button className="usa-button" type="submit" onClick={props.handleSubmit}>Add to Profile</button>} cancel={getCancelButton()}>
                                         <AddComponents isOneComponentOnly={false} pattern={props.pattern} {...props} />
                                     </Step>
                                 </fieldset>
@@ -109,15 +138,28 @@ export default function CreateAlternatePattern(props) {
                     :
                     <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
                         <fieldset className="usa-fieldset">
-                            <DefinePattern {...props} isEditing={!!props.values.uuid} isPublished={isPublished} />
+                            <DefinePattern {...props} isEditing={!!props.values.uuid} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
                         </fieldset>
-                        <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
-                            Save Changes
-                        </button>
-                        <button className="usa-button usa-button--unstyled" type="reset" onClick={() => history.goBack()}><b>Cancel</b></button>
+
+
+
+                        <div className="grid-row">
+                            <div className="grid-col">
+                                <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
+                                    Save Changes
+                                </button>
+                                <CancelButton className="usa-button usa-button--unstyled" type="reset" cancelAction={() => history.push(root_url)} />
+                            </div>
+                            <div className="grid-col-3">
+                                <div className="pin-right">
+                                    <DeprecateButton className="usa-button usa-button--unstyled text-secondary-dark text-bold" style={{ marginTop: "2em" }} type="reset" onClick={onDeprecate} componentType="pattern" />
+                                </div>
+                            </div>
+                        </div>
                     </Form>
                 }
             </>)}
         </Formik>
+    </>
     );
 }

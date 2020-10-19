@@ -14,18 +14,50 @@
 * limitations under the License.
 **************************************************************** */
 import React from 'react';
+import { useState } from 'react';
+import ModalBoxWithoutClose from './modalBoxWithoutClose';
 
-export default function ModalBox({ show, onClose, children }) {
+export default function ModalBox({ show, onClose, children, isForm }) {
+    const [showConfirmation, setShowConfirmation] = useState(false);
+
+    const closeAction = () => {
+        if (isForm) {
+            setShowConfirmation(true);
+        } else {
+            setShowConfirmation(false)
+            onClose();
+        }
+    }
 
     return (<>
-        {show &&
+        {show && <>
             <div className="modalbox-bg">
                 <div className="modalbox">
-                    <div className="modalbox-close" onClick={onClose}><span className="fa fa-close"></span></div>
+                    <div className="modalbox-close" style={{ zIndex: "1000" }} onClick={closeAction}><span className="fa fa-close"></span></div>
                     {children}
                 </div>
             </div>
-        }
+        </>}
+        <ModalBoxWithoutClose show={showConfirmation}>
+            <div className="grid-row">
+                <div className="grid-col">
+                    <h3>Discard Changes</h3>
+                </div>
+            </div>
+            <div className="grid-row">
+                <div className="grid-col">
+                    <span>Are you sure you want to discard the changes you may have made?</span>
+                </div>
+            </div>
+            <div className="grid-row">
+                <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                    <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={() => { setShowConfirmation(false); onClose() }}>Discard changes</button>
+                </div>
+                <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                    <button className="usa-button usa-button--unstyled" onClick={() => setShowConfirmation(false)} style={{ margin: "2.3em 1.5em" }}><b>Continue editing</b></button>
+                </div>
+            </div>
+        </ModalBoxWithoutClose>
     </>);
 }
 

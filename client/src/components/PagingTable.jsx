@@ -25,6 +25,7 @@ export default function PagingTable({
     data,
     emptyMessage,
     showPageHeader = true,
+    resourceType = "working groups",
     getHeaderProps = defaultPropGetter,
     getColumnProps = defaultPropGetter,
     getRowProps = defaultPropGetter,
@@ -56,7 +57,7 @@ export default function PagingTable({
 
     return (<>
         {showPageHeader && <div className="padding-top-3">
-            Showing <strong>{pageIndex * pageSize + 1} - {pageIndex * pageSize + page.length} of {data.length}</strong> working groups
+            Showing <strong>{pageIndex * pageSize + 1} - {pageIndex * pageSize + page.length} of {data.length}</strong> {resourceType}
             {searchTerm && <span> for keyword <strong>&apos;{searchTerm}&apos;</strong> | <button className="usa-button usa-button--unstyled" onClick={clearSearch}>Clear search</button></span>}
         </div>}
         <table className="usa-table usa-table--borderless" width="100%" {...getTableProps()}>

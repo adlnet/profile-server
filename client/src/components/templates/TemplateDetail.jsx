@@ -19,7 +19,7 @@ import { Link } from 'react-router-dom';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
 
-export default function TemplateDetail({ onEditClick, isMember, isCurrentVersion, belongsToAnotherProfile }) {
+export default function TemplateDetail({ onEditClick, isMember, isCurrentVersion, belongsToAnotherProfile, isEditable }) {
     let template = useSelector((state) => state.application.selectedTemplate)
 
     return (
@@ -42,7 +42,7 @@ export default function TemplateDetail({ onEditClick, isMember, isCurrentVersion
                 </Detail>
             </div>
             <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
-                {isMember && isCurrentVersion && !belongsToAnotherProfile &&
+                {isMember && isCurrentVersion && !belongsToAnotherProfile && isEditable &&
                     <button
                         className="usa-button padding-x-105 margin-bottom-2 margin-right-0"
                         onClick={onEditClick}

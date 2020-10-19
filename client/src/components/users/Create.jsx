@@ -20,6 +20,7 @@ import * as Yup from 'yup';
 import ErrorValidation from '../controls/errorValidation';
 import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user";
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
 export default function CreateAccount(props) {
     let dispatch = useDispatch();
@@ -52,6 +53,7 @@ export default function CreateAccount(props) {
                     .oneOf([Yup.ref('password'), null], "Passwords don't match")
                     .required('Required'),
             })}
+            validateOnMount={true}
             onSubmit={(values) => {
                 createAccount(values);
             }}
@@ -95,18 +97,19 @@ export default function CreateAccount(props) {
                             <div className="display-flex flex-column flex-align-end">
                                 <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show password</button>
                             </div>
-                            <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
+                            {
+                                userData.createFeedback && <div className="usa-error-message padding-right-1"><p>{userData.createFeedback}</p></div>
+                            }
+                            <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
                                 Create Account
-                            </button>
+                            </ValidationControlledSubmitButton>
                         </fieldset>
                     </Form>
                 </div>
             )}
 
         </Formik>
-        {
-            userData.createFeedback && <div className="usa-error-message padding-right-1"><p>{userData.createFeedback}</p></div>
-        }
+
     </>
     );
 }

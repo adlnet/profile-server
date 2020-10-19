@@ -21,7 +21,8 @@
     "assets": [
       "client/build/**/*",
       "server/views/*",
-      "server/views/**/*"
+      "server/views/**/*",
+      "server/utils/emails/*"
     ]
   },
   "bin": "manager.js",
@@ -33,6 +34,7 @@
     "compression": "^1.7.4",
     "cookie-parser": "~1.4.3",
     "cookie-session": "^1.4.0",
+    "copy-to-clipboard": "^3.3.1",
     "crypto-js": "^4.0.0",
     "debug": "~2.2.0",
     "dotenv": "^8.2.0",
@@ -42,6 +44,7 @@
     "helmet": "^3.23.3",
     "hjs": "~0.0.6",
     "is-primitive": "^3.0.1",
+    "js-file-download": "^0.4.12",
     "json-diff": "^0.5.4",
     "jsonpath": "^1.0.2",
     "jsonschema": "^1.2.6",
@@ -50,6 +53,7 @@
     "mongo-sanitize": "^1.1.0",
     "mongoose": "^5.8.9",
     "mongoose-unique-validator": "^2.0.3",
+    "multer": "^1.4.2",
     "mustache": "^4.0.1",
     "nodemailer": "^6.4.11",
     "passport": "^0.4.1",
@@ -57,6 +61,7 @@
     "rdfstore": "^0.9.17",
     "react": "^16.12.0",
     "react-dom": "^16.12.0",
+    "react-file-drop": "^3.0.7",
     "react-router-dom": "^5.1.2",
     "recluster": "github:rchadwic/recluster",
     "request": "^2.88.2",

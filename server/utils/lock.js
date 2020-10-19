@@ -20,6 +20,7 @@
  * @param {boolean} _continue To call next and move on to the next
  * function on the route
  */
+const settings = require('../settings');
 module.exports = function (_continue = false) {
     return async function lock(req, res, next) {
         if (!req.user) throw new Error('Anonymous users cannot lock a resource');
@@ -28,7 +29,7 @@ module.exports = function (_continue = false) {
         if (!('locked' in req.resource)) throw new Error('Resource not lockable');
 
         if (req.resource.locked) {
-            if (req.resource.lockedTime > Date.now() - 10000) {
+            if (req.resource.lockedTime > Date.now() - settings.lockTimeout) {
                 if (req.resource.lockedBy && req.resource.lockedBy.toString() !== req.user.id.toString()) {
                     return res.status(409).send({
                         success: false,
@@ -45,6 +46,7 @@ module.exports = function (_continue = false) {
             return res.status(200).send({
                 success: true,
                 message: 'locked',
+                timeout: settings.lockTimeout,
             });
         }
     };

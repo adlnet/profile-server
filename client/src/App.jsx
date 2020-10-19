@@ -24,19 +24,25 @@ import CreateOrganization from './components/organizations/CreateOrganization';
 import ErrorPage from './components/errors/ErrorPage';
 import Profiles from "./pages/Profiles";
 import APIInfo from "./pages/APIInfo";
-import SelectOrganization from "./components/profiles/SelectOrganization";
 
+import SelectOrganization from "./components/profiles/SelectOrganization";
+import Analytics from "./components/admin/Analytics";
 import Search from "./components/search/Search";
-import Users from './pages/Users';
+import User from './pages/Users.jsx';
 
 import history from "./history";
 
 import OfficialBanner from './components/OfficialBanner';
 import TitleBanner from './components/home/TitleBanner';
 import PrivateRoute from './components/users/PrivateRoute';
+import AdminRoute from './components/users/AdminRoute';
 import GlobalErrorBoundary from "./components/errors/GlobalErrorBoundary"
 import ErrorBoundary from './components/errors/ErrorBoundary';
 import Webhooks from "./components/webhooks/Webhooks.jsx";
+import AccountDetails from "./components/admin/AccountDetails";
+import Users from "./components/admin/Users.jsx";
+import VerificationRequests from "./components/admin/VerificationRequests.jsx"
+import SuccessBanner from './components/controls/successBanner';
 export default class App extends Component {
 
     render() {
@@ -44,6 +50,8 @@ export default class App extends Component {
             <OfficialBanner />
             <Router history={history}>
                 <TitleBanner />
+                <ErrorBoundary />
+                <SuccessBanner />
                 <GlobalErrorBoundary>
                     <Switch>
                         <Route path="/profile/:profileId">
@@ -58,9 +66,9 @@ export default class App extends Component {
                         <PrivateRoute exact path="/organization/create">
                             <CreateOrganization />
                         </PrivateRoute>
-                        <PrivateRoute path="/organization/:organizationId">
+                        <Route path="/organization/:organizationId">
                             <Organization />
-                        </PrivateRoute>
+                        </Route>
                         <PrivateRoute exact path="/profiles/create">
                             <SelectOrganization />
                         </PrivateRoute>
@@ -68,7 +76,7 @@ export default class App extends Component {
                             <Webhooks />
                         </PrivateRoute>
                         <Route path="/user">
-                            <Users></Users>
+                            <User></User>
                         </Route>
                         <Route path="/search">
                             <Search></Search>
@@ -79,12 +87,24 @@ export default class App extends Component {
                         <Route path="/api-info">
                             <APIInfo></APIInfo>
                         </Route>
+                        <AdminRoute exact path="/admin/users">
+                            <Users />
+                        </AdminRoute>
+                        <AdminRoute exact path="/admin/users/:userId">
+                            <AccountDetails adminView={true} />
+                        </AdminRoute>
+                        <AdminRoute exact path="/admin/verification">
+                            <VerificationRequests />
+                        </AdminRoute>
+                        <AdminRoute exact path="/admin/analytics">
+                            <Analytics />
+                        </AdminRoute>
                         <Route>
                             <ErrorPage />
                         </Route>
                     </Switch>
                 </GlobalErrorBoundary>
-                <ErrorBoundary />
+
                 <footer className="usa-footer usa-footer--slim">
                     {/* <div className="grid-container usa-footer__return-to-top">
                         <a href="#">Return to top</a>

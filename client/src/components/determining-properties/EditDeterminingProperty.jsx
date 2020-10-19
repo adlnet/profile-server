@@ -36,18 +36,18 @@ export default function EditDeterminingProperty({ onDeterminingPropertyAdd }) {
     if (!determiningProperties) return '';
     const determiningProperty = determiningProperties.find(property => property.propertyType === propertyType);
 
-    return (
+    return (<>
         <Formik
             enableReinitialize={true}
             initialValues={{
-                    propertyType: (determiningProperty && determiningProperty.propertyType) || '',
-                    properties: (determiningProperty && determiningProperty.properties) || '' 
+                propertyType: (determiningProperty && determiningProperty.propertyType) || '',
+                properties: (determiningProperty && determiningProperty.properties) || ''
             }}
             onSubmit={values => {
                 onDeterminingPropertyAdd(values);
             }}
         >
-            <Form className="usa-form"  style={{ maxWidth: 'inherit' }}>
+            <Form className="usa-form" style={{ maxWidth: 'inherit' }}>
                 <AddProperty
                     isEditing={true}
                     propertyType={determiningProperty.propertyType}
@@ -56,5 +56,6 @@ export default function EditDeterminingProperty({ onDeterminingPropertyAdd }) {
                 />
             </Form>
         </Formik>
+    </>
     );
 }

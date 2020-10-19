@@ -15,35 +15,71 @@
 **************************************************************** */
 import React from 'react'
 import { Formik, Field } from 'formik';
-import * as Yup from 'yup';
 
 import BaseConceptFields from './BaseConceptFields';
 import ErrorValidation from '../controls/errorValidation';
 import Schemas from '../fields/Schemas';
 import { Detail } from '../DetailComponents';
 import { useSelector } from 'react-redux';
+import { Autocomplete, TextField } from '@cmsgov/design-system';
+import mimeTypes from '../fields/data/mime-types.json'
+import { useState } from 'react';
+import CancelButton from '../controls/cancelButton';
+import { isValidIRI } from '../fields/Iri';
+import DeprecateButton from '../controls/deprecateButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
-export default function DocumentConcept({ initialValues, onCreate, onCancel, isPublished }) {
+export default function DocumentConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept }) {
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = currentProfileVersion.iri + "/document/";
+    const [mimetypes, setTypes] = useState(mimeTypes);
 
-    let startingValues;
-    if (initialValues) {
-        // it's possible that the iri was external and still match, but this is what 
-        // the system will use to generate the base of the concept iri, so we'll call it 
-        // generated
-        startingValues = { ...initialValues };
-        startingValues.iriType = initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
-        startingValues.iri = initialValues.iri.replace(generatedIRIBase, "");
+    const formValidation = (values) => {
+        const errors = {};
+        if (!values.name) errors.name = 'Required';
+        if (!values.description) errors.description = 'Required';
+        if (!values.type) errors.type = 'Required';
+        if (!values.mediaType) errors.mediaType = 'Required';
+        if (!values.schemaType) errors.schemaType = 'Required';
+        if (values.schemaType === 'inlineSchema') {
+            if (!values.inlineSchema) errors.inlineSchema = 'Required'
+        }
+        if (values.schemaType === 'schemaString') {
+            if (!values.schemaString) errors.schemaString = 'Required'
+            else if (!isValidIRI(values.schemaString)) errors.schemaString = 'IRI did not match expected format.'
+        }
+
+        if (!initialValues || !initialValues.iri) {
+            if (values.iriType === 'external-iri') {
+                if (!values.extiri.trim()) errors.extiri = 'Required';
+                if (!isValidIRI(values.extiri)) errors.extiri = 'IRI did not match expected format.';
+            } else {
+                if (!values.geniri.trim()) errors.geniri = 'Required';
+                const geniri = generatedIRIBase + values.geniri;
+                if (!isValidIRI(geniri)) errors.geniri = 'IRI did not match expected format.';
+            }
+        }
+
+        if (values.contextIri && values.contextIri.trim()) {
+            if (!isValidIRI(values.contextIri)) errors.contextIri = 'IRI did not match expected format.'
+        }
+        return errors;
+    }
+
+    // check to see if importedConcept has a new concept from an import 'create new concept' history push
+    if (importedConcept && !initialValues) {
+        initialValues = importedConcept.concept.model;
     }
 
     return (
         <Formik
-            initialValues={startingValues || {
+            initialValues={initialValues || {
                 conceptType: 'Document',
                 type: '',
                 iri: '',
+                extiri: '',
+                geniri: '',
                 iriType: "external-iri",
                 name: '',
                 description: '',
@@ -51,34 +87,22 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel, isP
                 schemaType: '',
                 inlineSchema: '',
                 schemaString: '',
+                contextIri: ''
             }}
-            validationSchema={Yup.object({
-                iri: Yup.string()
-                    .required('Required'),
-                name: Yup.string()
-                    .required('Required'),
-                description: Yup.string()
-                    .required('Required'),
-                type: Yup.string()
-                    .required('Required'),
-                mediaType: Yup.string()
-                    .required('Required'),
-                schemaType: Yup.string()
-                    .required('Required'),
-                inlineSchema: Yup.string()
-                    .when('schemaType', {
-                        is: (schemaType) => schemaType === 'inlineSchema' || !schemaType,
-                        then: Yup.string().required('Required'),
-                    }),
-                schemaString: Yup.string()
-                    .when('schemaType', {
-                        is: (schemaType) => schemaType === 'schemaString' || !schemaType,
-                        then: Yup.string().required('Required'),
-                    }),
-            })}
+            validate={formValidation}
             onSubmit={values => {
-                if (values.iriType === 'generated-iri')
-                    values.iri = `${generatedIRIBase}${values.iri}`;
+                if (!values.iri) {
+                    values.iri = values.extiri.trim();
+                    if (values.iriType === 'generated-iri')
+                        values.iri = `${generatedIRIBase}${values.geniri.trim()}`;
+                }
+                // wanna wipe out the one that wasn't selected
+                if (values.schemaType === 'inlineSchema')
+                    values.schemaString = '';
+                else
+                    values.inlineSchema = '';
+
+                if (values.contextIri) values.contextIri = values.contextIri.trim();
                 onCreate(values);
             }}
         >
@@ -93,7 +117,7 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel, isP
                         </div>
                     </div>
                     <form className="usa-form" style={{ maxWidth: "none" }}>
-                        <BaseConceptFields {...props} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
+                        <BaseConceptFields {...props} isEditing={initialValues} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
 
                         <div className="grid-row">
                             <div className="grid-col-6">
@@ -124,22 +148,28 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel, isP
                                             {props.values.mediaType}
                                         </Detail>
                                         :
-                                        <ErrorValidation name="mediaType" type="input">
-                                            <label className="usa-label" htmlFor="mediaType"><span className="text-secondary">*</span>
-                                                <span className="details-label">Media Type</span>
-                                            </label>
-                                            <Field
-                                                name="mediaType" component="select" value={props.values.mediaType} onChange={props.handleChange} rows="3"
-                                                className="usa-select" id="mediaType" aria-required="true"
+                                        <div className={`usa-form-group ${props.errors.mediaType && props.touched.mediaType ? "usa-form-group--error" : ""}`}  >
+                                            <Autocomplete
+                                                items={mimetypes}
+                                                loadingMessage="Loading"
+                                                noResultsMessage="No results found"
+                                                initialInputValue={(initialValues && initialValues.mediaType) || ''}
+                                                clearSearchButton={false}
+                                                onChange={(selectedItem) => {
+                                                    props.setFieldValue('mediaType', selectedItem.id);
+                                                }}
+                                                onInputValueChange={(val) => setTypes(mimeTypes.filter(type => type.name.match(new RegExp(`.*${val}.*`, 'i'))))}
                                             >
-                                                <option value="" disabled defaultValue>- Select Media Type -</option>
-                                                <option value="JSON">JSON</option>
-                                                <option value="Text">text</option>
-                                                <option value="audio">audio</option>
-                                                <option value="video">video</option>
-                                                <option value="multipart">multipart</option>
-                                            </Field>
-                                        </ErrorValidation>
+                                                <TextField
+                                                    label={getMediaTypeLabel(props)}
+                                                    name="mediaType"
+                                                    id="mediaType"
+                                                    style={{ border: "1px solid #000000", borderRadius: "0" }}
+                                                    onBlur={() => props.setFieldTouched('mediaType', true)}
+                                                    className={`${props.errors.mediaType && props.touched.mediaType ? "usa-text--error" : ""}`}
+                                                />
+                                            </Autocomplete>
+                                        </div>
                                 }
                             </div>
                         </div>
@@ -149,23 +179,50 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel, isP
                                     {props.values.contextIri}
                                 </Detail>
                                 :
-                                <>
+                                <ErrorValidation name="contextIri" type="input">
                                     <label className="usa-label" htmlFor="contextIri">
                                         <span className="details-label">context iri</span>
                                     </label>
                                     <Field name="contextIri" type="text" className="usa-input" id="contextIri" aria-required="true" />
-                                </>
+                                </ErrorValidation>
                         }
 
                         <Schemas isRequired={true} {...props} isPublished={isPublished} />
 
                     </form>
                 </div>
-                <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
-                    {initialValues ? 'Save Changes' : 'Add to Profile'}
-                </button>
-                <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
+                <div className="grid-row">
+                    <div className="grid-col-2">
+                        <ValidationControlledSubmitButton errors={props.errors} className="usa-button submit-button" style={{ margin: 0 }} type="submit" onClick={props.handleSubmit}>
+                            {(initialValues && !importedConcept) ? 'Save Changes' : 'Add to Profile'}
+                        </ValidationControlledSubmitButton>
+                    </div>
+                    <div className="grid-col">
+                        <CancelButton className="usa-button usa-button--unstyled" style={{ marginLeft: "2em", marginTop: "0.6em" }} type="reset" cancelAction={onCancel} />
+                    </div>
+                    {(initialValues && !importedConcept) &&
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeprecateButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onClick={onDeprecate}
+                                componentType="concept"
+                            />
+                        </div>
+                    }
+                </div>
             </>)}
         </Formik>
+    )
+}
+
+function getMediaTypeLabel(props) {
+    return (
+        <>
+            <label className={`details-label ${props.errors.mediaType && props.touched.mediaType ? "usa-text--error" : ""}`} htmlFor="mediaType">
+                <span className="text-secondary">*</span>Media Type</label>
+            {props.errors.mediaType && props.touched.mediaType && <span className="usa-error-message" id="input-error-message" role="alert">{props.errors.mediaType}</span>}
+        </>
     )
 }

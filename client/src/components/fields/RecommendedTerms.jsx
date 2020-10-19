@@ -82,7 +82,7 @@ export default function RecommendedTerms(props) {
         }
         {
             !props.isPublished &&
-            <button className="usa-button usa-button--outline" type='button' onClick={() => setShowModal(true)} style={{ marginTop: '8px' }}>
+            <button className="usa-button usa-button--outline" type='button' onClick={() => setShowModal(true)} style={{ marginTop: '8px' }} disabled={props.disabled}>
                 Add Recommended Term
         </button>
         }
@@ -91,9 +91,10 @@ export default function RecommendedTerms(props) {
             <RemoveRecommendedTermConfirmation onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
         </ModalBoxWithoutClose>
 
-        <ModalBox show={showModal} onClose={() => setShowModal(false)}>
+        <ModalBox show={showModal} onClose={() => setShowModal(false)} isForm={true}>
             <RecommendedTermForm
                 onAdd={onAdd}
+                type={props.type}
             />
         </ModalBox>
     </>);
@@ -120,14 +121,16 @@ function RemoveRecommendedTermConfirmation(props) {
     return (<>
         <h2 className="margin-top-0">Remove Recommended Term</h2>
         <div><span>Are you sure you want to remove the recommended term from this concept?</span></div>
-        <button className="usa-button submit-button" type="button" onClick={props.onConfirm}>Remove Translation</button>
-        <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}><b>Keep Translation</b></button>
+        <button className="usa-button submit-button" type="button" onClick={props.onConfirm}>Remove Recommended Term</button>
+        <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}><b>Keep Recommended Term</b></button>
     </>);
 }
 
-function RecommendedTermForm({ onAdd }) {
+function RecommendedTermForm({ onAdd, type }) {
     const dispatch = useDispatch();
     const conceptSearchResults = useSelector(state => state.searchResults.concepts);
+
+    const concepttype = type === 'ActivityExtension' ? 'ActivityType' : 'Verb'
 
     useEffect(() => {
         return () => {
@@ -135,7 +138,7 @@ function RecommendedTermForm({ onAdd }) {
         }
     }, []);
 
-    const searchResults = conceptSearchResults && conceptSearchResults.filter(r => r.parentProfile);
+    const searchResults = conceptSearchResults && conceptSearchResults.filter(r => r.parentProfile).filter(r => r.conceptType === concepttype);
 
     return (<>
         <h2 style={{ marginTop: '0' }}>Tag Recommended Terms</h2>

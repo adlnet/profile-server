@@ -16,11 +16,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function MemberTableRow({ member }) {
+export default function MemberTableRow({ member, isAdmin }) {
     let disabled = "";
     let pending = !member.level;
-    if (member.level === "owner")
-        disabled = "disabled";
+    // if (member.level === "owner")
+    //     disabled = "disabled";
     return (
         <tr >
             <th scope="row">{member.user.fullname}</th>
@@ -28,7 +28,7 @@ export default function MemberTableRow({ member }) {
             <td>{pending ? <em>Pending Approval</em> : <span style={{ textTransform: "capitalize" }}>{member.level}</span>}</td>
             <td>{member.user._created && (new Date(member.user._created)).toLocaleDateString()}</td>
             <td>
-                {!disabled &&
+                {!disabled && isAdmin &&
                     <Link to={{
                         pathname: `./members/${member.user.id}/edit`,
                         state: { member: member, pending: pending }

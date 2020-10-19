@@ -14,7 +14,8 @@
 * limitations under the License.
 **************************************************************** */
 import API from '../api';
-import {selectOrganization } from './organizations'
+import { selectOrganization } from './organizations'
+import { edited } from './successAlert';
 
 export const START_GET_APIKEYS = 'START_GET_APIKEYS';
 export const START_GET_APIKEY = 'START_GET_APIKEY';
@@ -142,6 +143,7 @@ export function editApiKey(apiKey) {
             });
 
             dispatch(loadOrgApiKeys(organizationId));
+            dispatch(edited());
         } catch (err) {
             dispatch({
                 type: ERROR_UPDATE_APIKEY,
@@ -167,7 +169,7 @@ export function deleteApiKey(apiKeyId) {
 
         try {
             await API.deleteApiKey(organizationId, apiKeyId);
-            
+
             dispatch(selectOrganization(organizationId));
             dispatch(loadOrgApiKeys(organizationId));
         } catch (err) {

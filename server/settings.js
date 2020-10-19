@@ -117,6 +117,13 @@ const defaults = {
         configurable: true,
         category: '',
     },
+    lockTimeout: {
+        default: 1000 * 60 * 10,
+        type: Number,
+        description: 'How long until the lock times out.',
+        configurable: true,
+        category: '',
+    },
 
     email_user: { type: String, category: 'Email', configurable: true, description: 'The username for the outgoing email server' },
     email_pass: { type: String, category: 'Email', configurable: true, description: 'The password for the outgoing email server' },

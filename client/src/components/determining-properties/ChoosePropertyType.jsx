@@ -15,6 +15,7 @@
 **************************************************************** */
 import React from 'react';
 import { Field } from 'formik';
+import CancelButton from '../controls/cancelButton';
 
 
 export default function ChoosePropertyType({ propertyType, onPropertyChange, setNextStep, onCancel }) {
@@ -77,7 +78,7 @@ export default function ChoosePropertyType({ propertyType, onPropertyChange, set
             </fieldset>
 
             <button className="usa-button submit-button" type="button" onClick={setNextStep} disabled={!propertyType}>Continue</button>
-            <button className="usa-button usa-button--unstyled text-bold" type="reset" onClick={onCancel}>Cancel</button>
+            <CancelButton className="usa-button usa-button--unstyled" type="reset" cancelAction={onCancel} />
         </div>
     );
 }

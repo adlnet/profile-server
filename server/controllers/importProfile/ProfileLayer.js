@@ -140,11 +140,12 @@ function ProfileLayer (workGroup, user, profileDocument, published, verification
                         iri: version.id,
                         name: version.id,
                         description: version.id,
-                        wasRevisionOf: wasRevisionOf,
+                        // wasRevisionOf: wasRevisionOf,
                         version: index,
                         updatedOn: version.generatedAtTime,
                         isShallowVersion: true,
                     });
+                    if (wasRevisionOf) profileVersion.wasRevisionOf = wasRevisionOf;
                 }
                 previousVersions.push(profileVersion);
             }

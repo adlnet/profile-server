@@ -22,15 +22,15 @@ mongoose.connection.on('connected', () => {
 });
 const day = 1000 * 60 * 60 * 24;
 const week = day * 7;
-module.exports.count = function(counterName, counterType, inc = 1) {
+module.exports.count = async function (counterName, counterType, inc = 1) {
     if (!Metrics) return;
     let timeStamp = Date.now();
     timeStamp /= (day);
     timeStamp = Math.floor(timeStamp);
     timeStamp *= day;
-    Metrics.updateOne({ timeStamp: timeStamp, counterName: counterName, counterType: counterType }, { $inc: { value: inc } }, { upsert: true });
+    await Metrics.updateOne({ timeStamp: timeStamp, counterName: counterName, counterType: counterType }, { $inc: { value: inc } }, { upsert: true });
 };
-module.exports.populateDemoData = async function(req, res) {
+module.exports.populateDemoData = async function (req, res) {
     for (let i = 0.0; i < 5000; i++) {
         let timeStamp = Date.now();
         timeStamp /= (day);
@@ -43,7 +43,7 @@ module.exports.populateDemoData = async function(req, res) {
     }
     res.send('ok');
 };
-module.exports.overtime = async function(counterName, counterType) {
+module.exports.overtime = async function (counterName, counterType) {
     if (!Metrics) return;
     const overTime = await Metrics.aggregate([
         {
@@ -68,7 +68,7 @@ module.exports.overtime = async function(counterName, counterType) {
     return overTime;
 };
 
-module.exports.total = async function(counterName, counterType) {
+module.exports.total = async function (counterName, counterType) {
     if (!Metrics) return;
     const overTime = await Metrics.aggregate([
         {
@@ -88,7 +88,7 @@ module.exports.total = async function(counterName, counterType) {
     return overTime;
 };
 
-module.exports.mostViewed = async function(req, res) {
+module.exports.mostViewed = async function (req, res) {
     if (!Metrics) return;
     const overTime = await Metrics.aggregate([
         {
@@ -103,15 +103,7 @@ module.exports.mostViewed = async function(req, res) {
                 value: { $sum: '$value' },
             },
         },
-        {
-            $sort: {
 
-                value: -1,
-            },
-        },
-        {
-            $limit: 10,
-        },
         {
             $lookup: {
                 from: 'profiles',
@@ -142,16 +134,30 @@ module.exports.mostViewed = async function(req, res) {
             },
         },
         {
+            $match: {
+                currentPublishedVersion: { $exists: true },
+            },
+        },
+        {
             $project: {
                 y: '$value',
                 name: '$currentPublishedVersion.name',
             },
         },
 
+        {
+            $sort: {
+                y: -1,
+            },
+        },
+        {
+            $limit: 10,
+        },
+
     ]).toArray();
     res.send(overTime);
 };
-module.exports.mostExported = async function(req, res) {
+module.exports.mostExported = async function (req, res) {
     if (!Metrics) return;
     const overTime = await Metrics.aggregate([
         {
@@ -165,14 +171,6 @@ module.exports.mostExported = async function(req, res) {
                 _id: { counterName: '$counterName', counterType: '$counterType' },
                 value: { $sum: '$value' },
             },
-        },
-        {
-            $sort: {
-                value: -1,
-            },
-        },
-        {
-            $limit: 10,
         },
         {
             $lookup: {
@@ -201,18 +199,81 @@ module.exports.mostExported = async function(req, res) {
             },
         },
         {
+            $match: {
+                currentPublishedVersion: { $exists: true },
+            },
+        },
+        {
             $project: {
                 y: '$value',
                 name: '$currentPublishedVersion.name',
             },
+        },
+        {
+            $sort: {
+                y: -1,
+            },
+        },
+        {
+            $limit: 10,
         },
 
     ]).toArray();
     res.send(overTime);
 };
 
-module.exports.serveProfileSparkline = function() {
-    return async function(req, res, next) {
+
+module.exports.mostAPIRetrievals = async function (req, res) {
+    if (!Metrics) return;
+    const overTime = await Metrics.aggregate([
+        {
+            $match: {
+                counterType: { $in: ['profileAPIRead', 'profileAPIWrite'] },
+                timeStamp: { $gt: Date.now() - req.query.days * day },
+            },
+        },
+        {
+            $group: {
+                _id: { counterName: '$counterName', counterType: '$counterType' },
+                value: { $sum: '$value' },
+            },
+        },
+
+        {
+            $lookup: {
+                from: 'apikeys',
+                localField: '_id.counterName',
+                foreignField: 'uuid',
+                as: 'keys',
+            },
+        },
+        {
+            $addFields: {
+                apiKey: { $arrayElemAt: ['$keys', 0] },
+            },
+        },
+        {
+            $project: {
+                y: '$value',
+                name: '$apiKey.description',
+            },
+        },
+
+        {
+            $sort: {
+                y: -1,
+            },
+        },
+        {
+            $limit: 10,
+        },
+
+    ]).toArray();
+    res.send(overTime);
+};
+
+module.exports.serveProfileSparkline = function () {
+    return async function (req, res, next) {
         const counterName = req.params.profile;
         const data = await module.exports.overtime(counterName, { $in: ['profileUIView', 'profileDownloads'] });
 
@@ -220,8 +281,8 @@ module.exports.serveProfileSparkline = function() {
     };
 };
 
-module.exports.serveProfileViewTotal = function() {
-    return async function(req, res, next) {
+module.exports.serveProfileViewTotal = function () {
+    return async function (req, res, next) {
         const counterName = req.params.profile;
         const data = await module.exports.total(counterName, { $in: ['profileUIView', 'profileDownloads'] });
 
@@ -229,11 +290,31 @@ module.exports.serveProfileViewTotal = function() {
     };
 };
 
-module.exports.serveProfileExportTotal = function() {
-    return async function(req, res, next) {
+module.exports.serveProfileExportTotal = function () {
+    return async function (req, res, next) {
         const counterName = req.params.profile;
         const data = await module.exports.total(counterName, { $in: ['profileUIExport', 'profileAPIExport'] });
 
         res.send(data);
     };
+};
+
+module.exports.serveMostAPIRetrievals = function () {
+    return async function (req, res, next) {
+        const counterName = req.params.profile;
+        const data = await module.exports.total(counterName, { $in: ['profileUIExport', 'profileAPIExport'] });
+
+        res.send(data);
+    };
+};
+
+module.exports.recordMetric = async function (metric, uuid, req) {
+    const log = console.prodLog || console.log;
+    try {
+        await module.exports.count(uuid, metric);
+        log(`METRIC COUNT: ${metric} - ${uuid}`);
+    } catch (e) {
+        log(`ERROR: Exception attempting to record API Write: ${req && req.method} ${req && req.originalURL}`);
+        log(e);
+    }
 };

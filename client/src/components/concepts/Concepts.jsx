@@ -14,8 +14,11 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { useRouteMatch, Route, Switch, Link, useHistory } from 'react-router-dom';
+import { useRouteMatch, Route, Switch, Link, useHistory, useLocation } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
+
+import { putHarvest } from '../../actions/profiles';
+import { deleteConceptProp } from '../profiles/ProfileImportQueue';
 
 import CreateConcept from "./CreateConcept";
 import AddConcepts from './AddConcepts'
@@ -26,8 +29,9 @@ import SortingTable from '../SortingTable';
 export default function Concepts({ isMember, isCurrentVersion }) {
     const { path, url } = useRouteMatch();
     const dispatch = useDispatch();
+    const location = useLocation();  
     const history = useHistory();
-    const { selectedProfileVersionId } = useSelector(state => state.application);
+    const { selectedProfileVersionId, selectedProfileVersion } = useSelector(state => state.application);
 
     useEffect(() => {
         dispatch(loadProfileConcepts(selectedProfileVersionId));
@@ -35,13 +39,23 @@ export default function Concepts({ isMember, isCurrentVersion }) {
 
     const concepts = useSelector((state) => state.concepts)
 
-
     let data = React.useMemo(() => concepts, [concepts]);
-    let columns = React.useMemo(() => getColumns());
+    let importedConcept = location.state && location.state ? {...location.state} : null;
+    let columns = React.useMemo(() => getColumns(selectedProfileVersionId), [selectedProfileVersionId]);
 
     function onCreateConcept(concept) {
         dispatch(createConcept(concept));
-        history.push(url);
+        
+        if(importedConcept){ 
+            const { concept, updateHarvest } = importedConcept;
+            dispatch(putHarvest(deleteConceptProp(updateHarvest, concept.groupIndex, concept.conceptType)));
+            history.goBack();
+        }else{
+            history.push(url);
+        }      
+    }
+    function onCreateCancel(){
+        importedConcept ? history.goBack() : history.push(url)
     }
 
     return (
@@ -83,7 +97,7 @@ export default function Concepts({ isMember, isCurrentVersion }) {
                     </div>
                 </Route>
                 <Route path={`${path}/create`}>
-                    <CreateConcept onCancel={() => history.push(url)} onCreate={onCreateConcept}></CreateConcept>
+                    <CreateConcept rootUrl={url} onCancel={onCreateCancel} onCreate={onCreateConcept} importedConcept={importedConcept}></CreateConcept>
                 </Route>
                 <Route exact path={`${path}/add`}>
                     <AddConcepts rootUrl={url} addToName="Profile"></AddConcepts>
@@ -97,7 +111,7 @@ export default function Concepts({ isMember, isCurrentVersion }) {
     );
 }
 
-function getColumns() {
+function getColumns(selectedProfileVersionId) {
     const cols = [
         {
             Header: 'Name',
@@ -117,7 +131,7 @@ function getColumns() {
                 )
             },
             style: {
-                width: '30%'
+                width: '35%'
             }
         },
         {
@@ -134,7 +148,19 @@ function getColumns() {
             Header: 'Profile',
             accessor: 'parentProfile.name',
             style: {
-                width: '18%'
+                width: '23%'
+            }
+        },
+        {
+            Header: 'Status',
+            accessor: (orow, rowidx, row) => {
+                return row.original.isDeprecated ? 'Deprecated' : row.original.parentProfile.state === 'draft' ? 'Unpublished' : 'Published';
+            },
+            Cell: function Status({ cell: { value } }) {
+                return value
+            },
+            style: {
+                width: '15%'
             }
         },
         {
@@ -142,7 +168,7 @@ function getColumns() {
             accessor: 'updatedOn',
             Cell: ({ cell: { value } }) => (new Date(value)).toLocaleDateString(),
             style: {
-                width: '15%'
+                width: '12%'
             }
         }
     ];

@@ -13,13 +13,26 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Field } from 'formik';
 
 
 export default function Tags(props) {
     const [tagInputValue, setTagInputValue] = useState('');
     const [tags, setTags] = useState(props.field.value || []);
+
+    function keyUpHandler(event) {
+        if (event.code === 'Enter' && event.target.nodeName === "INPUT" && event.target.id === 'input-tags') {
+            document.getElementById('input-tags-button').click();
+        }
+    }
+
+    useEffect(() => {
+        document.addEventListener('keyup', keyUpHandler);
+        return () => {
+            document.removeEventListener('keyup', keyUpHandler);
+        }
+    }, [])
 
     function handleRemoveTagButtonClick(index) {
         let newTags = [...tags];
@@ -55,6 +68,7 @@ export default function Tags(props) {
                 />
                 <button
                     className="usa-button grid-col flex-auto"
+                    id="input-tags-button"
                     style={{ marginTop: '8px', justify: 'right' }}
                     type="button"
                     disabled={!tagInputValue.trim()}
@@ -73,8 +87,8 @@ export default function Tags(props) {
                             className="usa-tag display-inline-flex bg-accent-cool-lighter text-base-darkest padding-y-05 margin-right-1"
                             style={{ marginTop: '.5em' }}
                         >
-                            <span className="margin-05">{tag}</span>
-                            {!props.isPublished && <span className="margin-05"><span className="fa fa-icon fa-close" onClick={() => handleRemoveTagButtonClick(index)} /></span>}
+                            <span className="">{tag}</span>
+                            {!props.isPublished && <span className=""><span className="fa fa-icon fa-close margin-left-05" onClick={() => handleRemoveTagButtonClick(index)} /></span>}
                         </span>
                     );
                 })

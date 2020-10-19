@@ -17,6 +17,9 @@ const express = require('express');
 const router = express.Router();
 const models = require('../ODM/models');
 
+const validate = require('../utils/validator');
+const validIRI = require('../schema/validIRI');
+
 const cookieSession = require('cookie-session');
 const cookieParser = require('cookie-parser');
 
@@ -27,6 +30,9 @@ router.use(cookieSession({
     // Cookie Options
     maxAge: 0,
 }));
+
+// validate iris when they exist
+router.use(validate(validIRI));
 
 const users = require('./users');
 require('../controllers/users').setupPassport();
@@ -50,6 +56,9 @@ router.use('/pattern', patterns);
 const profiles = require('./profiles');
 router.use('/profile', profiles);
 
+const versions = require('./profileVersions');
+router.use('/version', versions);
+
 router.get('/concept/:concept', async (req, res, next) => {
     const concept = await models.concept.findOne({ uuid: req.params.concept });
     if (!concept) {
@@ -65,79 +74,6 @@ router.get('/concept/:concept', async (req, res, next) => {
 function setRegex(column, searchArray) {
     return searchArray.map(s => ({ [column]: { $regex: new RegExp(s, 'i') } }));
 }
-
-// router.get('/concept', async (req, res, next) => {
-//     console.log('in appAPI - /concept?search');
-//     let search = req.query.search;
-//     let query = {};
-
-//     if (search) {
-//         search = search.split(' ')
-//             .map(s => s.trim())
-//             .filter(s => s);
-//         query = {
-//             $or: [
-//                 { $or: setRegex('name', search) },
-//                 { $or: setRegex('description', search) },
-//                 { $or: setRegex('uuid', search) },
-//                 { $or: setRegex('iri', search) },
-//             ],
-//         };
-//     }
-//     const results = await models.concept.find(query);
-//     res.send({
-//         success: true,
-//         concepts: results,
-//     });
-// });
-
-// router.get('/profile', async (req, res, next) => {
-//     console.log('in appAPI - /profile?search');
-//     let search = req.query.search;
-//     let query = {};
-//     if (search) {
-//         search = search.split(' ')
-//             .map(s => s.trim())
-//             .filter(s => s);
-//         query = {
-//             $or: [
-//                 { $or: setRegex('name', search) },
-//                 { $or: setRegex('description', search) },
-//                 { $or: setRegex('uuid', search) },
-//                 { $or: setRegex('iri', search) },
-//             ],
-//         };
-//     }
-//     const results = await models.profile.find(query);
-//     res.send({
-//         success: true,
-//         profiles: results,
-//     });
-// });
-
-// router.get('/organization', async (req, res, next) => {
-//     console.log('in appAPI - /organization?search');
-//     let search = req.query.search;
-//     let query = {};
-//     if (search) {
-//         search = search.split(' ')
-//             .map(s => s.trim())
-//             .filter(s => s);
-//         query = {
-//             $or: [
-//                 { $or: setRegex('name', search) },
-//                 { $or: setRegex('uuid', search) },
-//             ],
-//         };
-//     }
-
-//     const results = await models.organization.find(query);
-//     console.log('results', JSON.stringify(results));
-//     res.send({
-//         success: true,
-//         profiles: results,
-//     });
-// });
 
 router.get('/user', async (req, res, next) => {
     let search = req.query.search;
@@ -163,10 +99,13 @@ router.get('/user', async (req, res, next) => {
     });
 });
 
+router.use('/admin', require('./admin'));
 router.use('/search', require('./search'));
 
 router.use('/metrics/mostViewed', require('../controllers/metrics').mostViewed);
 router.use('/metrics/mostExported', require('../controllers/metrics').mostExported);
+router.use('/metrics/mostAPIRetrievals', require('../controllers/metrics').mostAPIRetrievals);
+
 router.use('/metrics/profile/:profile/usageOverTime', require('../controllers/metrics').serveProfileSparkline());
 router.use('/metrics/profile/:profile/viewTotal', require('../controllers/metrics').serveProfileViewTotal());
 router.use('/metrics/profile/:profile/exportTotal', require('../controllers/metrics').serveProfileExportTotal());
@@ -178,8 +117,25 @@ router.get('/rootProfileIRI', (req, res, next) => {
 
 
 router.use((err, req, res, next) => {
-    // Change in prod mode.
+    const responses = require('../reponseTypes/responses');
+    const errors = require('../errorTypes/errors');
+
+
     console.log(err);
-    res.status(500).send(err);
+    if (err instanceof errors.authorizationError) {
+        res.status(err.status).send(responses.unauthorized(err.message));
+    } else if (err instanceof errors.conflictError) {
+        res.status(err.status).send(responses.conflict(err.message));
+    } else if (err instanceof errors.validationError) {
+        res.status(err.status).send(responses.validation(false, err.message));
+    } else if (err instanceof errors.notAllowedError) {
+        res.status(err.status).send(responses.notAllowed(false, err.message));
+    } else {
+        res.status(err.status || 500).send({
+            success: false,
+            message: err.message,
+        });
+    }
 });
+
 module.exports = router;

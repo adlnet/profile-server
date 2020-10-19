@@ -21,6 +21,7 @@ const authorizationError = require('../errorTypes/authorizationError');
  * @param {boolean} _continue Used as middleware and should call next
  * @param {boolean} publicApi Used to send public api errors
  */
+const settings = require('../settings');
 module.exports = function unlock(_continue = false, publicApi = false) {
     return async function (req, res, next) {
         console.log('unlocking');
@@ -38,7 +39,7 @@ module.exports = function unlock(_continue = false, publicApi = false) {
         if (!('locked' in req.resource)) throw new Error('resource not lockable');
 
         if (req.resource.locked) {
-            if (req.resource.lockedTime > Date.now() - 10000) {
+            if (req.resource.lockedTime > Date.now() - settings.lockTimeout) {
                 if (req.resource.lockedBy && req.resource.lockedBy.toString() !== req.user.id.toString()) {
                     return res.status(409).send({
                         success: false,
@@ -47,7 +48,7 @@ module.exports = function unlock(_continue = false, publicApi = false) {
                 }
             }
         }
-        if (!req.resource.locked || req.resource.lockedTime < Date.now() - 10000) {
+        if (!req.resource.locked || req.resource.lockedTime < Date.now() - settings.lockTimeout) {
             if (req.resource.lockedUsedTime > req.resource.lockedTime) {
                 return res.status(409).send({
                     success: false,

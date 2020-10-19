@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
@@ -22,6 +22,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user"
 import api from "../../api";
 import { useState } from 'react';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
 var CryptoJS = require("crypto-js");
 
@@ -31,8 +32,19 @@ export default function ResetPassword(props) {
     const history = useHistory();
     const location = useLocation();
     const [showPassword, setShowPassword] = useState(false);
+    const [errorType, setErrorType] = useState("user");
 
     const [error, setError] = useState();
+
+    useEffect(async () => {
+        var urlParams = new URLSearchParams(window.location.search);
+        let key = urlParams.get("key");
+        let keyValid = await api.checkResetKey(key);
+        if (!keyValid) {
+            setError("The reset key you provided is no longer valid");
+            setErrorType("block")
+        }
+    }, [])
 
     async function signIn(loginRequest) {
         let salt = await api.getSalt(loginRequest.email);
@@ -44,7 +56,7 @@ export default function ResetPassword(props) {
     }
 
     return (
-        error ?
+        error && errorType === "block" ?
             <div className="display-flex flex-column flex-align-center margin-top-5">
                 <div className="usa-form padding-x-4 padding-top-3 padding-bottom-4 border border-base-light" style={{ width: "30em" }}>
                     <div className="grid-row ">
@@ -68,6 +80,7 @@ export default function ResetPassword(props) {
                             .oneOf([Yup.ref('password'), null], "Passwords don't match")
                             .required('Required'),
                     })}
+                    validateOnMount={true}
                     onSubmit={async (values) => {
                         var urlParams = new URLSearchParams(window.location.search);
                         values.key = urlParams.get("key");
@@ -76,7 +89,9 @@ export default function ResetPassword(props) {
                         if (res.success) {
                             history.push("/user/login")
                         } else {
-                            setError(res.err)
+
+                            setError(res.message);
+                            setErrorType("user")
                         }
                     }}
                 >
@@ -99,9 +114,9 @@ export default function ResetPassword(props) {
                                         <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show my typing</button>
                                     </div>
                                     <div className="grid-row">
-                                        <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
+                                        <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
                                             Reset password
-                                </button>
+                                        </ValidationControlledSubmitButton>
                                     </div>
                                 </fieldset>
                             </Form>
@@ -110,7 +125,7 @@ export default function ResetPassword(props) {
 
                 </Formik>
                 {
-                    userData.loginFeedback && <div className="usa-error-message padding-right-1"><p>{userData.loginFeedback}</p></div>
+                    error && errorType === "user" && <div className="usa-error-message padding-right-1"><p>{error}</p></div>
                 }
             </>
     );

@@ -20,7 +20,8 @@ import * as concept_actions from "../actions/concepts";
 import * as pattern_actions from "../actions/patterns";
 import * as user_actions from "../actions/user";
 import * as apiKey_actions from "../actions/apiKeys";
-import * as webhook_actions from "../actions/webhooks"
+import * as webhook_actions from "../actions/webhooks";
+import * as successAlert_actions from "../actions/successAlert";
 
 const { produce } = require('immer');
 
@@ -82,14 +83,36 @@ function application(application, action) {
     }
 
     if (action.type === profile_actions.SELECT_PROFILE) {
-
         application.selectedProfileId = action.profile.uuid;
         application.selectedProfile = action.profile;
     }
 
     if (action.type === profile_actions.SELECT_PROFILE_VERSION) {
+        if(application.selectedProfileVersionId !== action.profileVersion.uuid){
+            application.selectedImportedFileIndex = 0;
+        }
         application.selectedProfileVersionId = action.profileVersion.uuid;
         application.selectedProfileVersion = action.profileVersion;
+    }
+
+    if (action.type === profile_actions.SET_UPLOADING_STATE) {
+        application.uploading = action.payload;
+    }
+
+    if (action.type === profile_actions.BEGIN_HARVEST) {
+        application.uploading = 0;
+    }
+
+    if (action.type === profile_actions.COMPLETED_HARVEST) {        
+        application.selectedImportedFileIndex = application.selectedProfileVersion.harvestDatas.length;
+        application.uploading = 1;
+    }
+    if (action.type === profile_actions.UPDATED_IMPORTED_FILE_INDEX) {
+        application.selectedImportedFileIndex = action.index;
+    }
+
+    if (action.type === profile_actions.FINISH_HARVEST_DELETE) {
+        application.selectedImportedFileIndex = 0;
     }
 
     if (action.type === concept_actions.SELECT_CONCEPT) {
@@ -141,9 +164,6 @@ function application(application, action) {
     if (action.type === "GLOBAL_ERROR") {
         application.loading = 0;
     }
-
-
-
 
     return application;
 }
@@ -263,8 +283,8 @@ function searchResults(searchResults, action) {
     }
 
     if (action.type == concept_actions.CLEAR_CONCEPT_RESULTS) {
-        searchResults.selectedConcepts = [];
-        searchResults.concepts = [];
+        searchResults.selectedConcepts = null;
+        searchResults.concepts = null;
     }
 
     if (action.type === pattern_actions.FINISH_SEARCH_PATTERNS) {
@@ -353,13 +373,56 @@ function userData(userData, action) {
     }
     if (action.type == user_actions.ERROR_CREATE) {
         userData.user = action.user;
-        userData.createFeedback = action.err;
+        userData.createFeedback = action.error;
     }
-    if (action.type == user_actions.ERROR_LOGIN) {
-        userData.loginFeedback = action.err;
+    if (action.type == user_actions.LOGIN_FAILED) {
+        userData.loginFeedback = action.error;
     }
 
     return userData;
+}
+
+function successAlert(successAlert, action) {
+
+    if (action.type === successAlert_actions.CLEAR) {
+        successAlert.type = null;
+        successAlert.message = null;
+        successAlert.subject = null;
+    }
+    if (action.type === successAlert_actions.ADDED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+        successAlert.subject = action.subject;
+    }
+    if (action.type === successAlert_actions.CREATED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+        successAlert.subject = action.subject;
+    }
+    if (action.type === successAlert_actions.EDITED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+    }
+    if (action.type === successAlert_actions.REMOVED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+        successAlert.subject = action.subject;
+    }
+    if (action.type === successAlert_actions.DEPRECATED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+        successAlert.subject = action.subject;
+    }
+    if (action.type === successAlert_actions.PUBLISHED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+        successAlert.subject = action.subject;
+    }
+    if (action.type === successAlert_actions.VERIFICATION_REQUESTED) {
+        successAlert.type = action.type;
+        successAlert.message = action.message;
+    }
+    return successAlert;
 }
 
 
@@ -374,6 +437,11 @@ export default function (state = {
     searchResults: {},
     errors: [],
     globalErrors: [],
+    successAlert: {
+        type: null,
+        message: null,
+        subject: null
+    },
     userData: {
         user: null,
         loginFeedback: null
@@ -384,12 +452,13 @@ export default function (state = {
         selectedProfile: null,
         loading: 0,
         profileRootIRI: null,
+        selectedImportedFileIndex: 0,
+        uploading: -1
     },
 }, action) {
 
     return produce(state, (state) => {
         if (action.type == "permissionError") {
-            //Do better here;
             window.alert("Something went wrong: Permission Denied")
         }
         state.application = application(state.application, action);
@@ -405,6 +474,7 @@ export default function (state = {
         state.searchResults = searchResults(state.searchResults, action);
         state.errors = errors(state.errors, action);
         state.userData = userData(state.userData, action);
+        state.message = successAlert(state.successAlert, action);
         state.globalErrors = globalErrors(state.globalErrors, action)
         return state;
 

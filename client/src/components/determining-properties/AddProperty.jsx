@@ -22,6 +22,7 @@ import ConceptResultView from '../concepts/ConceptResultView';
 import { searchConcepts, clearConceptResults } from '../../actions/concepts'
 import Flyout from '../controls/flyout';
 import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
+import CancelButton from '../controls/cancelButton';
 
 export default function AddProperty({ isEditing, propertyType, isOneConceptOnly, setPreviousStep, handleSubmit }) {
 
@@ -105,20 +106,24 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
             dispatch(searchConcepts(searchValues))
     }
 
-    function propertyConceptFilter(conceptType) {
+    function propertyConceptFilter(c) {
         const verbRegex = /verb/i;
         const attachmentUsageTypeRegex = /attachmentUsageType/i;
         const activityTypeRegex = /activityType/i;
+        if (c.parentProfile.state === 'draft' &&
+            c.parentProfile.uuid !== profileVersionId) {
+            return false;
+        }
 
         switch (propertyType) {
             case 'verb':
-                if (verbRegex.test(conceptType)) return true;
+                if (verbRegex.test(c.conceptType)) return true;
                 break;
             case 'attachmentUsageType':
-                if (attachmentUsageTypeRegex.test(conceptType)) return true;
+                if (attachmentUsageTypeRegex.test(c.conceptType)) return true;
                 break;
             default:
-                if (activityTypeRegex.test(conceptType)) return true;
+                if (activityTypeRegex.test(c.conceptType)) return true;
         }
 
         return false;
@@ -132,7 +137,7 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
             searchFunction={onSearchConcepts}
             clearSearchFunction={() => dispatch(clearConceptResults())}
             placeholderText="Search for concepts"
-            searchResults={conceptResults && conceptResults.filter(c => propertyConceptFilter(c.conceptType))}
+            searchResults={conceptResults && conceptResults.filter(c => propertyConceptFilter(c))}
             selectResultFunction={select}
             removeSelectedResultFunction={remove}
             clearSelectedResultsFunction={() => setSelectedResults([])}
@@ -146,7 +151,7 @@ export default function AddProperty({ isEditing, propertyType, isOneConceptOnly,
 
         <div className="grid-row">
             <div className="grid-col display flex flew-row flex-align-center">
-                <button className="usa-button usa-button--unstyled" type="button" onClick={onCancel}><b>Cancel</b></button>
+                <CancelButton className="usa-button usa-button--unstyled" type="button" cancelAction={onCancel} />
             </div>
             <div className="grid-col display-flex flex-column flex-align-end">
                 <button

@@ -20,7 +20,7 @@ import { Link, useHistory } from 'react-router-dom';
 import ChoosePropertyType from './ChoosePropertyType';
 import AddProperty from './AddProperty';
 
-export default function CreateDeterminingProperty({ onDeterminingPropertyAdd, breadcrumbs }) {
+export default function CreateDeterminingProperty({ onDeterminingPropertyAdd, breadcrumbs, checkConflict }) {
 
     const [step, setStep] = useState(1);
     const [propertyType, setPropertyType] = useState();
@@ -29,13 +29,12 @@ export default function CreateDeterminingProperty({ onDeterminingPropertyAdd, br
     const renderBreadcrumbs = () => {
         if (breadcrumbs) {
             return breadcrumbs.map((b, i) => (
-                <span key={i}><Link to={b.to}><span className="details-label">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
+                <span key={i}><Link to={b.to}><span className="breadcrumb">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
             ))
         }
         return <></>;
     }
 
-    // const oneOrMoreConcepts = ['contextCategoryActivityType', 'contextGroupingActivityType', 'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType'];
     const oneConceptOnly = ['verb', 'objectActivityType'];
 
     return (<>
@@ -52,20 +51,20 @@ export default function CreateDeterminingProperty({ onDeterminingPropertyAdd, br
                 onDeterminingPropertyAdd(values);
             }}
         >
-            {({ handleSubmit }) => (
+            {({ handleSubmit, values, resetForm }) => (
                 <form className="usa-form" style={{ maxWidth: "none" }}>
                     <div className={step !== 1 ? "display-none" : ""}>
                         <ChoosePropertyType
                             propertyType={propertyType}
-                            onPropertyChange={propertyType => setPropertyType(propertyType)}
-                            setNextStep={() => setStep(2)}
+                            onPropertyChange={propertyType => { checkConflict(propertyType, () => setPropertyType(propertyType), () => { setStep(1); resetForm() }) }}
+                            setNextStep={() => { checkConflict(values.propertyType, () => setStep(2), () => setStep(1)) }}
                             onCancel={() => history.goBack()}
                         />
                     </div>
                     <div className={step !== 2 ? "display-none" : ""}>
                         <AddProperty
                             propertyType={propertyType}
-                            setPreviousStep={() => setStep(1)}
+                            setPreviousStep={() => history.goBack()}
                             isOneConceptOnly={oneConceptOnly.includes(propertyType)}
                             handleSubmit={handleSubmit}
                         />

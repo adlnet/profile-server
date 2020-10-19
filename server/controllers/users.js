@@ -316,6 +316,19 @@ exports.resendValidation = function (req, res, next) {
     );
 };
 
+exports.checkResetKey = async function (req, res, next) {
+    const _user = await user.findOne({ passwordResetKey: req.query.key });
+    if (_user) {
+        res.send({
+            success: true,
+        });
+    } else {
+        res.send({
+            success: false,
+        });
+    }
+};
+
 exports.resetPassword = async function (req, res, next) {
     const _user = await user.findOne({ passwordResetKey: req.body.key });
     if (_user) {
@@ -416,6 +429,9 @@ exports.editAccount = async function (req, res) {
         req.user.email = req.body.email;
         req.user.firstname = req.body.firstname;
         req.user.lastname = req.body.lastname;
+
+        // Note that the user self edit path has a prefilter to remove this, so a user cannot change their own type
+        if (req.body.type) { req.user.type = req.body.type; }
 
         if (req.body.password && req.body.password === req.body.password2) {
             await req.user.resetPassword(req.body.password);

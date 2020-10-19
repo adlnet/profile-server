@@ -40,6 +40,9 @@ import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 
 import { loadProfileTemplates, removeTemplateLink } from "../../actions/templates";
 import { reloadCurrentProfile } from '../../actions/profiles';
+import Breadcrumb from '../controls/breadcrumbs';
+import DeprecatedAlert from '../controls/deprecatedAlert';
+import { ADDED, EDITED, REMOVED, DEPRECATED } from '../../actions/successAlert';
 
 export default function Template({ isMember, isCurrentVersion }) {
 
@@ -66,14 +69,17 @@ export default function Template({ isMember, isCurrentVersion }) {
     const [isEditingDetails, setIsEditingDetails] = useState(false);
     const [isEditingExample, setIsEditingExample] = useState(false);
     const [isCreatingExample, setIsCreatingExample] = useState(false);
+    const [detpropOverwrite, setConfirmDetPropOverwrite] = useState(false);
     const [showModal, setShowModal] = useState(false);
 
     if (!template) return 'Template not populated';
 
-    const belongsToAnotherProfile = !template.parentProfile || template.parentProfile.uuid !== selectedProfileVersion.uuid;
+    // does the current template have the same root profile as the selected profile version?
+    const belongsToAnotherProfile = !(template.parentProfile && template.parentProfile.parentProfile.uuid === selectedProfileVersion.parentProfile.uuid);
     const isLinkedFromExternalProfile = !template.parentProfile || template.parentProfile.parentProfile.uuid !== selectedProfile.uuid
 
-    const isEditable = isMember && isCurrentVersion;
+    const isEditable = isMember && isCurrentVersion && !template.isDeprecated;
+
     const isPublished = template.parentProfile.state !== 'draft';
     const fromTemplateRef = location.state && location.state.templateRef;
 
@@ -81,16 +87,16 @@ export default function Template({ isMember, isCurrentVersion }) {
         if (isEditable) {
             let property = {};
             property[propertyType] = null;
-            dispatch(editTemplate(Object.assign({}, template, property)));
+            dispatch(editTemplate(Object.assign({}, template, property), REMOVED, "Determing property"));
             dispatch(selectTemplate(templateId));
         }
     }
 
-    function onDeterminingPropertyAdd(values) {
+    function onDeterminingPropertyAdd(values, actualAction) {
         if (isEditable) {
             let propertyValue = {};
             propertyValue[values.propertyType] = values.properties;
-            dispatch(editTemplate(Object.assign({}, template, propertyValue)));
+            dispatch(editTemplate(Object.assign({}, template, propertyValue), actualAction || ADDED, "Determining property"));
             history.push(url);
         }
     }
@@ -102,7 +108,7 @@ export default function Template({ isMember, isCurrentVersion }) {
             if (updatedTemplate.rules && updatedTemplate.rules.length) {
                 updatedTemplate.rules = updatedTemplate.rules.filter(r => r._id !== rule._id)
             }
-            dispatch(editTemplate(updatedTemplate));
+            dispatch(editTemplate(updatedTemplate, REMOVED, "Rule"));
             dispatch(selectTemplate(templateId));
         }
     }
@@ -128,19 +134,31 @@ export default function Template({ isMember, isCurrentVersion }) {
         }
     }
 
-    function onExampleSubmit(values) {
+    function onExampleSubmit(values, actualAction) {
         if (isEditable) {
-            dispatch(editTemplate(Object.assign({}, template, values)));
+            dispatch(editTemplate(Object.assign({}, template, values), actualAction, "Example statement"));
             setIsCreatingExample(false);
             setIsEditingExample(false);
         }
     }
 
-    function onEditDetailsSubmit(values) {
+    function onEditDetailsSubmit(values, actualAction) {
         if (isEditable) {
-            dispatch(editTemplate(Object.assign({}, template, values)));
+            dispatch(editTemplate(Object.assign({}, template, values), actualAction || EDITED, "Template"));
             setIsEditingDetails(false);
         }
+    }
+
+    function onDeprecate(reasonInfo) {
+        if (isEditable) {
+            onEditDetailsSubmit({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED);
+        }
+    }
+
+    function checkDeterminingPropertyConflict(detpropType, noconflictFunction, cancelFunction) {
+        if (determiningProperties.find(det => det.propertyType === detpropType)) {
+            setConfirmDetPropOverwrite({ detpropType, cancelFunction });
+        } else noconflictFunction();
     }
 
     async function onRemoveTemplateRef(templatereftype) {
@@ -152,7 +170,7 @@ export default function Template({ isMember, isCurrentVersion }) {
             else
                 propertyValue['contextStatementRefTemplate'] = []
 
-            await dispatch(editTemplate(Object.assign({}, template, propertyValue)));
+            await dispatch(editTemplate(Object.assign({}, template, propertyValue), REMOVED, `${templatereftype === 'object' ? 'Object' : 'Context'} template reference`));
             await dispatch(reloadCurrentProfile());
             await dispatch(loadProfileTemplates(selectedProfileVersionId));
         }
@@ -176,7 +194,8 @@ export default function Template({ isMember, isCurrentVersion }) {
                     {(isEditable) ?
                         <CreateDeterminingProperty
                             onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)}
-                            breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: selectedProfileVersion.name }]}
+                            breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: template.name }]}
+                            checkConflict={checkDeterminingPropertyConflict}
                         />
                         : <Redirect to={url} />
                     }
@@ -184,7 +203,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                 <Route exact path={`${path}/determining-properties/:propertyType/edit`}>
                     {(isEditable) ?
                         <EditDeterminingProperty
-                            onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values)} />
+                            onDeterminingPropertyAdd={(values) => onDeterminingPropertyAdd(values, EDITED)} />
                         : <Redirect to={url} />
                     }
                 </Route>
@@ -193,13 +212,13 @@ export default function Template({ isMember, isCurrentVersion }) {
                         isMember={isMember}
                         isCurrentVersion={isCurrentVersion}
                         isPublished={isPublished}
-                        breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: selectedProfileVersion.name }]}
+                        breadcrumbs={[{ to: templatesListURL, crumb: "statement templates" }, { to: url, crumb: template.name }]}
                     />
                 </Route>
                 <Route exact path={`${path}/rule/create`}>
                     {(isEditable) ?
                         <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
-                            <CreateRule templateName={template.name}></CreateRule>
+                            <CreateRule templateName={template.name} isEditable={isEditable} isPublished={isPublished} isEditing={false}></CreateRule>
                         </Lock>
                         : <Redirect to={url} />
                     }
@@ -207,7 +226,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                 <Route exact path={`${path}/rule/edit`}>
                     {(isEditable && !belongsToAnotherProfile) ?
                         <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
-                            <CreateRule templateName={template.name} isEditable={isEditable} isPublished={isPublished}></CreateRule>
+                            <CreateRule templateName={template.name} isEditable={isEditable} isPublished={isPublished} isEditing={true}></CreateRule>
                         </Lock>
                         : <Redirect to={url} />
                     }
@@ -237,6 +256,12 @@ export default function Template({ isMember, isCurrentVersion }) {
                     }
                 </Route>
                 <Route path={path}>
+                    <div className="grid-row border-bottom-2px border-base-lighter">
+                        <div className="grid-col margin-top-3">
+                            <Breadcrumb breadcrumbs={[{ to: templatesListURL, crumb: 'statement templates' }]} />
+                            <h2 style={{ margin: ".5em 0" }}>{template.name}</h2>
+                        </div>
+                    </div>
                     {
                         isLinkedFromExternalProfile &&
                         <div className="usa-alert usa-alert--info usa-alert--slim padding-2 margin-top-2" >
@@ -247,13 +272,20 @@ export default function Template({ isMember, isCurrentVersion }) {
                             </div>
                         </div>
                     }
-
-                    <div className="grid-row">
-                        <div className="grid-col margin-top-3">
-                            <Link to={templatesListURL}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right"></i>
-                            <h2 style={{ margin: ".5em 0" }}>{template.name}</h2>
+                    {
+                        template.isDeprecated && <DeprecatedAlert component={template} componentType="statement template" />
+                    }
+                    {
+                        isPublished && !belongsToAnotherProfile && isEditable &&
+                        <div className="usa-alert usa-alert--info usa-alert--slim margin-top-2" >
+                            <div className="usa-alert__body">
+                                <p className="usa-alert__text">
+                                    Editing is limited. This statement template has already been published in the profile and may be in use.
+                        </p>
+                            </div>
                         </div>
-                    </div>
+                    }
+
 
                     <div className="usa-accordion usa-accordion--bordered margin-top-2">
                         <h2 className="usa-accordion__heading">
@@ -273,11 +305,13 @@ export default function Template({ isMember, isCurrentVersion }) {
                                             onSubmit={onEditDetailsSubmit}
                                             onCancel={() => setIsEditingDetails(false)}
                                             isPublished={isPublished}
+                                            onDeprecate={onDeprecate}
                                         /> </Lock> :
                                     <TemplateDetail
                                         onEditClick={() => setIsEditingDetails(true)}
                                         isMember={isMember}
                                         isCurrentVersion={isCurrentVersion}
+                                        isEditable={isEditable}
                                         belongsToAnotherProfile={belongsToAnotherProfile}
                                     />
                             }
@@ -301,6 +335,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                                         isMember={isMember}
                                         isCurrentVersion={isCurrentVersion}
                                         belongsToAnotherProfile={belongsToAnotherProfile}
+                                        isEditable={isEditable}
                                     /> :
                                     isEditable && isCreatingExample ?
                                         <CreateStatementExample
@@ -331,6 +366,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                                 isMember={isMember}
                                 isCurrentVersion={isCurrentVersion}
                                 isPublished={isPublished}
+                                isEditable={isEditable}
                             />
                         </div>
 
@@ -352,6 +388,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                                 isCurrentVersion={isCurrentVersion}
                                 isPublished={isPublished}
                                 belongsToAnotherProfile={belongsToAnotherProfile}
+                                isEditable={isEditable}
                             />
                         </div>
 
@@ -386,6 +423,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                                 isPublished={isPublished}
                                 belongsToAnotherProfile={belongsToAnotherProfile}
                                 removeRelatedTemplate={onRemoveTemplateRef}
+                                isEditable={isEditable}
                             />
                         </div>
 
@@ -409,6 +447,26 @@ export default function Template({ isMember, isCurrentVersion }) {
                     </div>
                     <div className="grid-col" style={{ maxWidth: "fit-content" }}>
                         <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} style={{ margin: "2.3em 1.5em" }}><b>Cancel</b></button>
+                    </div>
+                </div>
+            </ModalBoxWithoutClose>
+            <ModalBoxWithoutClose show={detpropOverwrite}>
+                <div className="grid-row">
+                    <div className="grid-col">
+                        <h3>Determining property already exists</h3>
+                    </div>
+                </div>
+                <div className="grid-row" style={{ width: "640px" }}>
+                    <div className="grid-col">
+                        <span>This statement template has already defined <strong>{detpropOverwrite.detpropType}</strong>. Would you like to edit the existing determining property?</span>
+                    </div>
+                </div>
+                <div className="grid-row">
+                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                        <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={() => { setConfirmDetPropOverwrite(false); history.push(`${url}/determining-properties/${detpropOverwrite.detpropType}/edit`) }}>Edit existing</button>
+                    </div>
+                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                        <button className="usa-button usa-button--unstyled" onClick={() => { detpropOverwrite.cancelFunction(); setConfirmDetPropOverwrite(false); }} style={{ margin: "2.3em 1.5em" }}><b>Cancel</b></button>
                     </div>
                 </div>
             </ModalBoxWithoutClose>

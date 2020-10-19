@@ -26,15 +26,18 @@ import { loadProfileTemplates } from "../../actions/templates";
 export default function Templates({ isMember, isCurrentVersion }) {
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
-    const { selectedProfileVersionId } = useSelector(state => state.application);
-    const templates = useSelector((state) => state.templates);
+    const { selectedProfileVersionId, selectedProfileId } = useSelector(state => state.application);
+    let templates = useSelector((state) => state.templates);
+
+    // filter out draft components if the viewer is not a member of the group
+    if (!isMember && templates) templates = templates.filter(t => t.parentProfile && t.parentProfile.state !== 'draft')
 
     useEffect(() => {
         dispatch(loadProfileTemplates(selectedProfileVersionId));
     }, [selectedProfileVersionId]);
 
     let data = React.useMemo(() => templates, [templates]);
-    let columns = React.useMemo(() => getColumns(), [selectedProfileVersionId]);
+    let columns = React.useMemo(() => getColumns(selectedProfileId), [selectedProfileId]);
 
     return (
         <>
@@ -103,24 +106,13 @@ function getColumns() {
                 </>)
             },
             cellStyle: {
-                width: '48%',
+                width: '35%',
                 paddingRight: "2em"
             }
         },
         {
             Header: 'Required Concepts',
-            accessor: 'concepts',
-            Cell: ({ cell: { value } }) => {
-                let links = [];
-                if (value && value.length)
-                    for (const c of value) {
-                        if (c.parentProfile && c.parentProfile.uuid) {
-                            links.push(<br key={`br-${c.name}`} />)
-                            links.push(<Link key={c.uuid} to={`/profile/${c.parentProfile.uuid}/concepts/${c.uuid}`}>{c.name}</Link>)
-                        }
-                    }
-                return links.slice(1);
-            },
+            Cell: getDeterminingProperties,
             cellStyle: {
                 width: '20%'
             }
@@ -129,7 +121,19 @@ function getColumns() {
             Header: 'Profile',
             accessor: 'parentProfile.name',
             cellStyle: {
-                width: '16%'
+                width: '20%'
+            }
+        },
+        {
+            Header: 'Status',
+            accessor: (orow, rowidx, row) => {
+                return row.original.isDeprecated ? 'Deprecated' : row.original.parentProfile.state === 'draft' ? 'Unpublished' : 'Published';
+            },
+            Cell: function Status({ cell: { value } }) {
+                return value
+            },
+            style: {
+                width: '15%'
             }
         },
         {
@@ -137,10 +141,37 @@ function getColumns() {
             accessor: 'updatedOn',
             Cell: ({ cell: { value } }) => (new Date(value)).toLocaleDateString(),
             cellStyle: {
-                width: '16%'
+                width: '15%'
             }
         }
     ]
 
     return cols;
+}
+
+function getDeterminingProperties({ row: { original } }) {
+    const template = original;
+    const propertyTypes = [
+        'verb', 'objectActivityType', 'contextCategoryActivityType', 'contextGroupingActivityType',
+        'contextOtherActivityType', 'contextParentActivityType', 'attachmentUsageType'
+    ]
+
+    let determiningProperties = propertyTypes
+        .filter(propertyType => (template[propertyType] ?
+            (Array.isArray(template[propertyType]) ?
+                (template[propertyType].length > 0 ?
+                    true : false) : true) : false))
+        .map(propertyType => ({ propertyType: propertyType, properties: template[propertyType] }));
+
+    let links = [];
+    if (determiningProperties && determiningProperties.length) {
+        for (const c of determiningProperties) {
+            if (c.properties.parentProfile && c.properties.parentProfile.uuid) {
+                links.push(<br key={`br-${c.name}`} />)
+                links.push(<Link key={c.properties.uuid} to={`/profile/${c.properties.parentProfile.uuid}/concepts/${c.properties.uuid}`}>{c.properties.name}</Link>)
+            }
+        }
+    }
+
+    return links.slice(1);
 }

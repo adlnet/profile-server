@@ -37,7 +37,7 @@ export default function Sparkline({ url }) {
     let func = async function () {
 
       let _data = await api.getJSON("/app" + url);
-      setSum(_data.reduce((p,c)=>{return p+c.value},0))
+      setSum(_data.reduce((p, c) => { return p + c.value }, 0))
       setData(_data)
     };
     func();
@@ -52,7 +52,7 @@ export default function Sparkline({ url }) {
     getX={d => d._id}
     getY={d => d.value}
     xType="time"
-    
+
     style={{ width: "100%", height: "100%" }}
   >
     <AreaSeries
@@ -65,9 +65,9 @@ export default function Sparkline({ url }) {
       fill="none"
       curve="curveNatural"
       data={data} />
-    
-    
+
+
   </XYPlot>
-  <p><b>{sum} views</b> in the last 30 days</p>
+    <p><b>{sum} views</b> in the last 30 days</p>
   </>
 }

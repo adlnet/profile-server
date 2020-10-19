@@ -19,6 +19,8 @@ const uuid = require('uuid');
 const locks = require('./locks');
 const langmaps = require('../utils/langmaps');
 const mongoSanitize = require('mongo-sanitize');
+const { toLower } = require('lodash');
+const validationError = require('../errorTypes/validationError');
 const concept = new mongoose.Schema({
     uuid: {
         type: String,
@@ -147,6 +149,10 @@ const concept = new mongoose.Schema({
             ref: 'concept',
         },
     ],
+    deprecatedReason: {
+        reason: String,
+        reasonLink: String,
+    },
     isDeprecated: {
         type: Boolean,
         default: false,
@@ -163,6 +169,57 @@ concept.statics.findByUuid = function (uuid, callback) {
 
 concept.statics.deleteByUuid = async function (uuid) {
     await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
+};
+
+concept.statics.buildBaseModelFromDocument = function (document) {
+    const JsonLdToModel = require('../controllers/importProfile/JsonLdToModel').JsonLdToModel;
+    const jsonLdToModel = new JsonLdToModel();
+
+    const obj = {
+        iri: document.id,
+        type: document.type,
+        isDeprecated: document.deprecated,
+    };
+
+    switch (document.type.toLowerCase()) {
+        case 'verb':
+        case 'activitytype':
+        case 'attachmentusagetype':
+            obj.conceptType = document.type;
+            obj.name = jsonLdToModel.toName(document.prefLabel);
+            obj.description = jsonLdToModel.toDescription(document.definition);
+            obj.translations = jsonLdToModel.toTranslations(document.prefLabel, document.definition);
+            break;
+        case 'contextextension':
+        case 'resultextension':
+        case 'activityextension':
+            obj.conceptType = 'Extension';
+            obj.name = jsonLdToModel.toName(document.prefLabel);
+            obj.description = jsonLdToModel.toDescription(document.definition);
+            obj.translations = jsonLdToModel.toTranslations(document.prefLabel, document.definition);
+            obj.contextIri = document.context;
+            Object.assign(obj, jsonLdToModel.toSchema(document.inlineSchema, document.schema));
+            break;
+        case 'stateresource':
+        case 'agentprofileresource':
+        case 'activityprofileresource':
+            obj.name = jsonLdToModel.toName(document.prefLabel);
+            obj.description = jsonLdToModel.toDescription(document.definition);
+            obj.translations = jsonLdToModel.toTranslations(document.prefLabel, document.definition);
+            obj.conceptType = 'Document';
+            obj.mediaType = document.contentType;
+            Object.assign(obj, jsonLdToModel.toSchema(document.inlineSchema, document.schema));
+            break;
+        case 'activity':
+            obj.conceptType = document.type;
+            Object.assign(obj, jsonLdToModel.toActivityDefinition(document.activityDefinition));
+            break;
+        default:
+    }
+
+    const model = new this(obj);
+
+    return model;
 };
 
 concept.methods.getInteractionComponents = async function () {

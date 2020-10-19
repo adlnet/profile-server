@@ -15,42 +15,48 @@
 **************************************************************** */
 import React from 'react';
 import { Formik, Field, Form } from 'formik';
-import * as Yup from 'yup';
-import { Link, withRouter } from "react-router-dom";
+import { withRouter } from "react-router-dom";
 import { useDispatch, useSelector } from 'react-redux';
+import { useHistory, useLocation } from 'react-router-dom';
 
 import { createTemplate } from '../../actions/templates';
 import Translations from '../../components/fields/Translations';
 import Tags from '../../components/fields/Tags';
 import ErrorValidation from '../controls/errorValidation';
-import Iri from '../fields/Iri';
-import { useState } from 'react';
-import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
+import Iri, { isValidIRI } from '../fields/Iri';
+import Breadcrumb from '../controls/breadcrumbs';
+import CancelButton from '../controls/cancelButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
 function CreateTemplateForm(props) {
     const dispatch = useDispatch();
-
-    const [showModal, setShowModal] = useState(false);
+    const location = useLocation();
+    const history = useHistory();
 
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = `${currentProfileVersion.iri}/templates/`;
 
-    let startingValues;
-    if (props.initialValues) {
-        // it's possible that the iri was external and still match, but this is what 
-        // the system will use to generate the base of the concept iri, so we'll call it 
-        // generated
-        startingValues = { ...props.initialValues };
-        startingValues.iriType = props.initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
-        startingValues.iri = props.initialValues.iri.replace(generatedIRIBase, "");
-    }
+    let importedTemplate = location.state && location.state.template ? { ...location.state.template } : null;
 
-    function handleCancel(formEdited) {
-        if (formEdited)
-            setShowModal(true)
-        else
-            props.history.push(props.rootUrl);
+    if (importedTemplate) {
+        importedTemplate.model.iriType = 'external-iri';
+        importedTemplate.model.extiri = importedTemplate.model.iri;
+        importedTemplate.model.geniri = '';
+    }
+    const formValidation = (values) => {
+        const errors = {};
+        if (!values.name) errors.name = 'Required';
+        if (!values.description) errors.description = 'Required';
+        if (values.iriType === 'external-iri') {
+            if (!values.extiri.trim()) errors.extiri = 'Required';
+            if (!isValidIRI(values.extiri)) errors.extiri = 'IRI did not match expected format.';
+        } else {
+            if (!values.geniri.trim()) errors.geniri = 'Required';
+            const geniri = generatedIRIBase + values.geniri;
+            if (!isValidIRI(geniri)) errors.geniri = 'IRI did not match expected format.';
+        }
+        return errors;
     }
 
     return (
@@ -58,7 +64,7 @@ function CreateTemplateForm(props) {
             <header>
                 <div className="grid-row">
                     <div className="grid-col margin-top-3">
-                        <Link to={props.rootUrl}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right"></i>
+                        <Breadcrumb breadcrumbs={[{ to: props.rootUrl, crumb: 'statement templates' }]} />
                         <h2 style={{ margin: "0 0 .5em 0" }}>Create Statement Template</h2>
                     </div>
                 </div>
@@ -73,16 +79,18 @@ function CreateTemplateForm(props) {
             </div>
 
             <Formik
-                initialValues={{ name: '', description: '', 'more-information': '', tags: [], iriType: "external-iri", iri: '' }}
-                validationSchema={Yup.object({
-                    name: Yup.string()
-                        .required('Required'),
-                    description: Yup.string()
-                        .required('Required')
-                })}
+                initialValues={importedTemplate ? importedTemplate.model : { name: '', description: '', 'more-information': '', tags: [], iriType: "external-iri", iri: '', extiri: '', geniri: '' }}
+                validate={formValidation}
+                validateOnMount={true}
                 onSubmit={(values) => {
+                    values.iri = values.extiri.trim();
                     if (values.iriType === 'generated-iri')
-                        values.iri = `${generatedIRIBase}${values.iri}`;
+                        values.iri = `${generatedIRIBase}${values.geniri.trim()}`;
+
+                    if (importedTemplate) {
+                        dispatch({ type: 'REMOVE_IMPORT_QUEUE_ITEM', payload: { type: 'templates', index: importedTemplate.index } });
+                    }
+
                     dispatch(createTemplate(values));
                 }}
             >
@@ -122,30 +130,10 @@ function CreateTemplateForm(props) {
                             </fieldset>
                         </Form>
                     </div>
-                    <button className="usa-button submit-button" type="submit" onClick={formikProps.handleSubmit} >Create Statement Template</button>
-                    <button className="usa-button usa-button--unstyled" onClick={() => handleCancel(Object.values(formikProps.touched).length > 0)} type="reset">Cancel</button>
+                    <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="submit" onClick={formikProps.handleSubmit} >Create Statement Template</ValidationControlledSubmitButton>
+                    <CancelButton className="usa-button usa-button--unstyled" type="reset" cancelAction={() => props.history.push(props.rootUrl)} />
                 </>)}
             </Formik>
-            <ModalBoxWithoutClose show={showModal}>
-                <div className="grid-row">
-                    <div className="grid-col">
-                        <h3>Cancel Create Statement Template</h3>
-                    </div>
-                </div>
-                <div className="grid-row">
-                    <div className="grid-col">
-                        <span>Are you sure you want to stop creating this statement template? The information you entered in this form will not be saved if you cancel.</span>
-                    </div>
-                </div>
-                <div className="grid-row">
-                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
-                        <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={() => handleCancel(false)}>Cancel Create Statement Template</button>
-                    </div>
-                    <div className="grid-col" style={{ maxWidth: "fit-content" }}>
-                        <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} style={{ margin: "2.3em 1.5em" }}><b>Return to Create Statement Template</b></button>
-                    </div>
-                </div>
-            </ModalBoxWithoutClose>
         </div>
     );
 }

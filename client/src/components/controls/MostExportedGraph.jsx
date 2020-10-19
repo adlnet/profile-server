@@ -37,25 +37,25 @@ export default function MostExportedGraph(props) {
   useEffect(() => {
     let func = async function () {
 
-      let _data = await api.getJSON("/app/metrics/mostExported?days=30");
-      _data = _data.map((i, j) => { i.x = i.name; return i });
-      console.log(_data);
+      let _data = await api.getJSON("/app/metrics/mostExported?days=" + days);
+      _data = _data.map((i, j) => { i.x = i._id.counterName; return i });
+
+      // console.log(_data);
       setData(_data)
     };
     func();
-  }, [])
+  }, [days])
   function forgetSelected() {
     setSelected(null);
-  } 
-  async function _setDays(d)
-  {
+  }
+  async function _setDays(d) {
     let _data = await api.getJSON("/app/metrics/mostExported?days=" + d);
     setDays(d);
-    _data = _data.map((i, j) => { i.x = i.name; return i });
-    
+    _data = _data.map((i, j) => { i.x = i._id.counterName; return i });
+
     setData(_data)
   }
-  
+
   const axisStyle = {
     ticks: {
       fontSize: '12px',
@@ -68,56 +68,62 @@ export default function MostExportedGraph(props) {
   };
 
   if (!data) return ""
-  return <div className={"leadGraph " + (props.a?"a":"b")}> 
-  
-  <div className="graphHead">
-    <h3>Most Exported</h3>
-    <select name="language" rows="3" className="usa-select" id="days" aria-required="true" value={days} onChange={(e)=>_setDays(e.target.value)}><option value="30" disabled="">last 30 days</option><option value="365">last 12 months</option></select>
-  </div>
-  <XYPlot width={440} height={300} xType="ordinal" stackBy="y">
 
-    <HorizontalGridLines />
+  return <div className={"mostExported leadGraph " + (props.a ? "a" : "b") + (props.wide ? " wide" : "")}>
+
+    <div className="graphHead">
+      <h3>Most Exported {props.wide ? " Profiles" : ""}</h3>
+      <div>
+        <div className="colorHint">
+          <div className="api">API</div>
+          <div className="manual">Manual</div>
+        </div>
+      </div>
+      <select name="language" rows="3" className="usa-select" id="days" aria-required="true" value={days} onChange={(e) => _setDays(e.target.value)}><option value="30" disabled="">last 30 days</option><option value="365">last 12 months</option></select>
+    </div>
+    <XYPlot width={props.wide ? 880 : 440} height={props.wide ? 400 : 300} xType="ordinal" stackBy="y">
+
+      <HorizontalGridLines />
 
 
 
-    <YAxis style={axisStyle}
-    labelValues={[0,1000]}
-    />
-    <XAxis
+      <YAxis style={axisStyle}
+        labelValues={[0, 1000]}
+      />
+      <XAxis
+        tickFormat={v => {
+          if (!props.wide) return ''
+          let ret = data.find(d => d.x === v)
+          return ret ? ret.name.substr(0, Math.min(15, ret.name.length)) : ''
+        }}
+      />
 
+      <VerticalBarSeries
+        onValueMouseOver={setSelected}
+        onValueMouseOut={forgetSelected} data={data.filter(i => i._id.counterType == "profileUIExport")}
+        color="rgba(54, 162, 235, 0.498039215686275)"
+        style={{
+          stroke: 'rgba(54, 162, 235, 1)',
+          strokeLinejoin: 'round'
+        }}
+      />
+      <VerticalBarSeries
+        onValueMouseOver={setSelected}
+        onValueMouseOut={forgetSelected} data={data.filter(i => i._id.counterType == "profileAPIExport")}
+        color="rgba(255, 99, 132, 0.498039215686275)"
+        style={{
+          stroke: 'rgba(255, 99, 132, 1)',
+          strokeLinejoin: 'round'
+        }}
+      />
 
-      labelFormat={v => `Value is ${v}`}
-      labelValues={[]}
-      tickValues={[]}
-
-    />
-
-    <VerticalBarSeries
-      onValueMouseOver={setSelected}
-      onValueMouseOut={forgetSelected} data={data.filter(i=> i._id.counterType =="profileUIExport")}
-      color="rgba(54, 162, 235, 0.498039215686275)"
-      style={{
-        stroke: 'rgba(54, 162, 235, 1)',
-        strokeLinejoin: 'round'
-      }}
-    />
-    <VerticalBarSeries
-      onValueMouseOver={setSelected}
-      onValueMouseOut={forgetSelected} data={data.filter(i=> i._id.counterType =="profileAPIExport")}
-      color="rgba(255, 99, 132, 0.498039215686275)"
-      style={{
-        stroke: 'rgba(255, 99, 132, 1)',
-        strokeLinejoin: 'round'
-      }}
-    />
-
-    {selected ? (
-      <Hint
-        value={selected}
-        align={{ horizontal: Hint.ALIGN.CENTER, vertical: Hint.ALIGN.CENTER }}
-      >
-        <div className="rv-hint__content">{`(${selected.x}, ${selected.y})`}</div>
-      </Hint>
-    ) : null}
-  </XYPlot> </div>
+      {selected ? (
+        <Hint
+          value={selected}
+          align={{ horizontal: Hint.ALIGN.CENTER, vertical: Hint.ALIGN.CENTER }}
+        >
+          <div className="rv-hint__content">{`(${selected.name} - ${selected._id.counterType}, ${selected.y})`}</div>
+        </Hint>
+      ) : null}
+    </XYPlot> </div>
 }

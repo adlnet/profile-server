@@ -22,6 +22,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user"
 import api from "../../api";
 import { useState } from 'react';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
 var CryptoJS = require("crypto-js");
 
@@ -58,8 +59,10 @@ export default function Login(props) {
                 password: Yup.string()
                     .required('Required'),
             })}
+
             onSubmit={(values) => {
                 signIn(values);
+
             }}
         >
             {(formikProps) => (
@@ -86,9 +89,9 @@ export default function Login(props) {
                                 <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show password</button>
                             </div>
                             <div className="grid-row">
-                                <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
+                                <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
                                     Sign in
-                                </button>
+                                </ValidationControlledSubmitButton>
                             </div>
                             <div className="grid-row">
                                 <button onClick={() => forgotPassword()} className="usa-button usa-button--unstyled" type="reset">Forgot password?</button>
@@ -100,7 +103,10 @@ export default function Login(props) {
 
         </Formik>
         {
-            userData.loginFeedback && <div className="usa-error-message padding-right-1"><p>{userData.loginFeedback}</p></div>
+            userData.loginFeedback &&
+            <div className="display-flex flex-column flex-align-center margin-top-5">
+                <div className="usa-error-message padding-x-4"><p>{userData.loginFeedback}</p></div>
+            </div>
         }
     </>
     );

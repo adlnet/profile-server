@@ -18,6 +18,8 @@ import { useSelector, useDispatch } from 'react-redux';
 
 import { Detail, Translations, Tags } from '../DetailComponents';
 import { selectInfopanelTemplate } from '../../actions/templates';
+import { Link } from 'react-router-dom';
+import DeprecatedAlert from '../controls/deprecatedAlert';
 
 export default function StatementTemplateInfoPanel({ infoPanelTemplate, onViewConceptClick }) {
     const dispatch = useDispatch();
@@ -36,36 +38,42 @@ export default function StatementTemplateInfoPanel({ infoPanelTemplate, onViewCo
     return (
         <div>
             <div className="padding-top-4 padding-left-4">
-                <span className="border-2px padding-05 text-uppercase text-thin text-base font-sans-3xs">template</span>
+                <span className="border-1px padding-05 text-uppercase text-thin text-ink font-sans-3xs">template</span>
+                {template && template.isDeprecated && <span className="border-1px margin-left-1 padding-05 text-uppercase text-thin bg-base-lighter text-ink font-sans-3xs">deprecated</span>}
                 <h2>{template && template.name}</h2><br />
             </div >
             <div className="infopanel margin-right-2">
                 <div className="margin-left-4">
+                    {template && template.isDeprecated ?
+                        <DeprecatedAlert component={template} componentType="template" infoPanel={true} />
+                        : ''
+                    }
                     <Detail title="iri">
                         <span className="field-word-break">{template && template.iri}</span>
                     </Detail>
-                    <Detail title="statement template name">
-                        {template && template.name}
-                    </Detail>
-                    <Detail title="description">
+                    <Detail title="description" subtitle="English (en)">
                         {template && template.description}
                     </Detail>
                     <Detail title="translations">
                         <Translations translations={template && template.translations} />
                     </Detail>
                     <Detail title="tags">
-                        <Tags tags={template && template.tags} />
+                        <Tags tags={template && template.tags || <span className="text-italic text-base">(none)</span>} />
                     </Detail>
                     <Detail title="concepts">
                         {
                             concepts && concepts.map((concept, key) => (
-                                <button
+                                concept.parentProfile && concept.name &&
+                                <a
                                     key={key}
-                                    className="usa-button usa-button--unstyled display-block margin-y-1"
-                                    onClick={() => onViewConceptClick(concept)}
+                                    className="usa-button usa-button--unstyled display-block margin-y-105"
+                                    type="button"
+                                    href={`/profile/${concept.parentProfile && concept.parentProfile.uuid}/concepts/${concept.uuid}`}
+                                    target="_blank"
+                                    rel="noreferrer"
                                 >
-                                    {concept.name}
-                                </button>
+                                    {concept.name}<i className="margin-left-1 fa fa-external-link"></i>
+                                </a>
                             ))
                         }
                     </Detail>
@@ -75,10 +83,13 @@ export default function StatementTemplateInfoPanel({ infoPanelTemplate, onViewCo
                         {(template && template.updatedOn) ? (new Date(template.updatedOn)).toLocaleDateString() : "Unknown"}
                     </Detail>
                     <Detail title="parent profile" >
-                        {template && template.parentProfile && template.parentProfile.name}
+                        {(template.parentProfile && template.parentProfile.name) ?
+                            <Link to={`/profile/${template.parentProfile.uuid}`}>{template.parentProfile.name}</Link>
+                            : 'Unknown'}
                     </Detail>
                     <Detail title="author" >
-                        {(template && template.parentProfile && template.parentProfile.organization.name) || 'Unknown'}
+                        {(template.parentProfile && template.parentProfile.organization.name) ?
+                            <Link to={`/organization/${template.parentProfile.organization.uuid}`}>{template.parentProfile.organization.name}</Link> : 'Unknown'}
                     </Detail>
                 </div>
             </div>

@@ -35,6 +35,7 @@ export default function AddMember({ url }) {
 
     let member;
     let pending;
+
     if (location && location.state) {
         member = location.state.member;
         pending = location.state.pending;
@@ -195,7 +196,7 @@ export default function AddMember({ url }) {
                                 pending ?
                                     <span>Are you sure you want to deny <strong>{member.user.fullname}</strong> from joining <strong>{organization.name}</strong>?</span>
                                     :
-                                    <span>Are you sure you want to remove <strong>{member.user.fullname}</strong> from joining <strong>{organization.name}</strong>?</span>
+                                    <span>Are you sure you want to remove <strong>{member.user.fullname}</strong> from <strong>{organization.name}</strong>?</span>
 
                             }
                         </div>

@@ -15,32 +15,37 @@
 **************************************************************** */
 import React, { useState } from 'react';
 import { Link, useLocation, useRouteMatch } from 'react-router-dom';
+import { useSelector } from 'react-redux';
 import xapiPropData from './data/xapi-property-info.json';
 import RuleForm from './RuleForm';
 
-export default function CreateRule({ templateName, isEditable, isPublished }) {
+export default function CreateRule({ templateName, isEditable, isPublished, isEditing }) {
     const match = useRouteMatch();
     const location = useLocation();
+
+    const orgId = useSelector(state => state.application.selectedOrganizationId);
+    const profileId = useSelector(state => state.application.selectedProfileId);
+    const versionId = useSelector(state => state.application.selectedProfileVersionId);
     const rule = location.state && location.state.rule;
     const [jsonPath, setJSONPath] = useState(rule && rule.location.split('.') || ['$']);
     const [showForm, setShowForm] = useState(!!rule);
 
-    const pathToTemplates = `/organization/${match.params.organizationId}/profile/${match.params.profileId}/version/${match.params.versionId}/templates`;
-    const pathToCurrentTemplate = `/organization/${match.params.organizationId}/profile/${match.params.profileId}/version/${match.params.versionId}/templates/${match.params.templateId}`;
+    const pathToTemplates = `/organization/${orgId}/profile/${profileId}/version/${versionId}/templates`;
+    const pathToCurrentTemplate = `/organization/${orgId}/profile/${profileId}/version/${versionId}/templates/${match.params.templateId}`;
 
     return (<>
         <div className="margin-top-4">
             <Link to={pathToTemplates}><span className="details-label">statement templates</span></Link> <i className="fa fa-angle-right margin-x-1"></i>
             <Link to={pathToCurrentTemplate}><span className="details-label">{templateName}</span></Link>
         </div>
-        <h2 className="margin-top-1">Add Rule{showForm && <span>:  <span className="text-primary-dark">{jsonPath.join('.')}</span></span>}</h2>
+        <h2 className="margin-top-1">{isEditing ? 'Edit' : 'Add'} Rule{showForm && <span>:  <span className="text-primary-dark">{jsonPath.join('.')}</span></span>}</h2>
         {
             showForm ?
-                <RuleForm jsonPath={jsonPath} returnTo={pathToCurrentTemplate} rule={rule} isEditable={isEditable} isPublished={isPublished}></RuleForm>
+                <RuleForm jsonPath={jsonPath} returnTo={pathToCurrentTemplate} rule={rule} isEditable={isEditable} isPublished={isPublished} isEditing={isEditing}></RuleForm>
                 :
                 <>
                     <div className="grid-col margin-bottom-1">
-                        What type of role do you want to create?
+                        What type of rule do you want to create?
                     </div>
                     <div className="grid-row">
                         <div className="grid-col-4">
@@ -72,7 +77,7 @@ function PanelTwo({ jsonPath, onChange, setShowForm }) {
     if (!(jsonPath && jsonPath.length > 1)) return "";
     const stmtprop = jsonPath[1];
     return (
-        ['id', 'timestamp', 'verb'].includes(stmtprop) ?
+        ['id', 'timestamp', 'verb', 'object'].includes(stmtprop) ?
             <Description statementProperty={xapiPropData[stmtprop]} jsonPath={jsonPath} setShowForm={setShowForm}></Description>
             :
             <SelectPanel statementProperties={xapiPropData[stmtprop]['subprops']} onChange={onChange}></SelectPanel>
@@ -90,7 +95,7 @@ function PanelThree({ jsonPath, setShowForm }) {
 
 function SelectPanel({ statementProperties, onChange }) {
     return (
-        <select multiple name="property" component="select" role="list" rows="3" className="" id="property" aria-required="true" style={{ height: "14em", width: "100%", padding: "0.4em 1em" }} onChange={onChange}>
+        <select multiple name="property" component="select" role="list" rows="3" className="rule-select" id="property" aria-required="true" style={{ height: "14em", width: "100%", padding: "0.4em 1em" }} onClick={onChange} onChange={onChange}>
             {Object.entries(statementProperties).map((e, i) => (<option key={i} value={e[0]}>{e[1].name}</option>))}
         </select>
     )

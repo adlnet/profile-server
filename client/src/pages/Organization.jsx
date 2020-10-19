@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect, useState } from 'react';
-import { Route, Switch, useRouteMatch, useHistory, useParams } from 'react-router-dom';
+import { Route, Switch, useRouteMatch, useHistory, useParams, Redirect } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import { createProfile } from "../actions/profiles";
@@ -31,10 +31,10 @@ import ApiKeys from '../components/api-keys/ApiKeys';
 import About from '../components/organizations/About';
 import EditOrganization from '../components/organizations/EditOrganization';
 import Lock from '../components/users/lock';
-import WebHooks from "../components/webhooks/Webhooks"
-
+import PrivateRoute from '../components/users/PrivateRoute';
 
 export default function Organization() {
+
 
     const dispatch = useDispatch();
     const history = useHistory();
@@ -77,16 +77,16 @@ export default function Organization() {
     return (<>
         <LoadingSpinner></LoadingSpinner>
         <Switch>
-            <Route exact path={`${path}/profile/create`}>
+            <PrivateRoute exact path={`${path}/profile/create`}>
                 <CreateProfile>
                     <CreateProfileForm handleSubmit={handleProfileCreate} handleCancel={handleCancelProfileCreate} />
                 </CreateProfile>
-            </Route>
-            <Route path={`${path}/profile/:profileId/version/:versionId`}>
+            </PrivateRoute>
+            <PrivateRoute path={`${path}/profile/:profileId/version/:versionId`}>
                 <Profile rootUrl={url} />
-            </Route>
+            </PrivateRoute>
             <Route path={path}>
-                <OrganizationHeader organization={organization} url={url} isMember={isMember} joinAction={joinAction}></OrganizationHeader>
+                <OrganizationHeader user={user} organization={organization} organizationId={organizationId} url={url} isMember={isMember} joinAction={joinAction}></OrganizationHeader>
                 {
                     showModal &&
                     <div className="grid-row">
@@ -101,22 +101,26 @@ export default function Organization() {
                 <main id="main-content" className={"grid-container  padding-bottom-4"}>
                     <Switch>
                         <Route exact path={`${path}/about`}>
-                            <About organization={organization} rootUrl={url} />
+                            <About organization={organization} isMember={isMember} rootUrl={url} />
                         </Route>
-                        <Route exact path={`${path}/edit`}>
+                        <PrivateRoute exact path={`${path}/edit`}>
                             <Lock resourceUrl={`/org/${organizationId}`}>
                                 <EditOrganization organization={organization} rootUrl={url} />
                             </Lock>
-                        </Route>
+                        </PrivateRoute>
                         <Route exact path={path}>
                             <Profiles profiles={organization.profiles} isMember={isMember} />
                         </Route>
-                        <Route path={`${path}/members`}>
+                        <PrivateRoute path={`${path}/members`}>
                             <Members isMember={isMember} />
-                        </Route>
-                        <Route path={`${path}/apiKeys`}>
-                            <ApiKeys />
-                        </Route>
+                        </PrivateRoute>
+                        <PrivateRoute path={`${path}/apiKeys`}>
+                            {isMember === 'admin' ?
+                                <ApiKeys />
+                                :
+                                <Redirect to={`${url}/about`} />
+                            }
+                        </PrivateRoute>
 
 
                         <Route>

@@ -19,6 +19,8 @@ import * as Yup from 'yup';
 import ErrorValidation from '../controls/errorValidation';
 import { useSelector } from 'react-redux';
 import api from "../../api";
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+
 export default function RequestPasswordReset(props) {
     let userData = useSelector((store) => store.userData)
     const [showConfirmation, setShowConfirmation] = useState(false);
@@ -46,10 +48,11 @@ export default function RequestPasswordReset(props) {
                     validationSchema={Yup.object({
                         email: Yup.string().email(),
                     })}
+                    validateOnMount={true}
                     onSubmit={(values) => {
                         //dispatch(... something about request password reset)
                         setShowConfirmation(true)
-                        api.postJSON("/app/user/forgot",values)
+                        api.postJSON("/app/user/forgot", values)
                         console.log(values)
                     }}
                 >
@@ -70,9 +73,9 @@ export default function RequestPasswordReset(props) {
                                     </ErrorValidation>
 
                                     <div className="grid-row">
-                                        <button className="usa-button submit-button" type="submit" >
+                                        <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="submit" >
                                             Request password reset
-                                    </button>
+                                        </ValidationControlledSubmitButton>
                                     </div>
                                 </fieldset>
                             </Form>

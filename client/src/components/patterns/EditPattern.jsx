@@ -20,28 +20,24 @@ import CreateSequencePattern from './CreateSequencePattern';
 import CreateAlternatesPattern from './CreateAlternatesPattern';
 import CreateSinglePattern from './CreateSinglePattern';
 
-export default function EditPattern({ pattern, onEdit, isPublished }) {
+export default function EditPattern({ pattern, onEdit, isPublished, setEditing, root_url, onDeprecate }) {
     let { patternId } = useParams();
 
     let type = pattern && pattern.type;
+    setEditing(true);
 
     let capitalize = () => {
         return { textTransform: "capitalize" }
     }
 
     return (<>
-        <div className="grid-row margin-top-3">
-            <div className="grid-col">
-                {/* <Link to={props.root_url}><span className="text-uppercase font-sans-3xs">patterns</span></Link> <i className="fa fa-angle-right fa-xs"></i> */}
-                <h2>Edit Pattern{type ? (<><span>: </span><span className="text-primary-dark" style={capitalize()}> {type}</span></>) : ""}</h2>
-            </div>
-        </div>
+
         {
             (type === "sequence") ?
-                <CreateSequencePattern key={`${patternId}-sequence`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} />
+                <CreateSequencePattern key={`${patternId}-sequence`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
                 : (type === "alternates") ?
-                    <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} />
-                    : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} />
+                    <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
+                    : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
                         : ""
 
         }

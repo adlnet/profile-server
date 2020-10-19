@@ -18,7 +18,7 @@ import { Link } from 'react-router-dom';
 
 import { Detail } from '../DetailComponents';
 
-export default function About({ organization, rootUrl }) {
+export default function About({ organization, rootUrl, isMember }) {
     return (<>
         <div className="grid-row margin-top-2">
             <div className="desktop:grid-col-8">
@@ -32,17 +32,23 @@ export default function About({ organization, rootUrl }) {
                     </Detail>
                 }
                 <Detail title="link to collaborate">
-                    {organization.collaborationLink}
+                    {
+                        organization.collaborationLink && (organization.collaborationLink.indexOf('http') == 0)
+                            ? <a href={organization.collaborationLink} rel="noreferrer" target="_blank">{organization.collaborationLink}</a>
+                            : organization.collaborationLink
+                    }
                 </Detail>
             </div>
             <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
-                <Link
-                    to={`${rootUrl}/edit`}
-                    className="usa-button padding-x-105 margin-top-2 margin-right-0 "
-                >
-                    <span className="fa fa-pencil fa-lg margin-right-1"></span>
+                {isMember &&
+                    <Link
+                        to={`${rootUrl}/edit`}
+                        className="usa-button padding-x-105 margin-top-2 margin-right-0 "
+                    >
+                        <span className="fa fa-pencil fa-lg margin-right-1"></span>
                     Edit Working Group Details
                 </Link>
+                }
                 <div className="padding-2 bg-base-lightest margin-top-2 width-full">
                     <Detail title="date created">
                         {(organization.createdOn) ? (new Date(organization.createdOn)).toLocaleDateString() : "Unknown"}

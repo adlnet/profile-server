@@ -93,7 +93,7 @@ exports.createOrganization = async function (req, res) {
     try {
         organization = new organizationModel(req.body);
         organization.members.push({
-            level: 'owner',
+            level: 'admin',
             user: req.user,
         });
         organization.createdBy = req.user;
@@ -113,6 +113,42 @@ exports.createOrganization = async function (req, res) {
     });
 };
 
+exports.getOrganizationPublic = async function (req, res) {
+    let organization;
+    try {
+        organization = await organizationModel.findOne({ uuid: req.params.org })
+            .populate('createdBy', 'uuid firstname lastname fullname')
+            .populate({
+                path: 'profiles',
+                select: 'uuid updatedOn',
+                //  where: { currentPublishedVersion: { $exists: true } },
+                populate: [
+                    { path: 'currentDraftVersion', select: 'uuid name' },
+                    { path: 'currentPublishedVersion', select: 'uuid name isVerified' },
+                ],
+            });
+
+        if (!organization) {
+            return res.status(404).send({
+                success: false,
+                message: 'No organization found for this uuid',
+            });
+        }
+    } catch (err) {
+        console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+    organization = organization.toObject({ virtuals: true });
+    organization.membership = req.permissionLevel;
+    res.send({
+        success: true,
+        organization: organization,
+    });
+};
+
 exports.getOrganization = async function (req, res) {
     let organization;
     try {
@@ -123,7 +159,7 @@ exports.getOrganization = async function (req, res) {
                 select: 'uuid updatedOn',
                 populate: [
                     { path: 'currentDraftVersion', select: 'uuid name' },
-                    { path: 'currentPublishedVersion', select: 'uuid name' },
+                    { path: 'currentPublishedVersion', select: 'uuid name isVerified' },
                 ],
             })
             .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
@@ -202,7 +238,7 @@ exports.requestJoinOrganization = async function (req, res) {
         const org = req.resource;
         const user = await userModel.findOne({ uuid: req.body.uuid });
         if (!org) {
-            return resendValidation.status(404).send({
+            return req.status(404).send({
                 success: false,
                 message: 'The requested organization was not found.',
             });

@@ -25,11 +25,14 @@ import SearchSelectComponent from '../controls/search-select/searchSelectCompone
 import PatternResultView from './PatternResultView';
 import Template from '../templates/Template';
 import PatternDetail from './PatternDetail';
+import Breadcrumb from '../controls/breadcrumbs';
+import CancelButton from '../controls/cancelButton';
+import { ADDED } from '../../actions/successAlert';
 
 export default function AddPattern({ isOnePatternOnly, root_url }) {
 
     const { path } = useRouteMatch();
-    const { versionId } = useParams();
+
     const history = useHistory();
     const patternResults = useSelector((state) => state.searchResults.patterns)
     const selectedResults = useSelector((state) => state.searchResults.selectedPatterns)
@@ -41,13 +44,13 @@ export default function AddPattern({ isOnePatternOnly, root_url }) {
     const [infoPanelPattern, setInfoPanelPattern] = useState();
     const dispatch = useDispatch();
 
-    function handleAddToProfileClick() {
+    async function handleAddToProfileClick() {
         if (selectedResults) {
             const newProfileVersion = Object.assign({}, profileVersion);
             newProfileVersion.patterns = [...newProfileVersion.patterns, ...selectedResults];
 
             if (profileVersion.state === 'draft') {
-                dispatch(editProfileVersion(newProfileVersion));
+                await dispatch(editProfileVersion(newProfileVersion, ADDED, 'Pattern'));
             } else if (profileVersion.state === 'published') {
                 // if editing the published profile, we need to clean up 
                 // the values param since we create a new draft from the published version.
@@ -66,16 +69,12 @@ export default function AddPattern({ isOnePatternOnly, root_url }) {
                 };
                 // Need to verify iri is a new one, not the original published version (profileVersion)
                 if (newVersion.iri === profileVersion.iri) delete newVersion.iri;
-                dispatch(createNewProfileDraft(newVersion));
+                await dispatch(createNewProfileDraft(newVersion, ADDED, 'Pattern'));
             }
 
-            dispatch(loadProfilePatterns(versionId));
+            await dispatch(loadProfilePatterns(profileVersion.uuid));
             history.push(root_url);
         }
-    }
-
-    function handleCancel() {
-        history.goBack();
     }
 
     function onViewDetailsClick(property) {
@@ -84,17 +83,17 @@ export default function AddPattern({ isOnePatternOnly, root_url }) {
     }
 
     function patternResultsFilter(result) {
+        if (result.parentProfile && result.parentProfile.state === 'draft' && result.parentProfile.parentProfile.uuid !== profileVersion.parentProfile.uuid) return false;
         return !profilePatterns.map(p => p.uuid).includes(result.uuid);
     }
 
     return (<>
         <div className="grid-row margin-top-3 margin-bottom-3">
             <div className="grid-col">
-                <h2>Add Statement Pattern</h2>
+                <Breadcrumb breadcrumbs={[{ to: root_url, crumb: 'patterns' }]} />
+                <h2 className="margin-y-05">Add Pattern</h2>
             </div>
-            <div className="grid-col">
-                <Link to={"create"}><button className="usa-button pin-right bottom-2"><i className="fa fa-plus"></i> Create New</button></Link>
-            </div>
+
         </div>
 
         <SearchSelectComponent
@@ -114,16 +113,20 @@ export default function AddPattern({ isOnePatternOnly, root_url }) {
 
         <div className="grid-row">
             <div className="grid-col">
-                <button className="usa-button usa-button--unstyled padding-y-105" onClick={handleCancel}><b>Cancel</b></button>
+                <CancelButton className="usa-button usa-button--unstyled" style={{ marginTop: "0.6em" }} type="button" cancelAction={() => history.goBack()} />
             </div>
             <div className="grid-col">
-                <button
-                    onClick={handleAddToProfileClick}
-                    className="usa-button margin-right-0 pin-right"
-                    disabled={!(selectedResults && selectedResults.length > 0)}
-                >
-                    Add to Profile
+                <div className="pin-right">
+                    <Link to={"create"}><button className="usa-button"><i className="fa fa-plus"></i> Create New</button></Link>
+
+                    <button
+                        onClick={handleAddToProfileClick}
+                        className="usa-button margin-right-0"
+                        disabled={!(selectedResults && selectedResults.length > 0)}
+                    >
+                        Add to Profile
                     </button>
+                </div>
             </div>
         </div>
 

@@ -15,49 +15,69 @@
 **************************************************************** */
 import React from 'react';
 import { Formik, Field } from 'formik';
-import * as Yup from 'yup';
 
 import BaseConceptFields from './BaseConceptFields';
 import { Detail } from '../DetailComponents';
 import { useSelector } from 'react-redux';
+import CancelButton from '../controls/cancelButton';
+import { isValidIRI } from '../fields/Iri';
+import DeprecateButton from '../controls/deprecateButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import ErrorValidation from '../controls/errorValidation';
 
-export default function ActivityConcept({ initialValues, onCreate, onCancel, isPublished }) {
+export default function ActivityConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept }) {
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = currentProfileVersion.iri + "/activity/";
 
-    let startingValues;
-    if (initialValues) {
-        // it's possible that the iri was external and still match, but this is what 
-        // the system will use to generate the base of the concept iri, so we'll call it 
-        // generated
-        startingValues = { ...initialValues };
-        startingValues.iriType = initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
-        startingValues.iri = initialValues.iri.replace(generatedIRIBase, "");
+    const formValidation = (values) => {
+        const errors = {};
+        if (!values.name) errors.name = 'Required';
+        if (!values.description) errors.description = 'Required';
+
+        if (!initialValues || !initialValues.iri) {
+            if (values.iriType === 'external-iri') {
+                if (!values.extiri.trim()) errors.extiri = 'Required';
+                if (!isValidIRI(values.extiri)) errors.extiri = 'IRI did not match expected format.';
+            } else {
+                if (!values.geniri.trim()) errors.geniri = 'Required';
+                const geniri = generatedIRIBase + values.geniri;
+                if (!isValidIRI(geniri)) errors.geniri = 'IRI did not match expected format.';
+            }
+        }
+
+        if (!values.activityType) errors.activityType = 'Required';
+        if (values.activityType && !isValidIRI(values.activityType)) errors.activityType = 'IRI did not match expected format.';
+        return errors;
     }
 
+    // check to see if importedConcept has a new concept from an import 'create new concept' history push
+    if (importedConcept && !initialValues) {
+        initialValues = importedConcept.concept.model;
+    }
     return (
         <Formik
-            initialValues={startingValues || {
+            initialValues={initialValues || {
                 conceptType: 'Activity',
                 type: 'Activity',
                 iri: '',
+                extiri: '',
+                geniri: '',
                 iriType: "external-iri",
                 name: '',
                 description: '',
                 translations: [],
+                activityType: ''
             }}
-            validationSchema={Yup.object({
-                iri: Yup.string()
-                    .required('Required'),
-                name: Yup.string()
-                    .required('Required'),
-                description: Yup.string()
-                    .required('Required')
-            })}
+            validate={formValidation}
+            validateOnMount={true}
             onSubmit={values => {
-                if (values.iriType === 'generated-iri')
-                    values.iri = `${generatedIRIBase}${values.iri}`;
+                if (!values.iri) {
+                    values.iri = values.extiri.trim();
+                    if (values.iriType === 'generated-iri')
+                        values.iri = `${generatedIRIBase}${values.geniri.trim()}`;
+                }
+
                 onCreate(values);
             }}
         >
@@ -72,25 +92,42 @@ export default function ActivityConcept({ initialValues, onCreate, onCancel, isP
                         </div>
                     </div>
                     <form className="usa-form" style={{ maxWidth: "none" }}>
-                        <BaseConceptFields {...props} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
+                        <BaseConceptFields {...props} isEditing={initialValues} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
                         {
                             isPublished ?
                                 <Detail title='activity type'>
                                     {props.values.activityType}
                                 </Detail>
-                                : <>
+                                : <ErrorValidation name="activityType" type="input">
                                     <label className="usa-label" htmlFor="activityType">
                                         <span className="text-secondary-dark">*</span> <span className="details-label">activity type</span>
                                     </label>
                                     <Field name="activityType" type="text" className="usa-input" id="activityType" aria-required="true" />
-                                </>
+                                </ErrorValidation>
                         }
                     </form>
                 </div>
-                <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
-                    {initialValues ? 'Save Changes' : 'Add to Profile'}
-                </button>
-                <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
+                <div className="grid-row">
+                    <div className="grid-col-2">
+                        <ValidationControlledSubmitButton errors={props.errors} className="usa-button submit-button" style={{ margin: 0 }} type="submit" onClick={props.handleSubmit}>
+                            {(initialValues && !importedConcept) ? 'Save Changes' : 'Add to Profile'}
+                        </ValidationControlledSubmitButton>
+                    </div>
+                    <div className="grid-col">
+                        <CancelButton className="usa-button usa-button--unstyled" style={{ marginLeft: "2em", marginTop: "0.6em" }} type="reset" cancelAction={onCancel} />
+                    </div>
+                    {(initialValues && !importedConcept) &&
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeprecateButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onClick={onDeprecate}
+                                componentType="concept"
+                            />
+                        </div>
+                    }
+                </div>
             </>)}
         </Formik>
     )

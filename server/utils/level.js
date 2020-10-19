@@ -13,12 +13,12 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-const levels = ['member', 'admin', 'owner', 'sysadmin'];
+const levels = ['member', 'admin', 'sysadmin'];
 /**
  * Middleware that sets a permission level on a route. The value of
  * req.permission must be of the same level or greater to gain access.
  *
- * @param {enum} level ['member', 'admin', 'owner', 'sysadmin']
+ * @param {enum} level ['member', 'admin', 'sysadmin']
  */
 module.exports = function (level) {
     const required = levels.indexOf(level);

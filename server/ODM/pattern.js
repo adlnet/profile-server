@@ -30,6 +30,10 @@ const pattern = new mongoose.Schema({
         type: Boolean,
         // default: false,
     },
+    deprecatedReason: {
+        reason: String,
+        reasonLink: String,
+    },
     isDeprecated: {
         type: Boolean,
         default: false,
@@ -108,6 +112,23 @@ pattern.statics.findByUuid = function (uuid, callback) {
 
 pattern.statics.deleteByUuid = async function (uuid) {
     await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
+};
+
+pattern.statics.buildBaseModelFromDocument = function (document) {
+    const JsonLdToModel = require('../controllers/importProfile/JsonLdToModel').JsonLdToModel;
+    const jsonLdToModel = new JsonLdToModel();
+
+    const model = this({
+        iri: document.id,
+        name: jsonLdToModel.toName(document.prefLabel),
+        description: jsonLdToModel.toDescription(document.definition),
+        translations: jsonLdToModel.toTranslations(document.prefLabel, document.definition, { definition: true }),
+        isDeprecated: document.deprecated,
+        primary: document.primary,
+        type: jsonLdToModel.toPatternType(document),
+    });
+
+    return model;
 };
 
 pattern.methods.export = async function (profileVersionIRI) {

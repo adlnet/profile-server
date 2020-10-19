@@ -39,6 +39,7 @@ const Home = () => {
                 name: item.currentPublishedVersion.name,
                 subName: item.organization.name,
                 url: `/profile/${item.uuid}`,
+                isVerified: item.currentPublishedVersion.isVerified
             };
         });
 
@@ -48,9 +49,10 @@ const Home = () => {
     // format data to use within the CardList component
     conceptResults = conceptResults
         ? conceptResults
-            .map(pick("uuid", "name", "parentProfile", "createdOn"))
+            .filter(item => item.parentProfile.state !== 'draft')
             .sort((a, b) => new Date(b.createdOn) - new Date(a.createdOn))
             .slice(0, 3)
+            .map(pick("uuid", "name", "parentProfile", "createdOn"))
             .map((item) => {
                 return {
                     uuid: item.uuid,

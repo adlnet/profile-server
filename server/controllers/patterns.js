@@ -28,10 +28,10 @@ async function getVersionPatterns(versionUuid) {
             .findByUuid(versionUuid)
             .populate({
                 path: 'patterns',
-                select: 'uuid iri name primary type updatedOn',
+                select: 'uuid iri name primary type updatedOn updatedBy isDeprecated',
                 populate: {
                     path: 'parentProfile',
-                    select: 'uuid iri name',
+                    select: 'uuid iri name state',
                     populate: { path: 'parentProfile', select: 'uuid name' },
                 },
             });
@@ -55,10 +55,10 @@ async function getAllPatterns() {
     let patterns;
     try {
         patterns = await patternModel
-            .find({ parentProfile: { $ne: null } }, 'uuid iri name primary type updatedOn')
+            .find({ parentProfile: { $ne: null } }, 'uuid iri name primary type updatedOn updatedBy')
             .populate({
                 path: 'parentProfile',
-                select: 'uuid iri name',
+                select: 'uuid iri name state',
                 populate: { path: 'parentProfile', select: 'uuid name' },
             });
     } catch (err) {
@@ -86,8 +86,8 @@ async function searchPatterns(search, limit, page, sort) {
 
     results = results.populate({
         path: 'parentProfile',
-        select: 'uuid name iri',
-        populate: { path: 'organization', select: 'uuid name' },
+        select: 'uuid name iri state',
+        populate: { path: 'organization parentProfile', select: 'uuid name' },
     })
         .populate({
             path: 'sequence',
@@ -184,7 +184,7 @@ exports.createPattern = async function (req, res) {
                     return comp;
                 }),
             );
-        } else {
+        } else if (req.body[req.body.type]) {
             const comp = new patternComponentModel({
                 componentType: req.body[req.body.type].componentType,
                 component: req.body[req.body.type].component,
@@ -199,6 +199,7 @@ exports.createPattern = async function (req, res) {
         await pattern.save();
         profileVersion.patterns.push(pattern);
         profileVersion.updatedOn = new Date();
+        profileVersion.updatedBy = req.user;
         await profileVersion.save();
     } catch (err) {
         console.error(err);
@@ -218,6 +219,7 @@ exports.getPattern = async function (req, res) {
     let pattern;
     try {
         pattern = await patternModel.findByUuid(req.params.pattern)
+            .populate('updatedBy', 'firstname lastname email uuid')
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name state',
@@ -230,7 +232,7 @@ exports.getPattern = async function (req, res) {
                 path: 'sequence',
                 populate: {
                     path: 'component',
-                    select: 'uuid iri name description type updatedOn updatedOn',
+                    select: 'uuid iri name description type updatedOn updatedBy',
                     populate: {
                         path: 'parentProfile',
                         select: 'uuid name',
@@ -242,7 +244,7 @@ exports.getPattern = async function (req, res) {
                 path: 'alternates',
                 populate: {
                     path: 'component',
-                    select: 'uuid iri name description type updatedOn updatedOn',
+                    select: 'uuid iri name description type updatedOn updatedBy',
                     populate: {
                         path: 'parentProfile',
                         select: 'uuid name',
@@ -254,7 +256,7 @@ exports.getPattern = async function (req, res) {
                 path: 'oneOrMore',
                 populate: {
                     path: 'component',
-                    select: 'uuid iri name description type updatedOn updatedOn',
+                    select: 'uuid iri name description type updatedOn updatedBy',
                     populate: {
                         path: 'parentProfile',
                         select: 'uuid name',
@@ -266,7 +268,7 @@ exports.getPattern = async function (req, res) {
                 path: 'zeroOrMore',
                 populate: {
                     path: 'component',
-                    select: 'uuid iri name description type updatedOn updatedOn',
+                    select: 'uuid iri name description type updatedOn updatedBy',
                     populate: {
                         path: 'parentProfile',
                         select: 'uuid name',
@@ -278,7 +280,7 @@ exports.getPattern = async function (req, res) {
                 path: 'optional',
                 populate: {
                     path: 'component',
-                    select: 'uuid iri name description type updatedOn updatedOn',
+                    select: 'uuid iri name description type updatedOn updatedBy',
                     populate: {
                         path: 'parentProfile',
                         select: 'uuid name',
@@ -337,20 +339,20 @@ exports.updatePattern = async function (req, res) {
                     return comp;
                 }),
             );
-        } else if (pattern[pattern.type]) {
-            await pattern[pattern.type].remove();
-
-            if (req.body[req.body.type]) {
-                const comp = new patternComponentModel({
-                    componentType: req.body[req.body.type].componentType,
-                    component: req.body[req.body.type].component,
-                });
-                await comp.save();
-                req.body[req.body.type] = comp;
+        } else if (req.body[req.body.type]) {
+            if (pattern[pattern.type]) {
+                await pattern[pattern.type].remove();
             }
+
+            const comp = new patternComponentModel({
+                componentType: req.body[req.body.type].componentType,
+                component: req.body[req.body.type].component,
+            });
+            await comp.save();
+            req.body[req.body.type] = comp;
         }
 
-        Object.assign(pattern, req.body, { updatedOn: new Date() });
+        Object.assign(pattern, req.body, { updatedOn: new Date(), updatedBy: req.user });
         await pattern.save();
     } catch (err) {
         console.error(err);
@@ -395,6 +397,7 @@ exports.deletePattern = async function (req, res) {
 
         profileVersion.patterns = [...profileVersion.patterns].filter(t => !t.equals(pattern._id));
         profileVersion.updatedOn = new Date();
+        profileVersion.updatedBy = req.user;
         await profileVersion.save();
     } catch (err) {
         console.error(err);

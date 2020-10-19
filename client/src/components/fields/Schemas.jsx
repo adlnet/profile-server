@@ -30,10 +30,6 @@ export default function Schemas(props) {
 
     function toggleSchemaType(type) {
         props.setFieldValue('schemaType', type);
-        if (type === 'inlineSchema')
-            props.setFieldValue('schemaString', '');
-        else
-            props.setFieldValue('inlineSchema', '');
     }
 
     function updateValue(type, value) {
@@ -62,23 +58,23 @@ export default function Schemas(props) {
                             type="radio"
                             name="schemaType"
                             value="iriString"
-                            onChange={() => toggleSchemaType('inlineSchema')}
-                            checked={props.values.schemaType === 'inlineSchema'}
+                            onChange={() => toggleSchemaType('schemaString')}
+                            checked={props.values.schemaType === 'schemaString'}
 
                         />
                         <label className="usa-radio__label" htmlFor="iriString">
                             <div className="title">IRI</div>
                             <Field
-                                name="inlineSchema"
+                                name="schemaString"
                                 type="text"
-                                id="inlineSchema"
+                                id="schemaString"
                                 className={
-                                    `description ${props.values.schemaType === "inlineSchema" && !props.isPublished ? "usa-input" : "usa-input disabled"} 
-                                    ${(props.touched.inlineSchema && props.errors.inlineSchema && props.values.schemaType === 'inlineSchema') ?
+                                    `description ${props.values.schemaType === "schemaString" && !props.isPublished ? "usa-input" : "usa-input disabled"} 
+                                    ${(props.touched.schemaString && props.errors.schemaString && props.values.schemaType === 'schemaString') ?
                                         "usa-input--error" : ""}`
                                 }
-                                value={props.values.inlineSchema}
-                                onChange={(e) => updateValue('inlineSchema', e.target.value)}
+                                value={props.values.schemaString}
+                                onChange={(e) => updateValue('schemaString', e.target.value)}
                             />
                         </label>
                     </div>
@@ -89,21 +85,21 @@ export default function Schemas(props) {
                             type="radio"
                             name="schemaType"
                             value="string"
-                            onChange={() => toggleSchemaType('schemaString')}
-                            checked={props.values.schemaType === 'schemaString'}
+                            onChange={() => toggleSchemaType('inlineSchema')}
+                            checked={props.values.schemaType === 'inlineSchema'}
                         />
                         <label className="usa-radio__label" htmlFor="string">
                             <label className="title">String</label>
                             <Field
-                                name="schemaString"
+                                name="inlineSchema"
                                 component="textarea"
-                                id="schemaString"
+                                id="inlineSchema"
                                 className={
-                                    `description ${props.values.schemaType === "schemaString" && !props.isPublished ? "usa-textarea" : "usa-textarea disabled"} 
-                                    ${(props.touched.schemaString && props.errors.schemaString && props.values.schemaType === 'schemaString') ?
+                                    `description ${props.values.schemaType === "inlineSchema" && !props.isPublished ? "usa-textarea" : "usa-textarea disabled"} 
+                                    ${(props.touched.inlineSchema && props.errors.inlineSchema && props.values.schemaType === 'inlineSchema') ?
                                         "usa-input--error" : ""}`}
-                                value={props.values.schemaString}
-                                onChange={(e) => updateValue('schemaString', e.target.value)}
+                                value={props.values.inlineSchema}
+                                onChange={(e) => updateValue('inlineSchema', e.target.value)}
                             />
                         </label>
                     </div>

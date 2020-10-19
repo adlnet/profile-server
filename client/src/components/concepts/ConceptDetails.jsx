@@ -24,15 +24,21 @@ import EditConcept from './EditConcept';
 import { useState } from 'react';
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 import { reloadCurrentProfile } from '../../actions/profiles';
+import Breadcrumb from '../controls/breadcrumbs';
+import DeprecatedAlert from '../controls/deprecatedAlert';
+import { DEPRECATED } from '../../actions/successAlert';
 
 
 export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs }) {
-
     const { url, path } = useRouteMatch();
+    const params = useParams();
     const dispatch = useDispatch();
     const history = useHistory();
+    const [isEditing, setIsEditing] = useState(false);
     const { organizationId, profileId, versionId, conceptId } = useParams();
     const [showModal, setShowModal] = useState(false);
+
+    const isPublicView = !params.organizationId;
 
     const { selectedOrganizationId, selectedProfileId,
         selectedProfileVersionId } = useSelector((state) => state.application);
@@ -45,20 +51,24 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
 
     const concept = useSelector((state) => state.application.selectedConcept);
 
-    function handleEditConcept(editedConcept) {
-        dispatch(editConcept(Object.assign({}, concept, editedConcept)));
+    async function handleEditConcept(editedConcept, actualAction) {
+        await dispatch(editConcept(Object.assign({}, concept, editedConcept), actualAction));
         history.push(url);
+    }
+
+    function onDeprecate(reasonInfo) {
+        handleEditConcept({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED);
     }
 
     if (!concept) return '';
 
     const renderBreadcrumbs = () => {
         if (breadcrumbs) {
-            return breadcrumbs.map((b, i) => (
-                <span key={i}><Link to={b.to}><span className="details-label">{b.crumb}</span></Link> <i className="fa fa-angle-right"></i> </span>
-            ))
+            return <Breadcrumb breadcrumbs={breadcrumbs} />
         }
-        return <><Link to={`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`}><span className="details-label">concepts</span></Link> <i className="fa fa-angle-right"></i></>;
+
+        const conceptsBreadcrumbURL = isPublicView ? `/profile/${selectedProfileId}/concepts` : `/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`;
+        return <Breadcrumb breadcrumbs={[{ to: conceptsBreadcrumbURL, crumb: 'concepts' }]} />;
     }
 
 
@@ -77,7 +87,7 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
     }
 
     const belongsToAnotherProfile = !(selectedProfileVersion.concepts && selectedProfileVersion.concepts.includes(concept._id));
-    const isEditable = isMember && isCurrentVersion;
+    const isEditable = isMember && isCurrentVersion && !concept.isDeprecated;
     const isPublished = concept.parentProfile.state !== 'draft';
 
     return (<>
@@ -89,9 +99,9 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
             </div>
             <div className="grid-col display-flex flex-column flex-align-end">
                 {
-                    !belongsToAnotherProfile && isEditable &&
+                    !belongsToAnotherProfile && isEditable && !isEditing &&
                     <Link
-                        to={`${url}/edit/${concept.conceptType}`}
+                        to={`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts/${concept.uuid}/edit/${concept.conceptType}`}
                         className="usa-button padding-x-105 margin-top-2 margin-right-0 "
                     >
                         <span className="fa fa-pencil fa-lg margin-right-1"></span>
@@ -109,6 +119,8 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
                             onCreate={handleEditConcept}
                             onCancel={() => history.push(url)}
                             isPublished={isPublished}
+                            setIsEditing={setIsEditing}
+                            onDeprecate={onDeprecate}
                         />
                     </Lock>
                     : <Redirect to={url} />
@@ -116,60 +128,16 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
             </Route>
 
             <Route exact path={path}>
-                <>
-                    {
-                        belongsToAnotherProfile &&
-                        <div className="usa-alert usa-alert--info usa-alert--slim margin-top-2" >
-                            <div className="usa-alert__body">
-                                <p className="usa-alert__text">
-                                    <span style={{ fontWeight: "bold" }}>Linked Concept.</span> This concept is defined by another profile, {concept.parentProfile.name}. {!breadcrumbs && <button style={{ fontWeight: "bold" }} onClick={() => setShowModal(true)} className="usa-button usa-button--unstyled">Remove Link</button>}
-                                </p>
-                            </div>
-                        </div>
-                    }
-                    <div className="grid-row margin-top-2">
-                        <div className="desktop:grid-col-8">
-                            <Detail title="iri" subtitle="The IRI used to identify this in an xAPI statement.">
-                                {concept.iri}
-                            </Detail>
-                            <Detail title="concept type">
-                                {concept.conceptType}
-                            </Detail>
-                            <Detail title="concept name" subtitle="English (en)">
-                                {concept.name}
-                            </Detail>
-                            <Detail title="description" subtitle="English (en)">
-                                {concept.description}
-                            </Detail>
-                            <Detail title="translations">
-                                <Translations translations={concept.translations} linkable={true} />
-                            </Detail>
-                            <ConceptTypeDetailExtension
-                                concept={concept}
-                                translationLinks={true}
-                                similarTermsLinks={true}
-                                recommendedTermsLinks={true}
-                            />
-                        </div>
-                        <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
-
-                            <div className="details-metadata-box margin-top-2 width-full">
-                                <Detail title="updated">
-                                    {(concept.updatedOn) ? (new Date(concept.updatedOn)).toLocaleDateString() : "Unknown"}
-                                </Detail>
-                                <Detail title="profile">
-                                    {belongsToAnotherProfile ?
-                                        <Link to={`/profile/${concept.parentProfile.uuid}`}>{concept.parentProfile.name}</Link>
-                                        : concept.parentProfile.name
-                                    }
-                                </Detail>
-                                <Detail title="author">
-                                    <Link to={`/organization/${concept.parentProfile.organization.uuid}`}>{concept.parentProfile.organization.name}</Link>
-                                </Detail>
-                            </div>
-                        </div>
-                    </div>
-                </>
+                <ConceptDetailHome
+                    belongsToAnotherProfile={belongsToAnotherProfile}
+                    concept={concept}
+                    setIsEditing={setIsEditing}
+                    breadcrumbs={breadcrumbs}
+                    setShowModal={setShowModal}
+                    isPublished={isPublished}
+                    isEditable={isEditable}
+                    isEditing={isEditing}
+                />
             </Route>
         </Switch>
 
@@ -194,4 +162,77 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
             </div>
         </ModalBoxWithoutClose>
     </>);
+}
+
+function ConceptDetailHome({ belongsToAnotherProfile, concept, setIsEditing, breadcrumbs, setShowModal, isPublished, isEditing, isEditable }) {
+    setIsEditing(false);
+    return (
+        <>
+            {
+                belongsToAnotherProfile &&
+                <div className="usa-alert usa-alert--info usa-alert--slim margin-top-2" >
+                    <div className="usa-alert__body">
+                        <p className="usa-alert__text">
+                            <span style={{ fontWeight: "bold" }}>Linked Concept.</span> This concept is defined by another profile, {concept.parentProfile.name}. {!breadcrumbs && <button style={{ fontWeight: "bold" }} onClick={() => setShowModal(true)} className="usa-button usa-button--unstyled">Remove Link</button>}
+                        </p>
+                    </div>
+                </div>
+            }
+            {
+                concept.isDeprecated && <DeprecatedAlert component={concept} />
+            }
+            {
+                isPublished && !belongsToAnotherProfile && isEditable &&
+                <div className="usa-alert usa-alert--info usa-alert--slim margin-top-2" >
+                    <div className="usa-alert__body">
+                        <p className="usa-alert__text">
+                            Editing is limited. This concept has already been published in the profile and may be in use.
+                        </p>
+                    </div>
+                </div>
+            }
+            <div className="grid-row margin-top-2">
+                <div className="desktop:grid-col-8">
+                    <Detail title="iri" subtitle="The IRI used to identify this in an xAPI statement.">
+                        {concept.iri}
+                    </Detail>
+                    <Detail title="concept type">
+                        {concept.conceptType}
+                    </Detail>
+                    <Detail title="concept name" subtitle="English (en)">
+                        {concept.name}
+                    </Detail>
+                    <Detail title="description" subtitle="English (en)">
+                        {concept.description}
+                    </Detail>
+                    <Detail title="translations">
+                        <Translations translations={concept.translations} linkable={true} />
+                    </Detail>
+                    <ConceptTypeDetailExtension
+                        concept={concept}
+                        translationLinks={true}
+                        similarTermsLinks={true}
+                        recommendedTermsLinks={true}
+                    />
+                </div>
+                <div className="desktop:grid-col-4 display-flex flex-column flex-align-end">
+
+                    <div className="details-metadata-box margin-top-2 width-full">
+                        <Detail title="updated">
+                            {(concept.updatedOn) ? (new Date(concept.updatedOn)).toLocaleDateString() : "Unknown"}
+                        </Detail>
+                        <Detail title="profile">
+                            {belongsToAnotherProfile ?
+                                <Link to={`/profile/${concept.parentProfile.uuid}`}>{concept.parentProfile.name}</Link>
+                                : concept.parentProfile.name
+                            }
+                        </Detail>
+                        <Detail title="author">
+                            <Link to={`/organization/${concept.parentProfile.organization.uuid}`}>{concept.parentProfile.organization.name}</Link>
+                        </Detail>
+                    </div>
+                </div>
+            </div>
+        </>
+    );
 }

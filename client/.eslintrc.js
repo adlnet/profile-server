@@ -3,7 +3,8 @@ module.exports = {
         "plugin:react/recommended"],
     env: {
         node: true,
-        es6: true
+        es6: true,
+        "jest/globals": true
     },
     plugins: ['notice'],
     "parser": "babel-eslint",

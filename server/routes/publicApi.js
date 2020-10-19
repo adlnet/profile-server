@@ -87,16 +87,13 @@ router.put(
 );
 
 // published profiles
-// foo.com/profile/abc123
-// foo.com/profile/1232343
-// bob.com/profiles/n/profile/abc123/v/2  version
-// statements.context.contextActivity.grouping[{id: foo.com/profile/12321312}]
+// recordAPIRead is done in controller for this and get by iri
 router.get('/profile/:profile',
     apiKeyController.middleware.validateApiKey('profile'),
     profileController.middleware.populateProfile,
     profileController.exportProfile);
 
-// published profiles
+// published profiles, also handles get profile by iri
 router.get('/profile', profileController.getPublishedProfiles);
 
 // delete draft profile (only draft)

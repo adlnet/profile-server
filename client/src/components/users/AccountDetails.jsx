@@ -24,6 +24,8 @@ import * as user_actions from "../../actions/user";
 import { getOrganizations, removeMember, revokeMemberRequest } from "../../actions/organizations";
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 import api from "../../api"
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+
 export default function AccountDetails(props) {
     let dispatch = useDispatch();
     let userData = useSelector((store) => store.userData)
@@ -62,8 +64,12 @@ export default function AccountDetails(props) {
     }
 
     async function saveAccountEdits(newAccountDetails) {
-        dispatch(user_actions.checkStatus())
-        setIsEditing(false)
+        let res = await api.postJSON("/app/user/update", newAccountDetails);
+        if (res.success) {
+            dispatch(user_actions.checkStatus());
+            setIsEditing(false);
+        }
+        return res;
     }
 
     return (<>
@@ -79,7 +85,7 @@ export default function AccountDetails(props) {
             <div className="grid-row margin-top-6">
                 <h1>My Working Groups</h1>
             </div>
-            <MyWorkingGroupsTable orgs={myOrgs} orgReqs={myOrgRequests} user={userData.user} setShowDialog={setShowDialog} setOrgToLeave={setOrgToLeave}></MyWorkingGroupsTable>
+            <MyWorkingGroupsTable MyWorkingGroupsTable orgs={myOrgs} orgReqs={myOrgRequests} user={userData.user} setShowDialog={setShowDialog} setOrgToLeave={setOrgToLeave}></MyWorkingGroupsTable>
             <div className="grid-row">
                 <button className="usa-button" onClick={join}><i className="fa fa-users margin-right-05"></i>Join Working Group</button>
             </div>
@@ -111,7 +117,7 @@ export default function AccountDetails(props) {
     </>);
 }
 
-function MyWorkingGroupsTable({ orgs, orgReqs, user, setShowDialog, setOrgToLeave }) {
+export function MyWorkingGroupsTable({ orgs, adminView, orgReqs, user, setShowDialog, setOrgToLeave }) {
     return <div className="grid-row">
         <table className="usa-table usa-table--borderless margin-top-0" width="100%">
             <thead>
@@ -123,20 +129,23 @@ function MyWorkingGroupsTable({ orgs, orgReqs, user, setShowDialog, setOrgToLeav
             </thead>
             <tbody style={{ lineHeight: 3 }}>
                 {!((orgs && orgs.length > 0) || (orgReqs && orgReqs.length > 0)) &&
-                    <tr key={1}><td className="font-sans-xs" colSpan="6">You are not a member of any working groups.</td></tr>
+                    <tr key={1}><td className="font-sans-xs" colSpan="6">
+                        {!adminView && "You are not a member of any working groups."}
+                        {adminView && "User is not a member of any working groups."}
+                    </td></tr>
                 }
                 {(orgReqs && orgReqs.length > 0)
-                    && orgReqs.map((org) => <WorkingGroupRow org={org} user={user} key={org.id} pending={true} setShowDialog={setShowDialog} setOrgToLeave={setOrgToLeave} />)
+                    && orgReqs.map((org) => <WorkingGroupRow adminView={adminView} org={org} user={user} key={org.id} pending={true} setShowDialog={setShowDialog} setOrgToLeave={setOrgToLeave} />)
                 }
                 {(orgs && orgs.length > 0)
-                    && orgs.map((org) => <WorkingGroupRow org={org} user={user} key={org.id} setShowDialog={setShowDialog} setOrgToLeave={setOrgToLeave} />)
+                    && orgs.map((org) => <WorkingGroupRow adminView={adminView} org={org} user={user} key={org.id} setShowDialog={setShowDialog} setOrgToLeave={setOrgToLeave} />)
                 }
             </tbody>
         </table>
     </div>
 }
 
-function WorkingGroupRow({ org, user, pending, setShowDialog, setOrgToLeave }) {
+export function WorkingGroupRow({ org, user, adminView, pending, setShowDialog, setOrgToLeave }) {
     let member = org.members.find(mem => mem.user.uuid === user.uuid);
     return (
         <tr >
@@ -151,7 +160,7 @@ function WorkingGroupRow({ org, user, pending, setShowDialog, setOrgToLeave }) {
                     : <span style={{ textTransform: "capitalize" }}>{member && member.level}</span>}
             </td>
             {
-                member && member.level === 'owner' ?
+                adminView ?
                     <td></td>
                     :
                     pending ?
@@ -163,14 +172,20 @@ function WorkingGroupRow({ org, user, pending, setShowDialog, setOrgToLeave }) {
                             <button className="usa-button usa-button--unstyled" onClick={() => { setShowDialog(true); setOrgToLeave(org) }}>Leave Working Group</button>
                         </td>
             }
+
         </tr>
     )
 }
 
-function MyAccountDetails({ user, isAdmin, editAction }) {
+export function MyAccountDetails({ user, isAdmin, editAction, adminView }) {
     return (<>
         <div className="grid-row margin-top-4">
-            <h1>My Account</h1>
+            {!adminView && <h1>My Account</h1>}
+
+
+        </div>
+        <div className="grid-row ">
+            {adminView && <h3>Account Information</h3>}
         </div>
         <div className="grid-row">
             <div className="grid-col-4">
@@ -205,16 +220,18 @@ function MyAccountDetails({ user, isAdmin, editAction }) {
     </>)
 }
 
-function MyAccountForm({ user, isAdmin, saveAction, cancelAction }) {
+export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAction, adminView }) {
     const [showPassword, setShowPassword] = useState();
     const [setPassword, setSetPassword] = useState();
     const [error, setError] = useState();
+    const [showModal, setShowModal] = useState(false);
     function cancel() {
+        setShowModal(false);
         setShowPassword(false);
         setSetPassword(false);
         cancelAction();
     }
-    return (
+    return (<>
         <Formik
             initialValues={{
                 firstname: user.firstname,
@@ -223,7 +240,8 @@ function MyAccountForm({ user, isAdmin, saveAction, cancelAction }) {
                 newEmail: '',
                 type: user.type,
                 password: '',
-                password2: ''
+                password2: '',
+                admin: user.type === "admin"
             }}
             validationSchema={Yup.object({
                 email: Yup.string().email(),
@@ -236,10 +254,17 @@ function MyAccountForm({ user, isAdmin, saveAction, cancelAction }) {
                     .oneOf([Yup.ref('password'), null], "Passwords don't match")
 
             })}
+            validateOnMount={true}
             onSubmit={async (values) => {
 
+                if (values.admin) {
+                    values.type = "admin";
+                    delete values.admin;
+                } else {
+                    values.type = "user";
+                }
+                let res = await saveAction(values);
 
-                let res = await api.postJSON("/app/user/update", values);
                 if (res.success) {
                     saveAction(values);
                 } else {
@@ -253,7 +278,10 @@ function MyAccountForm({ user, isAdmin, saveAction, cancelAction }) {
                 <div className="display-flex flex-column flex-align-center margin-top-5">
                     <Form className="usa-form padding-x-4 padding-top-3 padding-bottom-4 border border-base-light" style={{ width: "100%", maxWidth: "100%" }}>
                         <div className="grid-row ">
-                            <h3 className="margin-y-05">Edit Your Account Information</h3>
+                            <h3 className="margin-y-05">
+                                {!adminView && "Edit Your Account Information"}
+                                {adminView && "Edit Account Information"}
+                            </h3>
                         </div>
                         <fieldset className="usa-fieldset">
                             <div className="display-flex ">
@@ -296,11 +324,21 @@ function MyAccountForm({ user, isAdmin, saveAction, cancelAction }) {
                                     </div> : null}
                                 </div>
                             </div>
+                            {adminView && <div className="display-flex ">
+                                <div className="grid-col padding-right-2">
+
+                                    <div className="usa-checkbox">
+                                        <Field className="usa-checkbox__input" id="isAdmin" type="checkbox" name="admin" disabled={user.uuid === currentUser.uuid}></Field>
+                                        <label className="usa-checkbox__label" htmlFor="isAdmin">Has admin permissions for the server</label>
+                                    </div>
+
+                                </div>
+                            </div>}
 
                         </fieldset>
                         <div className="grid-row">
-                            <button className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>Save Changes</button>
-                            <button className="usa-button usa-button--unstyled" onClick={cancel} type="reset"><b>Cancel</b></button>
+                            <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>Save Changes</ValidationControlledSubmitButton>
+                            <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(true)} type="reset"><b>Cancel</b></button>
                         </div>
                         {error && <div className="grid-row">
                             <span className="usa-error-message" id="input-error-message" role="alert">{error}</span>
@@ -310,5 +348,25 @@ function MyAccountForm({ user, isAdmin, saveAction, cancelAction }) {
             )}
 
         </Formik>
-    )
+        <ModalBoxWithoutClose show={showModal}>
+            <div className="grid-row">
+                <div className="grid-col">
+                    <h3>Discard Changes</h3>
+                </div>
+            </div>
+            <div className="grid-row">
+                <div className="grid-col">
+                    <span>Are you sure you want to discard the changes you have made?</span>
+                </div>
+            </div>
+            <div className="grid-row">
+                <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                    <button className="usa-button submit-button" style={{ margin: "1.5em 0em" }} onClick={cancel}>Discard changes</button>
+                </div>
+                <div className="grid-col" style={{ maxWidth: "fit-content" }}>
+                    <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} style={{ margin: "2.3em 1.5em" }}><b>Continue editing</b></button>
+                </div>
+            </div>
+        </ModalBoxWithoutClose>
+    </>)
 }

@@ -16,7 +16,6 @@
 
 import React, { useState } from 'react';
 import { Formik, Field } from 'formik';
-import * as Yup from 'yup';
 
 import ModalBox from '../controls/modalBox';
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
@@ -24,9 +23,12 @@ import ErrorValidation from '../controls/errorValidation';
 import { Autocomplete, TextField } from '@cmsgov/design-system';
 
 import languages from './data/languages.json';
+import CancelButton from '../controls/cancelButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import { Detail } from '../DetailComponents';
 
 /**
- * 
+ * Scope note widget, like found in Rule form.
  * @param {*} readOnly true sent from views that don't want any edit buttons
  * @param {*} isEditable is it the currentversion and is the user is a member of this profile
  * @param {*} isPublished is this template's parent profile already published - if so you can only change scope notes
@@ -104,7 +106,7 @@ export default function ScopeNote(props) {
     return (<>
         <div className="grid-row">
             <p>
-                <label className="text-bold" htmlFor="scopeNotes">Scope Notes</label><br />
+                <label className="text-bold " htmlFor="scopeNotes">Scope Notes</label><br />
                 <span className="text-base font-body-2xs">
                     A Language Map describing usage details for the parts of Statements addressed by this rule.
                 </span>
@@ -147,7 +149,7 @@ export default function ScopeNote(props) {
         </div>
         { translations.length === 0 && props.readOnly &&
             <div className="grid-row">
-                <span className="text-base font-body-xs text-italic">(none)</span>
+                <span>None provided.</span>
             </div>
         }
         {
@@ -159,11 +161,12 @@ export default function ScopeNote(props) {
             <RemoveScopeNoteConfirmation selectedLang={removing} onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
         </ModalBoxWithoutClose>
 
-        <ModalBox show={showModal} onClose={() => setShowModal(false)}>
+        <ModalBox show={showModal} onClose={() => setShowModal(false)} isForm={true}>
             <ScopeNoteForm
                 onSubmit={(values) => onFormSubmit(values)}
                 onCancel={onCancel}
                 initialValue={editing ? editing.translation : null}
+                existingTranslations={translations}
             />
         </ModalBox>
 
@@ -176,14 +179,25 @@ export default function ScopeNote(props) {
 }
 
 function ViewScopeNote({ note }) {
-    return (<div className="margin-top-4 margin-x-4" style={{ width: "600px", minHeight: "400px" }}>
-        <div className="grid-row"><div className="grid-col-12"><h2>{note.languageName ? `${note.languageName} (${note.language})` : note.language}</h2></div></div>
-        <div className="grid-row"><div className="grid-col-12">{note.scopeNote}</div></div>
-    </div>)
+    return (
+        <div className="margin-top-4 margin-x-4" style={{ width: "600px", minHeight: "400px" }}>
+            <h2>Scope Note</h2>
+            <Detail title='language'>
+                {note.languageName ? `${note.languageName} (${note.language})` : note.language}
+            </Detail>
+            <Detail title={`scope note`}>
+                {note.scopeNote}
+            </Detail>
+        </div>)
 }
 
 function ScopeNoteForm(props) {
-    const [langs, setLangs] = useState(languages);
+    // get the list of languages that haven't already been selected
+    const [availableLanguages, updateAvailableLanguages] = useState(languages.filter(l => !props.existingTranslations.find(et => et.language === l.id)))
+    // set up state to keep the list of dropdown options
+    const [langs, setLangs] = useState(availableLanguages);
+    // maintain out of formik the actual field values for language
+    const [languageFieldValue, setLanguageFieldValue] = useState(props.initialValue ? { id: props.initialValue.language, name: props.initialValue.languageName } : { id: '', name: '' });
 
     return (
         <Formik
@@ -192,58 +206,74 @@ function ScopeNoteForm(props) {
                 language: '',
                 languageName: ''
             }}
-            validationSchema={Yup.object({
-                language: Yup.string()
-                    .required('Required'),
-                languageName: Yup.string(),
-                scopeNote: Yup.string()
-                    .required('Required')
-            })}
+            validate={(values) => {
+                let errors = {};
+                if (!(languageFieldValue && languageFieldValue.id)) errors.language = 'Required'
+                if (!(values && values.scopeNote)) errors.scopeNote = 'Required'
+                return errors;
+            }}
             onSubmit={(values) => {
-                const lang = languages.find(lang => lang.language === values.language);
+                const lang = languages.find(lang => lang.language === languageFieldValue.id);
                 if (lang)
                     values.languageName = lang.languageName;
                 props.onSubmit(values)
             }}
         >
-            {({ values, handleSubmit, setFieldValue }) => (
+            {(formikProps) => (
                 <div className="usa-form translation-form">
-                    <h2 style={{ margin: '0' }}>Add Scope Note</h2>
+                    <h2 style={{ margin: '0 0 1em 0' }}>Add Scope Note</h2>
                     <div className="grid-row">
                         <div className="grid-col-6" >
-                            <ErrorValidation name="language" type="input">
+                            <div className={''} style={{ marginTop: '0' }}>
+
                                 <Autocomplete
                                     items={langs}
                                     loadingMessage="Loading"
                                     noResultsMessage="No results found"
-                                    initialSelectedItem={values.language ? { id: values.language, name: values.languageName } : null}
+                                    initialSelectedItem={formikProps.values.language ? { id: formikProps.values.language, name: formikProps.values.languageName } : null}
                                     clearSearchButton={false}
-                                    onChange={(selectedItem) => {
-                                        setFieldValue('language', selectedItem.id);
-                                        setFieldValue('languageName', selectedItem.name);
+                                    onChange={async (selectedItem) => {
+                                        await setLanguageFieldValue(selectedItem)
+                                        formikProps.setFieldValue('language', selectedItem.id);
+                                        formikProps.setFieldValue('languageName', selectedItem.name);
+                                        formikProps.setFieldTouched('language', true, true);
+                                        formikProps.handleBlur('language')
                                     }}
-                                    onInputValueChange={(val) => setLangs(languages.filter(lang => lang.id.startsWith(val) || lang.name.startsWith(val)))}
+                                    onInputValueChange={(val) => {
+                                        formikProps.setFieldTouched('language', true, true);
+                                        setLangs(availableLanguages.filter(lang => lang.id.toLocaleLowerCase().startsWith(val.trim().toLowerCase()) || lang.name.match(new RegExp(`.*${val.trim()}.*`, 'i'))))
+                                    }}
                                 >
                                     <TextField
-                                        label={<label className="usa-label" htmlFor="language"><span className="text-secondary">*</span>Language</label>}
+                                        className={`${formikProps.errors.language ? "usa-form-group--error" : ""}`}
+                                        fieldClassName={`${formikProps.errors.language ? "usa-input--error" : ""}`}
+                                        labelClassName={`details-label margin-top-0`}
+                                        label={<>
+                                            <span className="text-secondary">*</span>
+                                                    Language
+                                                    {
+                                                formikProps.errors.language && (<>
+                                                    <br /><span className="usa-error-message padding-right-1" id="input-error-message" role="alert">{formikProps.errors.language}</span>
+                                                </>)
+                                            }
+                                        </>}
                                         name="language"
-                                        style={{ border: "1px solid #000000", borderRadius: "0" }}
+                                        style={{ border: "1px solid #000000", borderRadius: "0", fontFamily: "Source Sans Pro Web,Helvetica Neue,Helvetica,Roboto,Arial,sans-serif, FontAwesome" }}
+                                        placeholder="&#xf002; Search languages"
                                     />
                                 </Autocomplete>
-                            </ErrorValidation>
+                            </div>
                         </div>
                     </div>
 
-                    <ErrorValidation name="scopeNote" type="input">
-                        <label className="usa-label" htmlFor="scopeNote"><span className="text-secondary">*</span>Scope notes</label>
+                    <ErrorValidation name="scopeNote" type="input" style={{ marginTop: "1em", marginBottom: "1em" }}>
+                        <label className="details-label" htmlFor="scopeNote"><span className="text-secondary">*</span>Scope notes</label>
                         <Field name="scopeNote" component="textarea" rows="3" className="usa-textarea" id="scopeNote" aria-required="true" >
                         </Field>
                     </ErrorValidation>
 
-                    <button className="usa-button submit-button" type="button" onClick={handleSubmit}>Save Scope Note</button>
-                    <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}>
-                        <span className="text-bold">Cancel</span>
-                    </button>
+                    <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>Save Scope Note</ValidationControlledSubmitButton>
+                    <CancelButton className="usa-button usa-button--unstyled" type="button" cancelAction={props.onCancel} />
                 </div>)
             }
         </Formik>

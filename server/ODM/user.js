@@ -91,6 +91,7 @@ userSchema.methods.checkResetKey = function (plaintext, keyFromSession) {
 
 userSchema.methods.forgotPassword = function (plaintext) {
     this.passwordResetKey = crypto.randomBytes(16).toString('hex');
+    console.log(this.passwordResetKey);
     return this.save();
 };
 

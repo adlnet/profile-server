@@ -82,7 +82,7 @@ searchRouter.get('/:type', async (req, res, next) => {
     if (query.$or.length === 0) { delete query.$or; }
     console.log(query);
     const total = await model.find(query).count();
-    const results = await model.find(query).skip(parseInt(req.query.page)).limit(10)
+    const results = await model.find(query).skip(parseInt(req.query.page * 10)).limit(10)
         .populate('parentProfile organization')
         .populate('parentProfile.organization')
         .lean()
@@ -92,6 +92,37 @@ searchRouter.get('/:type', async (req, res, next) => {
         const o = await (require('../ODM/models').organization).findOne({ _id: i.parentProfile.organization.toString() }).lean();
         i.parentProfile.organization = o;
     }));
+
+    if (req.params.type === 'profiles') {
+        const mongoose = require('mongoose');
+        for (const result of results) {
+            result.similarProfiles = [];
+            const profiles = await models.profiles.find({
+                parentProfile: { $exists: true, $ne: result.parentProfile._id },
+                $or: [
+                    {
+                        $or: [
+                            { concepts: { $in: result.concepts.map(v => mongoose.Types.ObjectId(v)) } },
+                            { concepts: { $in: result.externalConcepts.map(v => mongoose.Types.ObjectId(v)) } }],
+                    },
+                    {
+                        $or: [
+                            { externalConcepts: { $in: result.concepts.map(v => mongoose.Types.ObjectId(v)) } },
+                            { externalConcepts: { $in: result.externalConcepts.map(v => mongoose.Types.ObjectId(v)) } }],
+                    },
+                    { patterns: { $in: result.patterns.map(v => mongoose.Types.ObjectId(v)) } },
+                    { templates: { $in: result.templates.map(v => mongoose.Types.ObjectId(v)) } },
+                ],
+            }, 'parentProfile').populate({ path: 'parentProfile', match: { currentPublishedVersion: { $exists: true } }, select: 'currentPublishedVersion', populate: 'currentPublishedVersion' }).lean()
+                .exec();
+
+            const nextStep = (profiles.filter(v => v.parentProfile && v.parentProfile.currentPublishedVersion).map(v => v.parentProfile.currentPublishedVersion));
+            for (const item of nextStep) {
+                if (!result.similarProfiles.find(v => v.uuid === item.uuid)) result.similarProfiles.push(item);
+            }
+        }
+    }
+
     res.send({
         success: true,
         results: results,

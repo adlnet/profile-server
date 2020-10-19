@@ -15,15 +15,17 @@
 **************************************************************** */
 import React from 'react';
 import { useState } from 'react';
-import { useRouteMatch, Link } from 'react-router-dom'
+import { useRouteMatch, Link, useHistory } from 'react-router-dom'
+import CancelButton from '../controls/cancelButton';
 
 export default function PatternTypes() {
     let [type, updateType] = useState("");
     const { url } = useRouteMatch();
+    const history = useHistory()
 
     return (
         <>
-            <form className="usa-form">
+            <form className="usa-form" style={{ marginBottom: "1.5em" }}>
                 <span className="text-secondary">*</span>What type of pattern will this be?
             <fieldset className="usa-fieldset">
                     <div className="usa-radio">
@@ -114,6 +116,7 @@ export default function PatternTypes() {
                     </div>
                 </fieldset>
             </form>
-            <Link className="usa-button" to={`${url}/${type}`}>Continue</Link>  <button className="usa-button usa-button--unstyled" type="reset">Cancel</button>
+            <Link className="usa-button padding-x-3 margin-right-4" to={`${url}/${type}`}>Continue</Link>
+            <CancelButton className="usa-button usa-button--unstyled" type="reset" cancelAction={() => history.push(url.replace("/create", ""))} />
         </>);
 }

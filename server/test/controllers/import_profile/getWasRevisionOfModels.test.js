@@ -197,7 +197,7 @@ describe('getWasRevisionOfModels', () => {
 
                     afterEach(async () => {
                         await existingProfileVersion.remove();
-                        if (wasRevisionOFModels) await Promise.all(wasRevisionOFModels.map(async w => { w.remove(); }));
+                        if (wasRevisionOFModels) await Promise.all(wasRevisionOFModels.map(async w => { await w.remove(); }));
                     });
 
                     test('it should return an array with the profile version.', () => {

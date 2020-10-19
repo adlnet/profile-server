@@ -31,145 +31,146 @@ var objectPath = require("object-path");
 
 
 
-function getCols( genSortHeader)
-{
+function getCols(genSortHeader) {
 
 
-const cols = [
-    {
-        Header: genSortHeader("Profiles","name"),
-        id: 'name',
-        accessor: i => i,
-        Cell: function NameLink(
-            data
-        ) {
-            let value = data.cell.value
-            return (
-                <Link
-                    to={`/profile/${value.parentProfile.uuid}`}
-                    className="usa-link button-link"
-                >
-                    <span>{value.name}</span>
-                </Link >
-            )
+    const cols = [
+        {
+            Header: genSortHeader("Profiles", "name"),
+            id: 'name',
+            accessor: i => i,
+            Cell: function NameLink(
+                data
+            ) {
+                let value = data.cell.value; 
+                return (
+                    <Link
+                        to={`/profile/${value.parentProfile.uuid}`}
+                        // to={`/organization/${value.organization.uuid}/profile/${value.parentProfile.uuid}/version/${value.uuid}`}
+                        className="usa-link button-link"
+                    >
+                        <span>{value.name}</span>
+                        {value.isVerified && <img className="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />}
+                    </Link >
+                )
+            },
+            style: {
+                width: '30%'
+            }
         },
-        style: {
-            width: '30%'
-        }
-    },
-    {
-        Header: genSortHeader("Working Group","organization.name"),
-        id: 'organization',
-        accessor: i => i,
-        Cell: function NameLink(
-            data
-        ) {
-            let value = data.cell.value
-            return (
-                <Link
-                    to={`organization/${value.organization.uuid}/`}
-                    className="usa-link button-link"
-                >
-                    <span>{value.organization.name}</span>
-                </Link >
-            )
+        {
+            Header: genSortHeader("Working Group", "organization.name"),
+            id: 'organization',
+            accessor: i => i,
+            Cell: function NameLink(
+                data
+            ) {
+                let value = data.cell.value
+                return (
+                    <Link
+                        to={`organization/${value.organization.uuid}`}
+                        className="usa-link button-link"
+                    >
+                        <span>{value.organization.name}</span>
+                    </Link >
+                )
+            },
+            style: {
+                width: '30%'
+            }
         },
-        style: {
-            width: '30%'
-        }
-    },
 
-    {
-        Header: genSortHeader("Updated","updatedOn"),
-        accessor: 'updatedOn',
-        Cell: ({ cell: { value } }) => value ? (new Date(value)).toLocaleDateString() : "Unknown",
-        style: {
-            width: '16%',
-            textAlign: 'center'
+        {
+            Header: genSortHeader("Updated", "updatedOn"),
+            accessor: 'updatedOn',
+            Cell: ({ cell: { value } }) => value ? (new Date(value)).toLocaleDateString() : "Unknown",
+            style: {
+                width: '16%',
+                textAlign: 'center'
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
         },
-        cellStyle: {
-            textAlign: 'center'
-        }
-    },
-    {
-        Header: <div><div>Views</div><div className="headerSub">Last 30 Days</div></div>,
-        Cell: ({cell:{value}}) => <MetricCount url={`/metrics/profile/${value.parentProfile.uuid}/viewTotal`} ></MetricCount>,
-        id:"views",
-        accessor: i => i,
-        style: {
-            width: '12%',
-            textAlign: 'center'
+        {
+            Header: <div><div>Views</div><div className="headerSub">Last 30 Days</div></div>,
+            Cell: ({ cell: { value } }) => <MetricCount url={`/metrics/profile/${value.parentProfile.uuid}/viewTotal`} ></MetricCount>,
+            id: "views",
+            accessor: i => i,
+            style: {
+                width: '12%',
+                textAlign: 'center'
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
         },
-        cellStyle: {
-            textAlign: 'center'
-        }
-    },
-    {
-        Header: <div><div>Exports</div><div className="headerSub">Last 30 Days</div></div>,
-        Cell: ({cell:{value}}) => <MetricCount url={`/metrics/profile/${value.parentProfile.uuid}/exportTotal`} ></MetricCount>,
-        id:"exports",
-        accessor: i => i,
-        style: {
-            width: '12%',
-            textAlign: 'center'
+        {
+            Header: <div><div>Exports</div><div className="headerSub">Last 30 Days</div></div>,
+            Cell: ({ cell: { value } }) => <MetricCount url={`/metrics/profile/${value.parentProfile.uuid}/exportTotal`} ></MetricCount>,
+            id: "exports",
+            accessor: i => i,
+            style: {
+                width: '12%',
+                textAlign: 'center'
+            },
+            cellStyle: {
+                textAlign: 'center'
+            }
         },
-        cellStyle: {
-            textAlign: 'center'
-        }
-    },
-];
-return cols
+    ];
+    return cols
 }
 
 export default function Profiles(props) {
 
     let [profiles, setProfiles] = useState([]);
+    let [verifiedOnly, setVerifedOnly] = useState(false);
     let [sortKey, setSortKey] = useState(null);
     let [sortOrder, setSortOrder] = useState(1);
 
-    function gotData(p)  {
+    function gotData(p) { 
 
-        if(sortKey)
-        {
-             p.sort((i,j) => {
-                if(sortOrder == 1)
-                return objectPath.get(i,sortKey) > objectPath.get(j,sortKey) ? 1 : -1
-                if(sortOrder == -1)
-                return objectPath.get(i,sortKey) < objectPath.get(j,sortKey) ? 1 : -1
+        if (sortKey) {
+            p.sort((i, j) => {
+                if (sortOrder == 1)
+                    return objectPath.get(i, sortKey) > objectPath.get(j, sortKey) ? 1 : -1
+                if (sortOrder == -1)
+                    return objectPath.get(i, sortKey) < objectPath.get(j, sortKey) ? 1 : -1
             })
         }
         setProfiles(p)
-        
+
     }
 
     useEffect(() => {
-        api.getPublishedProfiles().then(gotData)
-    }, [sortKey,sortOrder]);
+        api.getPublishedProfiles({ verifiedOnly }).then(gotData)
+    }, [sortKey, sortOrder, verifiedOnly]);
 
-    function sort(accessor,order)
-    {
-       
+    function showVerified() {
+        setVerifedOnly(!verifiedOnly);
+    }
+    function sort(accessor, order) {
+
         setSortKey(accessor);
         setSortOrder(order);
-       
-     
+
+
     }
-    function genSortHeader(title,accessor)
-    {
-        return function SortHeader()
-        {
-            return <span onClick={()=>{sort(accessor,sortOrder * -1)}}>{title}
-            {
-                sortKey == accessor && sortOrder == 1 && <i className="fa fa-arrow-up"></i> 
-            }
-            {
-                sortKey == accessor && sortOrder == -1 && <i className="fa fa-arrow-down"></i> 
-            }
+    function genSortHeader(title, accessor) {
+        return function SortHeader() {
+            return <span onClick={() => { sort(accessor, sortOrder * -1) }}>{title}
+                {
+                    sortKey == accessor && sortOrder == 1 && <i className="fa fa-arrow-up"></i>
+                }
+                {
+                    sortKey == accessor && sortOrder == -1 && <i className="fa fa-arrow-down"></i>
+                }
             </span>
         }
     }
 
-    let columns = React.useMemo(() => getCols(genSortHeader), [sortOrder,sortKey]);
+    let columns = React.useMemo(() => getCols(genSortHeader), [sortOrder, sortKey]);
 
 
 
@@ -177,7 +178,7 @@ export default function Profiles(props) {
 
     return (<>
         <main id="main-content" >
-            <div className="grid-container ">
+            <div className="grid-container margin-top-4">
 
 
                 <div className="grid-row display-flex flex-row flex-align-end">
@@ -218,7 +219,7 @@ export default function Profiles(props) {
 
                         <div className="usa-checkbox">
                             <input className="usa-checkbox__input" id="washington" type="checkbox" name="historical-figures-1" value="washington"></input>
-                            <label className="usa-checkbox__label" htmlFor="washington">Show Verified Only</label>
+                            <label className="usa-checkbox__label" onClick={(e) => showVerified()} htmlFor="washington">Show Verified Only</label>
                         </div>
 
                     </div>
@@ -228,7 +229,7 @@ export default function Profiles(props) {
                     <PagingTable
                         columns={columns}
                         data={profiles}
-                        emptyMessage="There are published profiles"
+                        emptyMessage="There are no published profiles"
                         showPageHeader={false}
                         clearSearch={() => { }}
                     />

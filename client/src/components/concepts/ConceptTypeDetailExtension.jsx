@@ -26,9 +26,6 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
         case 'Activity':
             detailExtention = (
                 <>
-                    <Detail title="more information">
-                        <a href={concept.moreInformation}>{concept.moreInformation}</a>
-                    </Detail>
                     <Detail title="activity type">
                         {concept && concept.activityType || "None provided"}
                     </Detail>
@@ -60,14 +57,14 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
                     </Detail>
                     {
                         (concept && concept.inlineSchema) &&
-                        <Detail title="schema iri">
+                        <Detail title="schema">
                             {concept && concept.inlineSchema || "None provided"}
                         </Detail>
                     }
                     {
                         (concept && concept.schemaString) &&
-                        <Detail title="schema">
-                            <pre className="margin-0" style={{ font: 'inherit' }}>{concept && concept.schemaString}</pre>
+                        <Detail title="schema iri">
+                            <pre className="margin-0" style={{ font: 'inherit' }}>{concept && concept.schemaString || "None provided"}</pre>
                         </Detail>
                     }
                 </>
@@ -90,14 +87,14 @@ export default function ConceptTypeDetailExtention({ concept, similarTermsLinks,
                     </Detail>
                     {
                         (concept && concept.inlineSchema) &&
-                        <Detail title="schema iri">
-                            {concept && concept.inlineSchema}
+                        <Detail title="schema">
+                            {concept && concept.inlineSchema || "None provided"}
                         </Detail>
                     }
                     {
                         (concept && concept.schemaString) &&
-                        <Detail title="schema">
-                            <pre className="margin-0" style={{ font: 'inherit' }}>{concept && concept.schemaString}</pre>
+                        <Detail title="schema iri">
+                            <pre className="margin-0" style={{ font: 'inherit' }}>{concept && concept.schemaString || "None provided"}</pre>
                         </Detail>
                     }
                 </>

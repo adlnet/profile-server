@@ -21,19 +21,19 @@ export default function PatternResultView({ children, result, onViewDetailsClick
 
     return (
         <SearchSelectResultView
-                result={result}
-                resultName='name'
-                resultDescription='description'
-                subdescriptionView={<PatternResultSubdescriptionView />}
-                onViewDetailsClick={onViewDetailsClick}
+            result={result}
+            resultName='name'
+            resultDescription='description'
+            subdescriptionView={<PatternResultSubdescriptionView />}
+            onViewDetailsClick={onViewDetailsClick}
         >
             {children}
         </SearchSelectResultView>
     );
 }
 
-function PatternResultSubdescriptionView ({ result }) {
+function PatternResultSubdescriptionView({ result }) {
     return (<>
-        {`${result && result.type}  |  ${result && (result.primary ? 'primary' : 'secondary')}  |  ${result && result.parentProfile && result.parentProfile.name}`}
+        <span style={{ textTransform: "capitalize" }}>{`${result && result.type}  |  `}</span>{`${result && (result.primary ? 'Primary' : 'Secondary')}  |  `}<span className="text-bold">Profile: </span> {`${result && result.parentProfile && result.parentProfile.name}`}
     </>);
 }

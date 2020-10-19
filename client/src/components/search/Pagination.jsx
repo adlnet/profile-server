@@ -17,6 +17,7 @@ import {Link} from "react-router-dom";
 
 export default function Pagination(props)
 {
+    let total = Math.ceil(props.total);
     if(props.total <= 1) return "";
     let min = Math.max(0, props.current - 5);
     let max =Math.min(props.total, props.current + 5);
@@ -28,7 +29,7 @@ export default function Pagination(props)
 return <div className = "usa-pagination">
     {props.current !== 0 && <div className="usa-page-link" onClick={()=>props.pageChanged(props.current - 1)}>Previous</div>}
     {pages.map(p=> <div className={"usa-page-link"+ (p == props.current ? " current" : "")} onClick={()=>props.pageChanged(p)}>{p+1}</div>)}
-    {props.current !== props.total && <div className="usa-page-link" onClick={()=>props.pageChanged(props.current + 1)}>Next</div> }
+    {props.current < total -1 && <div className="usa-page-link" onClick={()=>props.pageChanged(props.current + 1)}>Next</div> }
 </div>
 
 

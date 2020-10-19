@@ -15,17 +15,18 @@
 **************************************************************** */
 import React, { useState } from 'react'
 import { Link, useRouteMatch } from 'react-router-dom';
+import CancelButton from '../controls/cancelButton';
 
 export default function ChooseConceptType({ onCancel }) {
     const { url } = useRouteMatch();
     const [conceptType, setConceptType] = useState();
 
-    return (
+    return (<>
         <div>
             <div><span className="text-secondary">*</span><span>What type of concept will this be?</span></div>
 
             <form className="usa-form">
-                <RadioButton 
+                <RadioButton
                     name="conceptType"
                     id="activity"
                     label="Activity"
@@ -34,7 +35,7 @@ export default function ChooseConceptType({ onCancel }) {
                     onChange={setConceptType}
                     type={conceptType}
                 />
-                <RadioButton 
+                <RadioButton
                     name="conceptType"
                     id="activityType"
                     label="Activity Type"
@@ -43,7 +44,7 @@ export default function ChooseConceptType({ onCancel }) {
                     onChange={setConceptType}
                     type={conceptType}
                 />
-                <RadioButton 
+                <RadioButton
                     name="conceptType"
                     id="attachmentUsageType"
                     label="Attachment Usage Type"
@@ -52,7 +53,7 @@ export default function ChooseConceptType({ onCancel }) {
                     onChange={setConceptType}
                     type={conceptType}
                 />
-                <RadioButton 
+                <RadioButton
                     name="conceptType"
                     id="document"
                     label="Document"
@@ -61,7 +62,7 @@ export default function ChooseConceptType({ onCancel }) {
                     onChange={setConceptType}
                     type={conceptType}
                 />
-                <RadioButton 
+                <RadioButton
                     name="conceptType"
                     id="extension"
                     label="Extension"
@@ -70,7 +71,7 @@ export default function ChooseConceptType({ onCancel }) {
                     onChange={setConceptType}
                     type={conceptType}
                 />
-                <RadioButton 
+                <RadioButton
                     name="conceptType"
                     id="verb"
                     label="Verb"
@@ -81,19 +82,20 @@ export default function ChooseConceptType({ onCancel }) {
                 />
             </form>
 
-            
+
             {
-                conceptType ? 
-                <Link
+                conceptType ?
+                    <Link
                         to={`${url}/${conceptType}`}
                         className="usa-button submit-button"
-                >
-                    Continue
+                    >
+                        Continue
                 </Link> :
-                <button className="usa-button submit-button" disabled>Continue</button>
+                    <button className="usa-button submit-button" disabled>Continue</button>
             }
-            <button className="usa-button usa-button--unstyled" onClick={onCancel}><b>Cancel</b></button>
+            <CancelButton className="usa-button usa-button--unstyled" type="button" cancelAction={onCancel} />
         </div>
+    </>
     )
 }
 
@@ -102,7 +104,7 @@ function RadioButton(props) {
     return (
         <div className="usa-radio">
             <input
-                className="usa-radio__input" 
+                className="usa-radio__input"
                 name={props.name}
                 id={props.id}
                 type="radio"

@@ -21,6 +21,7 @@ const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
 const getResource = require('../utils/getResource');
 const permissions = require('../utils/permissions');
 const level = require('../utils/level');
+const deny = require('../utils/deny');
 
 const Org = require('../ODM/models').organization;
 
@@ -28,6 +29,7 @@ const permissionStack = [
     mustBeLoggedIn,
     getResource(Org, 'org', 'uuid'),
     permissions(),
+    deny,
 ];
 
 const lock = require('../utils/lock');
@@ -36,12 +38,20 @@ const unlock = require('../utils/unlock');
 organizations.get('/', controller.getOrganizations);
 organizations.post('/', mustBeLoggedIn, controller.createOrganization);
 
-organizations.get('/:org', ...permissionStack, controller.getOrganization);
+organizations.get('/:org', getResource(Org, 'org', 'uuid'), (req, res, next) => {
+    if (req.user) {
+        return permissions()(req, res, () => {
+            if (req.permissionState !== 'denied') return controller.getOrganization(req, res, next);
+            return controller.getOrganizationPublic(req, res, next);
+        });
+    }
+    return controller.getOrganizationPublic(req, res, next);
+});
 organizations.get('/:org/lock', ...permissionStack, lock());
 organizations.get('/:org/unlock', ...permissionStack, unlock());
 organizations.put('/:org', ...permissionStack, level('admin'), unlock(true), controller.updateOrganization);
 organizations.delete('/:org', ...permissionStack, level('admin'), lock(true), controller.deleteOrganization);
-organizations.post('/:org/join', ...permissionStack, controller.requestJoinOrganization);
+organizations.post('/:org/join', mustBeLoggedIn, getResource(Org, 'org', 'uuid'), controller.requestJoinOrganization);
 organizations.post('/:org/join/member', ...permissionStack, controller.approveJoinOrganization);
 organizations.delete('/:org/deny/member/:userId', ...permissionStack, controller.denyJoinOrganization);
 organizations.delete('/:org/join/member/:userId', ...permissionStack, controller.revokeJoinOrganization);

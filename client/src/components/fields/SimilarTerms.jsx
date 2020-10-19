@@ -24,6 +24,7 @@ import { searchConcepts, clearConceptResults } from '../../actions/concepts';
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 
 export default function SimilarTerms(props) {
+    const dispatch = useDispatch();
     const [showModal, setShowModal] = useState(false);
     const [removing, setRemoving] = useState(-1)
     const [showRemoveSimilarTermsModal, setShowRemoveSimilarTermsModal] = useState(false);
@@ -75,7 +76,7 @@ export default function SimilarTerms(props) {
     }
 
     return (<>
-        {(props.field && props.field.value.length > 0) &&
+        {(props.field && props.field.value && props.field.value.length > 0) &&
             <div className="grid-row">
                 <table style={{ margin: '0', tableLayout: 'fixed' }} className="usa-table usa-table--borderless" width="100%">
                     <thead>
@@ -111,9 +112,13 @@ export default function SimilarTerms(props) {
             <RemoveSimilarTermConfirmation onConfirm={onRemovalConfirmed} onCancel={onRemovalCanceled} />
         </ModalBoxWithoutClose>
 
-        <ModalBox show={showModal} onClose={() => setShowModal(false)}>
+        <ModalBox show={showModal} onClose={() => { setShowModal(false); dispatch(clearConceptResults()) }} isForm={true}>
             <SimilarTermForm
                 onAdd={onAdd}
+                conceptType={props.conceptType}
+                profileVersion={props.profileVersion}
+                conceptIRI={props.form && props.form.values && props.form.values.iri}
+                conceptSimilarTerms={props.form && props.form.values && props.form.values.similarTerms}
             />
         </ModalBox>
     </>);
@@ -136,15 +141,16 @@ function SimilarTermRow({ similarTerm, onRemove, onRelationTypeChange, isPublish
                             onChange={e => onRelationTypeChange(e.target.value)}
                             className={`usa-select ${meta.error && meta.touched && !similarTerm.relationType ? "usa-input--error" : ""}`}
                             id="type" aria-required="true" style={{ marginTop: '0' }}
+                            onBlur={field.onBlur}
                         >
                             <option value="" disabled defaultValue></option>
                             <option value="related">Related</option>
-                            <option value="relatedMatch">Related Match</option>
+                            {/* <option value="relatedMatch">Related Match</option> */}
                             <option value="broader">Broader</option>
-                            <option value="broadMatch">Broad Match</option>
+                            {/* <option value="broadMatch">Broad Match</option> */}
                             <option value="narrower">Narrower</option>
-                            <option value="narrowMatch">Narrow Match</option>
-                            <option value="exactMatch">Exact Match</option>
+                            {/* <option value="narrowMatch">Narrow Match</option> */}
+                            {/* <option value="exactMatch">Exact Match</option> */}
                         </select>
                         : similarTerm.relationType.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())
                 }
@@ -166,12 +172,12 @@ function RemoveSimilarTermConfirmation(props) {
     return (<>
         <h2 className="margin-top-0">Remove Similar Term</h2>
         <div><span>Are you sure you want to remove the similar term from this concept?</span></div>
-        <button className="usa-button submit-button" type="button" onClick={props.onConfirm}>Remove Translation</button>
-        <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}><b>Keep Translation</b></button>
+        <button className="usa-button submit-button" type="button" onClick={props.onConfirm}>Remove Similar Term</button>
+        <button className="usa-button usa-button--unstyled" type="button" onClick={props.onCancel}><b>Keep Similar Term</b></button>
     </>);
 }
 
-function SimilarTermForm({ onAdd }) {
+function SimilarTermForm({ onAdd, conceptType, profileVersion, conceptIRI, conceptSimilarTerms }) {
     const dispatch = useDispatch();
     const conceptSearchResults = useSelector(state => state.searchResults.concepts);
 
@@ -181,7 +187,13 @@ function SimilarTermForm({ onAdd }) {
         }
     }, []);
 
-    const searchResults = conceptSearchResults && conceptSearchResults.filter(r => r.parentProfile);
+    const searchResults = conceptSearchResults
+        && conceptSearchResults.filter(r => r.parentProfile)
+            .filter(v => v.parentProfile.state !== 'draft' || (v.parentProfile.parentProfile && v.parentProfile.parentProfile.uuid === profileVersion.parentProfile.uuid))
+            .filter(v => !v.isDeprecated)
+            .filter(v => v.conceptType.toLowerCase() === conceptType.toLowerCase())
+            .filter(v => v.iri !== conceptIRI)
+            .filter(v => !(conceptSimilarTerms && conceptSimilarTerms.find(t => t.concept.uuid === v.uuid)));
 
     return (<>
         <h2 style={{ marginTop: '0' }}>Tag Similar Terms</h2>
@@ -229,7 +241,7 @@ function SimilarTermForm({ onAdd }) {
                         </div>
                         <div className="similar-terms-results-panel">
                             {
-                                (searchResults && searchResults.length > 0) && <>
+                                (searchResults && searchResults.length > 0) ? <>
                                     <div className="grid-row">
                                         <span className="margin-y-2">{`${searchResults.length} results`}</span>
                                     </div>
@@ -252,6 +264,10 @@ function SimilarTermForm({ onAdd }) {
                                         </table>
                                     </div>
                                 </>
+                                    : searchResults &&
+                                    <div className="grid-row">
+                                        <span className="margin-y-2">No results found</span>
+                                    </div>
                             }
                         </div>
                     </div>

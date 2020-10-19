@@ -18,33 +18,64 @@ import { Formik, Field } from 'formik';
 import { useSelector } from 'react-redux';
 import * as Yup from 'yup';
 
+
 import BaseConceptFields from './BaseConceptFields';
 import Schemas from '../fields/Schemas';
 import ErrorValidation from '../controls/errorValidation';
 import RecommendedTerms from '../fields/RecommendedTerms';
 import { Detail } from '../DetailComponents';
+import CancelButton from '../controls/cancelButton';
+import { isValidIRI } from '../fields/Iri';
+import DeprecateButton from '../controls/deprecateButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
-export default function ExtensionConcept({ initialValues, onCreate, onCancel, isPublished }) {
+export default function ExtensionConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept }) {
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = currentProfileVersion.iri + "/extension/";
 
-    let startingValues;
-    if (initialValues) {
-        // it's possible that the iri was external and still match, but this is what 
-        // the system will use to generate the base of the concept iri, so we'll call it 
-        // generated
-        startingValues = { ...initialValues };
-        startingValues.iriType = initialValues.iri.startsWith(generatedIRIBase) ? 'generated-iri' : 'external-iri'
-        startingValues.iri = initialValues.iri.replace(generatedIRIBase, "");
+    const formValidation = (values) => {
+        const errors = {};
+        if (!values.name) errors.name = 'Required';
+        if (!values.description) errors.description = 'Required';
+        if (!values.type) errors.type = 'Required';
+        if (!values.schemaType) errors.schemaType = 'Required';
+        if (values.schemaType === 'inlineSchema') {
+            if (!values.inlineSchema) errors.inlineSchema = 'Required'
+        }
+        if (values.schemaType === 'schemaString') {
+            if (!values.schemaString) errors.schemaString = 'Required'
+            else if (!isValidIRI(values.schemaString)) errors.schemaString = 'IRI did not match expected format.'
+        }
+
+        if (!initialValues || !initialValues.iri) {
+            if (values.iriType === 'external-iri') {
+                if (!values.extiri.trim()) errors.extiri = 'Required';
+                if (!isValidIRI(values.extiri)) errors.extiri = 'IRI did not match expected format.';
+            } else {
+                if (!values.geniri.trim()) errors.geniri = 'Required';
+                const geniri = generatedIRIBase + values.geniri;
+                if (!isValidIRI(geniri)) errors.geniri = 'IRI did not match expected format.';
+            }
+        }
+
+        if (values.contextIRI && values.contextIri.trim() && !isValidIRI(values.contextIri)) errors.contextIri = 'IRI did not match expected format.';
+        return errors;
+    }
+
+    // check to see if importedConcept has a new concept from an import 'create new concept' history push
+    if (importedConcept && !initialValues) {
+        initialValues = importedConcept.concept.model;;
     }
 
     return (
         <Formik
-            initialValues={startingValues || {
+            initialValues={initialValues || {
                 conceptType: 'Extension',
                 type: '',
                 iri: '',
+                extiri: '',
+                geniri: '',
                 iriType: "external-iri",
                 name: '',
                 description: '',
@@ -53,31 +84,21 @@ export default function ExtensionConcept({ initialValues, onCreate, onCancel, is
                 schemaString: '',
                 recommendedTerms: [],
             }}
-            validationSchema={Yup.object({
-                iri: Yup.string()
-                    .required('Required'),
-                name: Yup.string()
-                    .required('Required'),
-                description: Yup.string()
-                    .required('Required'),
-                type: Yup.string()
-                    .required('Required'),
-                schemaType: Yup.string()
-                    .required('Required'),
-                inlineSchema: Yup.string()
-                    .when('schemaType', {
-                        is: (schemaType) => schemaType === 'inlineSchema' || !schemaType,
-                        then: Yup.string().required('Required'),
-                    }),
-                schemaString: Yup.string()
-                    .when('schemaType', {
-                        is: (schemaType) => schemaType === 'schemaString' || !schemaType,
-                        then: Yup.string().required('Required'),
-                    }),
-            })}
+            validate={formValidation}
             onSubmit={values => {
-                if (values.iriType === 'generated-iri')
-                    values.iri = `${generatedIRIBase}${values.iri}`;
+                if (!values.iri) {
+                    values.iri = values.extiri.trim();
+                    if (values.iriType === 'generated-iri')
+                        values.iri = `${generatedIRIBase}${values.geniri.trim()}`;
+                }
+                // wanna wipe out the one that wasn't selected
+                if (values.schemaType === 'inlineSchema')
+                    values.schemaString = '';
+                else
+                    values.inlineSchema = '';
+
+                if (values.contextIri) values.contextIri = values.contextIri.trim();
+
                 onCreate(values);
             }}
         >
@@ -92,7 +113,7 @@ export default function ExtensionConcept({ initialValues, onCreate, onCancel, is
                         </div>
                     </div>
                     <form className="usa-form" style={{ maxWidth: "none" }}>
-                        <BaseConceptFields {...props} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
+                        <BaseConceptFields {...props} isEditing={initialValues} isPublished={isPublished} generatedIRIBase={generatedIRIBase} />
 
                         <div className="grid-row">
                             <div className="grid-col-6">
@@ -103,7 +124,7 @@ export default function ExtensionConcept({ initialValues, onCreate, onCancel, is
                                         </Detail>
                                         :
                                         <ErrorValidation name="type" type="input">
-                                            <label className="usa-label" htmlFor="type"><span className="text-secondary">*</span> <span className="details-label">Extention Type</span>
+                                            <label className="usa-label" htmlFor="type"><span className="text-secondary">*</span> <span className="details-label">Extension Type</span>
                                             </label>
                                             <Field
                                                 name="type" component="select" value={props.values.type} onChange={props.handleChange} rows="3"
@@ -120,27 +141,44 @@ export default function ExtensionConcept({ initialValues, onCreate, onCancel, is
                         </div>
 
                         <label className="usa-label" htmlFor="recommendedTerms"><span className="details-label">tag recommended terms</span></label>
-                        <Field name="recommendedTerms" component={RecommendedTerms} id="recommendedTerms" isPublished={isPublished}></Field>
+                        <Field name="recommendedTerms" component={RecommendedTerms} id="recommendedTerms" isPublished={isPublished} disabled={!props.values.type} type={props.values.type}></Field>
                         {
                             isPublished ?
                                 <Detail title='context iri'>
                                     {props.values.contextIri}
                                 </Detail>
                                 :
-                                <>
+                                <ErrorValidation name="contextIri" type="input">
                                     <label className="usa-label" htmlFor="contextIri">
                                         <span className="details-label">context iri</span>
                                     </label>
                                     <Field name="contextIri" type="text" className="usa-input" id="contextIri" aria-required="true" />
-                                </>
+                                </ErrorValidation>
                         }
                         <Schemas isRequired={true} {...props} isPublished={isPublished} />
                     </form>
                 </div>
-                <button className="usa-button submit-button" type="submit" onClick={props.handleSubmit}>
-                    {initialValues ? 'Save Changes' : 'Add to Profile'}
-                </button>
-                <button className="usa-button usa-button--unstyled" type="reset" onClick={onCancel}><b>Cancel</b></button>
+                <div className="grid-row">
+                    <div className="grid-col-2">
+                        <ValidationControlledSubmitButton errors={props.errors} className="usa-button submit-button" style={{ margin: 0 }} type="submit" onClick={props.handleSubmit}>
+                            {(initialValues && !importedConcept) ? 'Save Changes' : 'Add to Profile'}
+                        </ValidationControlledSubmitButton>
+                    </div>
+                    <div className="grid-col">
+                        <CancelButton className="usa-button usa-button--unstyled" style={{ marginLeft: "2em", marginTop: "0.6em" }} type="reset" cancelAction={onCancel} />
+                    </div>
+                    {(initialValues && !importedConcept) &&
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeprecateButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onClick={onDeprecate}
+                                componentType="concept"
+                            />
+                        </div>
+                    }
+                </div>
             </>)}
         </Formik>
     )

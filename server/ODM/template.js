@@ -129,6 +129,10 @@ const template = new mongoose.Schema({
     ],
     tags: [String],
     statementExample: String,
+    deprecatedReason: {
+        reason: String,
+        reasonLink: String,
+    },
     isDeprecated: {
         type: Boolean,
         default: false,
@@ -143,6 +147,22 @@ template.statics.findByUuid = function (uuid, callback) {
 
 template.statics.deleteByUuid = async function (uuid) {
     await this.findOneAndDelete(mongoSanitize({ uuid: uuid }));
+};
+
+template.statics.buildBaseModelFromDocument = function (document) {
+    const JsonLdToModel = require('../controllers/importProfile/JsonLdToModel').JsonLdToModel;
+    const jsonLdToModel = new JsonLdToModel();
+
+    const model = this({
+        iri: document.id,
+        name: jsonLdToModel.toName(document.prefLabel),
+        description: jsonLdToModel.toDescription(document.definition),
+        translations: jsonLdToModel.toTranslations(document.prefLabel, document.definition),
+        isDeprecated: document.deprecated,
+        rules: document.rules,
+    });
+
+    return model;
 };
 
 template.virtual('concepts', { localField: 'id', foreignField: '_id' }).get(function () {

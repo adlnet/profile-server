@@ -32,6 +32,8 @@ export default function Members({ isMember }) {
 
     const organization = useSelector((state) => state.application.selectedOrganization);
 
+    const isAdmin = isMember === "admin";
+
     useEffect(() => {
         dispatch(getMembers());
     }, [dispatch, organizationId])
@@ -48,27 +50,29 @@ export default function Members({ isMember }) {
                         <h2>Members</h2>
                     </div>
                     <div className="grid-col display-flex flex-column flex-align-end">
-                        <Link
-                            to={`${url}/add`}
-                            className="usa-button margin-top-2 margin-right-0"
-                        >
-                            <i className="fa fa-plus margin-right-05"></i>
+                        {isAdmin &&
+                            <Link
+                                to={`${url}/add`}
+                                className="usa-button margin-top-2 margin-right-0"
+                            >
+                                <i className="fa fa-plus margin-right-05"></i>
                             Add Member
                         </Link>
+                        }
                     </div>
                 </div>
-                <MemberTable members={[...organization.memberRequests, ...organization.members]}></MemberTable>
+                <MemberTable isAdmin={isAdmin} members={[...organization.memberRequests, ...organization.members]}></MemberTable>
             </Route>
             <Route exact path={`${path}/add`}>
                 {
-                    isMember ?
+                    isMember && isAdmin ?
                         <AddMember url={url} />
                         : <Redirect to={url} />
                 }
             </Route>
             <Route exact path={`${path}/:userId/edit`}>
                 {
-                    isMember ?
+                    isMember && isAdmin ?
                         <AddMember url={url} />
                         : <Redirect to={url} />
                 }

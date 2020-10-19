@@ -19,9 +19,11 @@ import * as Yup from 'yup';
 
 import ErrorValidation from '../controls/errorValidation';
 import api from '../../api';
+import CancelButton from '../controls/cancelButton';
+import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
 export default function CreateWebHookForm({ initialValues, onSubmit, onCancel }) {
-   
+
     let defaults = {
         uuid: require('uuid').v4(),
         target: '',
@@ -33,35 +35,31 @@ export default function CreateWebHookForm({ initialValues, onSubmit, onCancel })
     };
 
     let [subjects, setSubjects] = useState([])
-    useEffect( ()=>{
+    useEffect(() => {
 
-        api.getWebHookSubjects().then((subjects)=>setSubjects(subjects));
-        
+        api.getWebHookSubjects().then((subjects) => setSubjects(subjects));
+
         return function cleanup() {
-           
-        }
-    },[]);
 
-    return (
+        }
+    }, []);
+
+    return (<>
         <Formik
             initialValues={initialValues || defaults}
             validationSchema={Yup.object({
                 description: Yup.string()
                     .required('Required'),
             })
-            .test(
-                'permissionsTest',
-                null,
-                (obj) => {
-                    return true;
+                .test(
+                    'permissionsTest',
+                    null,
+                    (obj) => {
+                        return true;
 
-                    return new Yup.ValidationError (
-                        'Check at least one.',
-                        null,
-                        'permissions',
-                    )
-                }
-            )}
+                    }
+                )}
+            validateOnMount={true}
             onSubmit={(values) => {
                 onSubmit(values);
             }}
@@ -77,7 +75,7 @@ export default function CreateWebHookForm({ initialValues, onSubmit, onCancel })
                         </div>
                     </div>
                     <form className="usa-form">
-                       
+
                         <ErrorValidation name="target" type="input">
                             <label className="usa-label" htmlFor="target">
                                 <div className="margin-bottom-05"><span className="text-secondary">*</span><span className="details-label">Webhook Target</span></div>
@@ -94,13 +92,11 @@ export default function CreateWebHookForm({ initialValues, onSubmit, onCancel })
                             <Field name="description" type="text" className="usa-input" id="input-description" aria-required="true" />
                         </ErrorValidation>
 
-                        <ErrorValidation name="clientSecret" type="input">
-                            <label className="usa-label" htmlFor="clientSecret">
-                                <div className="margin-bottom-05"><span className="text-secondary">*</span><span className="details-label">Client Secret</span></div>
-                                <div className="text-thin text-base font-sans-3xs">Some webhook consumers will provide you with a secret value. Place it here.</div>
-                            </label>
-                            <Field name="clientSecret" type="text" className="usa-input" id="input-clientSecret" aria-required="true" />
-                        </ErrorValidation>
+                        <label className="usa-label" htmlFor="clientSecret">
+                            <div className="margin-bottom-05"><span className="details-label">Client Secret</span></div>
+                            <div className="text-thin text-base font-sans-3xs">Some webhook consumers will provide you with a secret value. Place it here.</div>
+                        </label>
+                        <Field name="clientSecret" type="text" className="usa-input" id="input-clientSecret" aria-required="true" />
 
                         {false && <div className="grid-row">
                             <div className="grid-col-6">
@@ -127,12 +123,12 @@ export default function CreateWebHookForm({ initialValues, onSubmit, onCancel })
                                     className="usa-select" id="subject" aria-required="true"
                                 >
                                     <option value=""></option>
-                                    {subjects.map(i=><option value={i.parentProfile}>{i.name}</option>)}
+                                    {subjects.map((i, j) => <option key={j} value={i.parentProfile}>{i.name}</option>)}
                                 </Field>
                             </div>
                         </div>
 
-                        
+
 
                         <div className="grid-row">
                             <div className="grid-col-6">
@@ -166,17 +162,18 @@ export default function CreateWebHookForm({ initialValues, onSubmit, onCancel })
                         </div>
                     </form>
                 </div>
-                <button
-                        className="usa-button submit-button"
-                        type="button"
-                        onClick={formikProps.handleSubmit}>
+                <ValidationControlledSubmitButton
+                    errors={formikProps.errors}
+                    className="usa-button submit-button"
+                    type="button"
+                    onClick={formikProps.handleSubmit}>
                     {
                         initialValues ? "Save Changes" : "Create Webhook"
                     }
-                </button>
-                <button onClick={onCancel} className="usa-button usa-button--unstyled" type="reset"><b>Cancel</b></button>
-                    
+                </ValidationControlledSubmitButton>
+                <CancelButton className="usa-button usa-button--unstyled" type="reset" cancelAction={onCancel} />
             </>)}
         </Formik>
+    </>
     )
 }

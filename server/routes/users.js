@@ -30,7 +30,14 @@ users.post('/logout', controller.logout);
 
 users.post('/forgot', controller.forgotPassword);
 users.post('/reset', controller.resetPassword);
-users.post('/update', controller.editAccount);
+users.get('/checkResetKey', controller.checkResetKey);
+
+
+function stripType(req, res, next) {
+    delete req.body.type;
+    next();
+}
+users.post('/update', stripType, controller.editAccount);
 const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
 const getResource = require('../utils/getResource');
 const hooks = require('./hooks');

@@ -1881,10 +1881,6 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                     expect(error).toMatch(/Concept concept4_id cannot have a broader relation because it is not part of this profile version/);
                 });
             });
-
-            describe('and there concepts of a type differnt from this type', () => {
-                test.todo('it should throw and error.');
-            });
         });
 
         describe('if the terms are to be outside of this profile version', () => {
@@ -2066,10 +2062,6 @@ describe('ConceptLayer#ScanSubcomponentLayer', () => {
                             .toEqual(conceptModels[1].similarTerms[0].concept._id.toString());
                     });
                 });
-            });
-
-            describe('and there concepts of a type differnt from this type', () => {
-                test.todo('it should throw and error.');
             });
         });
     });

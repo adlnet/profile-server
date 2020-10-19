@@ -19,7 +19,7 @@ import { useSelector } from 'react-redux';
 
 import DeterminingPropertyTableRow from './DeterminingPropertyTableRow';
 
-export default function DeterminingPropertyTable({ removeDeterminingProperty, url, isMember, isCurrentVersion, isPublished }) {
+export default function DeterminingPropertyTable({ removeDeterminingProperty, url, isMember, isCurrentVersion, isPublished, isEditable }) {
     const determiningProperties = useSelector(state => state.application.selectedDeterminingProperties);
 
     return (<>
@@ -57,7 +57,7 @@ export default function DeterminingPropertyTable({ removeDeterminingProperty, ur
                 }
             </tbody>
         </table>
-        {isMember && isCurrentVersion && !isPublished &&
+        {isMember && isCurrentVersion && !isPublished && isEditable &&
             <Link
                 to={`${url}/create`}>
                 <button className="usa-button">Add Determining Property</button>

@@ -15,6 +15,7 @@
 **************************************************************** */
 import React from 'react';
 import { Link } from 'react-router-dom';
+import RemoveButton from '../controls/removeButton';
 
 export default function RuleTableRow(props) {
     return (
@@ -32,7 +33,9 @@ export default function RuleTableRow(props) {
                 </td>
             }
             {props.isMember && props.isCurrentVersion && !props.isPublished && !props.belongsToAnotherProfile &&
-                <td><button className="usa-button  usa-button--unstyled" onClick={() => props.removeRule(props.rule)}><span className="text-bold">Remove</span></button> </td>
+                <td>
+                    <RemoveButton className="usa-button  usa-button--unstyled" onClick={() => props.removeRule(props.rule)} item="rule" object="statement template" />
+                </td>
             }
         </tr>
     );

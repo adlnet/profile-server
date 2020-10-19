@@ -24,7 +24,7 @@ import CreateWebHookForm from './CreateWebHookForm';
 export default function EditWebHook({ onSubmit, onCancel }) {
     const dispatch = useDispatch();
     const { hookId } = useParams();
-   
+
     useEffect(() => {
         dispatch(selectWebHook(hookId));
     }, [dispatch, hookId]);
@@ -38,9 +38,9 @@ export default function EditWebHook({ onSubmit, onCancel }) {
                 <h2 className="site-page-title">Edit API Key</h2>
             </header>
             <p className="site-text-intro">
-                Instructions if needed...
+
             </p>
-            <CreateWebHookForm initialValues={initialValues} onSubmit={onSubmit} onCancel={onCancel}/>
+            <CreateWebHookForm initialValues={initialValues} onSubmit={onSubmit} onCancel={onCancel} />
         </div>
     )
 }

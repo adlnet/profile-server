@@ -15,7 +15,8 @@
 **************************************************************** */
 import React, { useEffect } from 'react';
 import MemberTableRow from "./MemberTableRow";
-export default function MemberTable({ members }) {
+
+export default function MemberTable({ members, isAdmin }) {
     return <div className="grid-row">
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
@@ -29,7 +30,7 @@ export default function MemberTable({ members }) {
             </thead>
             <tbody style={{ lineHeight: 3 }}>
                 {(members && members.length > 0)
-                    ? members.map((member, i) => <MemberTableRow member={member} key={member.id} />)
+                    ? members.map((member, i) => <MemberTableRow isAdmin={isAdmin} member={member} key={member.id} />)
                     : <tr key={1}><td className="font-sans-xs" colSpan="6">There are no members in this organization.</td></tr>}
             </tbody>
         </table>

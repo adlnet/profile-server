@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useState, useEffect } from 'react';
-import { Link, useParams, useHistory } from 'react-router-dom';
+import { Link, useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from "react-redux";
 
 import { searchConcepts, selectConceptResult, deselectConceptResult, clearConceptResults, loadProfileConcepts } from "../../actions/concepts";
@@ -23,16 +23,14 @@ import ConceptInfoPanel from '../infopanels/ConceptInfoPanel';
 import SearchSelectComponent from '../controls/search-select/searchSelectComponent';
 import ConceptResultView from './ConceptResultView';
 import { editProfileVersion } from '../../actions/profiles';
+import Breadcrumb from '../controls/breadcrumbs';
+import CancelButton from '../controls/cancelButton';
+import { ADDED } from '../../actions/successAlert';
 
 
 export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
-    const { versionId } = useParams();
     const history = useHistory();
     const dispatch = useDispatch();
-
-    useEffect(() => {
-        dispatch(loadProfileConcepts(versionId));
-    }, [dispatch, versionId]);
 
     const conceptResults = useSelector((state) => state.searchResults.concepts)
     const selectedResults = useSelector((state) => state.searchResults.selectedConcepts)
@@ -40,6 +38,10 @@ export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
     const profileConcepts = useSelector((state) => state.concepts);
     const [showConceptInfopanel, setShowConceptInfopanel] = useState(false);
     const [infoPanelConcept, setInfoPanelConcept] = useState();
+
+    useEffect(() => {
+        dispatch(loadProfileConcepts(profileVersion.uuid));
+    }, [dispatch, profileVersion.uuid]);
 
     function onViewDetailsClick(property) {
         setInfoPanelConcept(property);
@@ -50,20 +52,21 @@ export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
         if (selectedResults) {
             const newProfileVersion = Object.assign({}, profileVersion);
             newProfileVersion.externalConcepts = [...newProfileVersion.externalConcepts, ...selectedResults];
-            await dispatch(editProfileVersion(newProfileVersion));
-            await dispatch(loadProfileConcepts(versionId));
+            await dispatch(editProfileVersion(newProfileVersion, ADDED, 'Concept'));
+            await dispatch(loadProfileConcepts(profileVersion.uuid));
             history.push(rootUrl);
         }
     }
 
     function conceptResultsFilter(result) {
+        if (result.parentProfile && result.parentProfile.state === 'draft' && result.parentProfile.parentProfile.uuid !== profileVersion.parentProfile.uuid) return false;
         return !profileConcepts.map(t => t.uuid).includes(result.uuid);
     }
 
     return (<>
         <div className="grid-row margin-top-3 margin-bottom-3">
             <div className="grid-col">
-                <Link to={rootUrl}><span className="details-label">concepts</span></Link> <i className="fa fa-angle-right"></i>
+                <Breadcrumb breadcrumbs={[{ to: rootUrl, crumb: 'concepts' }]} />
                 <h2 className="margin-y-05">Add Concepts</h2>
             </div>
         </div>
@@ -85,7 +88,7 @@ export default function AddConcepts({ rootUrl, addToName, isOneConceptOnly }) {
 
         <div className="grid-row">
             <div className="grid-col">
-                <button className="usa-button usa-button--unstyled text-bold" style={{ paddingTop: ".8em" }}>Cancel</button>
+                <CancelButton className="usa-button usa-button--unstyled" type="button" style={{ paddingTop: ".8em" }} cancelAction={() => history.push(rootUrl)} />
             </div>
             <div className="grid-col">
                 <div className="pin-right">
