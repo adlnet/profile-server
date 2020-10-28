@@ -52,7 +52,7 @@ export default function GettingStarted() {
                     <li>Click the Create New API Key button</li>
                     <li>Fill in the name, choose read and write permissions, keep the status 'Enabled'</li>
                     <li>Click the Create API Key button</li>
-                    <li>The UUID in the Key column of the table is the value used in the HTTP Header (x-xapi-key)</li>
+                    <li>The UUID in the Key column of the table is the value used in the HTTP Header (x-api-key)</li>
                 </ol>
             </Description>
             <SubHeader>

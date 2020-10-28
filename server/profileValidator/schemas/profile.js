@@ -84,6 +84,7 @@ module.exports = {
                     { $ref: '#Concept' },
                     { $ref: '#Extension' },
                     { $ref: '#Document' },
+                    { $ref: '#Activity' },
                 ],
             },
         },

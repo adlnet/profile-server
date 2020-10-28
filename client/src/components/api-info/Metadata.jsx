@@ -27,7 +27,7 @@ export default function Metadata() {
             <Lead>Get the metadata about a specific profile.</Lead>
             <Description>
                 This endpoint returns the metadata about a profile based on the
-                UUID profiled in the URL. Using the base profile UUID will return
+                UUID provided in the URL. Using the base profile UUID will return
                 the metadata for the latest published profile.
             </Description>
             <SubHeader>

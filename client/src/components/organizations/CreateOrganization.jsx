@@ -36,9 +36,6 @@ export default function CreateOrganization() {
                             <Link to={'/organization'}><span className="details-label">working groups</span></Link> <i className="fa fa-angle-right"></i>
                             <h1 className="site-page-title margin-top-0">Create Working Group</h1>
                         </header>
-                        <span>
-                            Description or instructions for creating a working group…
-                        </span>
                         <p>
                             <em>Once the working group is created, you will be able to add members and create profiles.</em>
                         </p>

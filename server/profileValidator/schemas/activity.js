@@ -45,7 +45,7 @@ module.exports = {
     },
     additionalProperties: false,
     description: "These Concepts are just literal xAPI Activity definitions the Profile wants to provide for use. This is the Profile's canonical version of the Activity.",
-    required: ['id', 'type', 'inScheme', 'prefLabel', 'activityDefinition'],
+    required: ['id', 'type', 'inScheme', 'activityDefinition'],
 };
 
 

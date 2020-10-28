@@ -47,7 +47,7 @@ export default function PutProfile() {
             </SubHeader>
             <HTTPRequest
                 method="PUT"
-                path="/api/profile"
+                path="/api/profile/:profile_uuid"
                 headers={{ "Content-Type": "application/json", "x-api-key": "api-key-uuid", "If-Unmodified-Since": "Datetime (Last-Modified value)" }}
                 expandHeaderColumn={true}
             >

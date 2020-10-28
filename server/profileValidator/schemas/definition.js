@@ -41,7 +41,7 @@ const definition = {
             format: 'uri',
         },
         extensions: {
-            $ref: '#Extensions',
+            type: 'object',
         },
         interactionType: {
             type: 'string',
