@@ -23,5 +23,5 @@ const settings = require('../settings');
  */
 exports.profile = function profile(uuid) {
     if (!uuid) throw Error('must include the uuid of the profile');
-    return [settings.profileAPIRootURL, 'profile', uuid].join('/');
+    return [settings.clientURL, 'profile', uuid].join('/');
 };

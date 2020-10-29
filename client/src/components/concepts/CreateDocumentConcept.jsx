@@ -26,6 +26,7 @@ import mimeTypes from '../fields/data/mime-types.json'
 import { useState } from 'react';
 import CancelButton from '../controls/cancelButton';
 import { isValidIRI } from '../fields/Iri';
+import { isValidInlineSchema } from '../fields/Schemas';
 import DeprecateButton from '../controls/deprecateButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
@@ -43,7 +44,12 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel, isP
         if (!values.mediaType) errors.mediaType = 'Required';
         if (!values.schemaType) errors.schemaType = 'Required';
         if (values.schemaType === 'inlineSchema') {
-            if (!values.inlineSchema) errors.inlineSchema = 'Required'
+            try {
+                if (!values.inlineSchema) errors.inlineSchema = 'Required'
+                else if (!isValidInlineSchema(JSON.parse(values.inlineSchema))) errors.inlineSchema = 'Schema String did not match expected format.'
+            } catch (err) {
+                errors.inlineSchema = 'Not a valid json string.'
+            }
         }
         if (values.schemaType === 'schemaString') {
             if (!values.schemaString) errors.schemaString = 'Required'

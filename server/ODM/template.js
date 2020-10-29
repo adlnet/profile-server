@@ -199,8 +199,11 @@ template.methods.export = async function (profileVersionIRI) {
     }
 
     for (const typeprop of ['contextStatementRefTemplate', 'contextGroupingActivityType', 'contextParentActivityType', 'contextOtherActivityType', 'contextCategoryActivityType', 'attachmentUsageType']) {
-        const vals = (await this.populate(typeprop, 'iri').execPopulate())[typeprop].map(v => v.iri);
-        if (vals && vals.length) t[typeprop] = vals;
+        const type = (await this.populate(typeprop, 'iri').execPopulate())[typeprop];
+        if (type) {
+            const vals = (await this.populate(typeprop, 'iri').execPopulate())[typeprop].map(v => v.iri);
+            if (vals && vals.length) t[typeprop] = vals;
+        }
     }
 
     if (this.rules && this.rules.length) {

@@ -265,7 +265,10 @@ concept.methods.export = async function (currentScheme) {
     } else if (this.conceptType === 'Extension') {
         await this.populate('recommendedTerms').execPopulate();
         c.schema = this.schemaString;
-        if (!c.schema) c.inlineSchema = this.inlineSchema;
+        if (!c.schema) {
+            delete c.schema;
+            c.inlineSchema = this.inlineSchema;
+        }
         c.context = this.contextIri;
         for (const term of this.recommendedTerms) {
             if (this.type === 'ActivityExtension') {
@@ -280,7 +283,10 @@ concept.methods.export = async function (currentScheme) {
         c.contentType = this.mediaType;
         c.context = this.contextIri;
         c.schema = this.schemaString;
-        if (!c.schema) c.inlineSchema = this.inlineSchema;
+        if (!c.schema) {
+            delete c.schema;
+            c.inlineSchema = this.inlineSchema;
+        }
     } else {
         c.activityDefinition = {
             '@context': 'https://w3id.org/xapi/profiles/activity-context',

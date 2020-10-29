@@ -30,7 +30,7 @@ export default function TitleBanner() {
         dispatch(loadProfileRootIRI())
     }, [])
     function search(e) {
-        history.push({pathname: "/search", state:{search:searchString}});
+        history.push({ pathname: "/search", state: { search: searchString } });
         e.preventDefault();
         setSearchString("");
         return false;
@@ -41,7 +41,7 @@ export default function TitleBanner() {
             <div className="usa-navbar">
                 <div className="usa-logo" id="extended-logo">
                     <em className="usa-logo__text">
-                        <a href="/" title="Home" aria-label="Home">xAPI Profile Server</a>
+                        <a href="/" title="Home" aria-label="Home" style={{ color: "white" }}>xAPI Profile Server</a>
                     </em>
                 </div>
                 <button className="usa-menu-btn">Menu</button>
@@ -112,7 +112,7 @@ export default function TitleBanner() {
                     <div className="usa-nav__secondary">
                         <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
                             <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
-                            <input className="usa-input" id="extended-search-field-small" value={searchString}onChange={e => setSearchString(e.target.value)} type="search" name="search" />
+                            <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" />
                             <button id="site-search" className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
                         </form>
                     </div>

@@ -16,6 +16,9 @@
 import React, { useEffect } from 'react';
 import { Field } from 'formik';
 
+import { validate } from 'jsonschema';
+import jsonSchema from './validation/jsonschema';
+
 export default function Schemas(props) {
 
     useEffect(() => {
@@ -107,4 +110,14 @@ export default function Schemas(props) {
             </fieldset>
         </div>
     )
+}
+
+export function isValidInlineSchema(value) {
+    try {
+        validate(value, jsonSchema, { throwError: true });
+        return true;
+    } catch (e) {
+        console.log(e);
+        return false;
+    }
 }

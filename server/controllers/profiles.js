@@ -27,6 +27,7 @@ const { conflictError, validationError, notFoundError, preconditionFailedError, 
 const authorizationError = require('../errorTypes/authorizationError');
 const models = require('../ODM/models');
 const metrics = require('./metrics');
+const pattern = require('../ODM/pattern');
 
 /**
  * Adds a new profile to the system by creating a new profile and profile
@@ -228,7 +229,7 @@ exports.resolveProfile = async function (req, res) {
             });
 
         if (req.user && organization
-                && organization.members.find(member => member.user.uuid === req.user.uuid)) {
+            && organization.members.find(member => member.user.uuid === req.user.uuid)) {
             if (profile.currentDraftVersion) {
                 profileVersion = await profileVersionModel
                     .findById(profile.currentDraftVersion)
@@ -254,6 +255,11 @@ exports.resolveProfile = async function (req, res) {
                 success: false,
                 message: 'No profile found for this uuid.',
             });
+        }
+
+        const metrics = require('./metrics');
+        if (profileVersion.parentProfile && profileVersion.parentProfile.uuid) {
+            metrics.count(profileVersion.parentProfile.uuid, 'profileUIView');
         }
     } catch (err) {
         console.error(err);
