@@ -13,10 +13,25 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React from 'react';
-import { NavLink } from 'react-router-dom';
+import React, { useState } from 'react';
+import { NavLink, useHistory } from 'react-router-dom';
+import { useSelector, useDispatch } from 'react-redux';
+import AccountButton from "../../components/users/AccountButton"
 
 export default function OrganizationHeader({ organization, url, isMember, user, joinAction }) {
+    let [searchString, setSearchString] = useState();
+    let history = useHistory();
+
+    const userData = useSelector((state) => state.userData);
+    const dispatch = useDispatch();
+
+    function search(e) {
+        history.push({ pathname: "/search", state: { search: searchString } });
+        e.preventDefault();
+        setSearchString("");
+        return false;
+    }
+
     const profilecount = (profiles) => {
         if (!profiles) return "0";
         if (isMember) return profiles.length;
@@ -32,12 +47,68 @@ export default function OrganizationHeader({ organization, url, isMember, user, 
                 <div className="usa-logo" id="extended-logo">
                     <em className="usa-logo__text"><a href={`${url}/about`} title="Home" aria-label="Home">{organization.name}</a></em>
                 </div>
-                <button className="usa-menu-btn">Menu</button>
+                {/* <button className="usa-menu-btn">Menu</button> */}
             </div>
             <nav aria-label="Primary navigation" className="usa-nav">
                 <div className="usa-nav__inner">
                     <button className="usa-nav__close"><i className="fa fa-close"></i></button>
                     <ul className="usa-nav__primary usa-accordion" style={{ marginBottom: '-.15rem' }}>
+                    <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/profiles"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Profiles</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/organization"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Working Groups</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/api-info"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">API Info</span>
+                            </NavLink>
+                        </li>
+                        {userData && userData.user && userData.user.type === 'admin' &&
+                            <li className="usa-nav__primary-item main-menu-show">
+                                <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin1">
+                                    <span className="text-bold">Admin</span>
+                                </button>
+                                <ul id="basic-nav-section-admin1" className="usa-nav__submenu" hidden>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/users"
+                                            className="usa-link"
+                                        >
+                                            Manage Users
+                                        </NavLink>
+                                    </li>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/verification"
+                                            className="usa-link"
+                                        >
+                                            Verify Profiles
+                                        </NavLink>
+                                    </li>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/analytics"
+                                            className="usa-link"
+                                        >
+                                            Analytics
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        <li className="usa-nav__primary-item main-menu-show" style={{ marginLeft: 'auto' }}>
+                            <AccountButton controlIndex={1001}></AccountButton>
+                        </li>
                         <li className={`usa-nav__primary-item`}>
                             <NavLink to={`${url}/about`}
                                 className="usa-nav__link"
@@ -75,6 +146,13 @@ export default function OrganizationHeader({ organization, url, isMember, user, 
                                 </li>
                             }
                         </>)}
+                        <div className="usa-nav__secondary main-menu-show">
+                            <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
+                                <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
+                                <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" />
+                                <button id="site-search" className="usa-button" type="submit" style={{backgroundColor: '#005ea2'}}><span className="usa-sr-only">Search</span></button>
+                            </form>
+                        </div>
                     </ul>
                     {!isMember && user && <div className="usa-nav__secondary">
                         <button className="usa-button usa-button--outline bg-white pull-right margin-right-0"

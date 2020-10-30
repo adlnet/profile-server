@@ -279,9 +279,9 @@ export default function ProfileImportQueue() {
         const exist = await getConcept(harvestItem.model.iri)
         let matchType = await getMatchType(exist, profileVersion);
         let updateHarvest = JSON.parse(JSON.stringify(profileVersion.harvestDatas[selectedImportedFileIndex]));
-  
+        
         if (matchType === 'parentless' || matchType === 'deprecated' || matchType === 'inProfile' || matchType === 'yes') {
-          if (matchType === 'yes') {
+          if (matchType === 'yes' || matchType === 'partial') {
               window.alert("This concept matches a concept already on the server.");
               updateHarvest.match.data[harvestItem.groupIndex][harvestItem.conceptType].match.model = exist[0];
           }

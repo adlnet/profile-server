@@ -1325,3 +1325,24 @@ path.rv-xy-plot__series.rv-xy-plot__series--line {
 .remove-file-modal-container h2{
   font-size: 22px;
 }
+.main-menu-show{
+  display: none;
+  text-decoration: none;  
+}
+.sub-menu-list {
+  list-style: none;
+}
+.hide-duplicate{
+  display: block;
+}
+@media (max-width: 1024px){
+  .main-menu-show{
+    display: block;
+  }
+  .hide-duplicate{
+    display: none;
+  }
+  .usa-nav__inner{
+    background-color: white;
+  }
+}

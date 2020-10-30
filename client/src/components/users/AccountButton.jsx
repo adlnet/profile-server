@@ -18,7 +18,7 @@ import { NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user";
 
-export default function AccountButton() {
+export default function AccountButton({controlIndex = 0 }) {
     let dispatch = useDispatch();
     function signOut() {
         dispatch(user_actions.logout())
@@ -32,10 +32,10 @@ export default function AccountButton() {
 
     return (
         userData.user ? <>
-            <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-two">
+            <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls={`basic-nav-section-two-${controlIndex}`}>
                 <span className="text-bold"><i className="fa fa-user margin-right-05"></i>{userData.user.fullname}</span>
             </button>
-            <ul id="basic-nav-section-two" className="usa-nav__submenu" hidden>
+            <ul id={`basic-nav-section-two-${controlIndex}`} className="usa-nav__submenu" hidden>
                 <li className="usa-nav__submenu-item">
                     <NavLink exact to="/user/account"
                         className="usa-link"

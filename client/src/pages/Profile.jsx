@@ -13,8 +13,8 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useEffect } from 'react';
-import { Switch, Route, NavLink, useParams, useRouteMatch, Link } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { Switch, Route, NavLink, useParams, useRouteMatch, Link, useHistory } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 import jsDownload from 'js-file-download';
 import Lock from "../components/users/lock";
@@ -29,7 +29,7 @@ import ErrorPage from '../components/errors/ErrorPage';
 import ProfilePublishButton from '../components/profiles/profilePublishButton';
 import ProfileImportQueue from '../components/profiles/ProfileImportQueue'
 import { selectOrganization } from '../actions/organizations';
-import { useState } from 'react';
+
 import ModalBoxWithoutClose from '../components/controls/modalBoxWithoutClose';
 import { Field, Form, Formik } from 'formik';
 import api from "../api";
@@ -42,7 +42,10 @@ import CancelButton from '../components/controls/cancelButton';
 import ErrorValidation from '../components/controls/errorValidation';
 import { verificationResponded } from '../actions/successAlert';
 
+import AccountButton from "../components/users/AccountButton"
+
 export default function Profile() {
+    let history = useHistory();
     const dispatch = useDispatch();
     const { url, path } = useRouteMatch();
     const { organizationId, profileId, versionId } = useParams();
@@ -57,6 +60,15 @@ export default function Profile() {
     const profile = useSelector((state) => state.application.selectedProfile);
     const profileVersion = useSelector((state) => state.application.selectedProfileVersion);
     const organization = useSelector(state => state.application.selectedOrganization);
+
+    let [searchString, setSearchString] = useState();
+
+    function search(e) {
+        history.push({ pathname: "/search", state: { search: searchString } });
+        e.preventDefault();
+        setSearchString("");
+        return false;
+    }
 
     let isMember = organization
         && (organization.membership
@@ -246,7 +258,63 @@ export default function Profile() {
                 <div className="usa-nav__inner">
                     <button className="usa-nav__close"><i className="fa fa-close"></i></button>
                     <ul className="usa-nav__primary usa-accordion" style={{ marginBottom: '-.15rem' }}>
-                        <li className={`usa-nav__primary-item`}>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/profiles"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Profiles</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/organization"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Working Groups</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/api-info"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">API Info</span>
+                            </NavLink>
+                        </li>
+                        {userData && userData.user && userData.user.type === 'admin' &&
+                            <li className="usa-nav__primary-item main-menu-show">
+                                <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin1">
+                                    <span className="text-bold">Admin</span>
+                                </button>
+                                <ul id="basic-nav-section-admin1" className="usa-nav__submenu" hidden>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/users"
+                                            className="usa-link"
+                                        >
+                                            Manage Users
+                                        </NavLink>
+                                    </li>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/verification"
+                                            className="usa-link"
+                                        >
+                                            Verify Profiles
+                                        </NavLink>
+                                    </li>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/analytics"
+                                            className="usa-link"
+                                        >
+                                            Analytics
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        <li className="usa-nav__primary-item main-menu-show" style={{ marginLeft: 'auto' }}>
+                            <AccountButton controlIndex={1000}></AccountButton>
+                        </li>
+                        <li className={`usa-nav__primary-item `}>
                             <NavLink exact
                                 to={`${url}`}
                                 className="usa-nav__link"
@@ -254,7 +322,7 @@ export default function Profile() {
                                 <span className="text-bold">Profile Details</span>
                             </NavLink>
                         </li>
-                        <li className={`usa-nav__primary-item`}>
+                        <li className={`usa-nav__primary-item `}>
                             <NavLink
                                 to={`${url}/templates`}
                                 className="usa-nav__link"
@@ -262,7 +330,7 @@ export default function Profile() {
                                 <span className="text-bold">Statement Templates ({profileVersion.templates ? profileVersion.templates.length : 0})</span>
                             </NavLink>
                         </li>
-                        <li className={`usa-nav__primary-item`}>
+                        <li className={`usa-nav__primary-item `}>
                             <NavLink
                                 to={`${url}/patterns`}
                                 className="usa-nav__link"
@@ -270,7 +338,7 @@ export default function Profile() {
                                 <span className="text-bold">Patterns ({profileVersion.patterns ? profileVersion.patterns.length : 0})</span>
                             </NavLink>
                         </li>
-                        <li className={`usa-nav__primary-item`}>
+                        <li className={`usa-nav__primary-item `}>
                             <NavLink
                                 to={`${url}/concepts`}
                                 className="usa-nav__link"
@@ -284,7 +352,7 @@ export default function Profile() {
                             </NavLink>
                         </li>
                         {(isMember && profileVersion.harvestDatas && profileVersion.harvestDatas.length > 0) &&
-                            <li className={`usa-nav__primary-item`}>
+                            <li className={`usa-nav__primary-item `}>
                                 <NavLink
                                     to={`${url}/queue`}
                                     className="usa-nav__link"
@@ -297,6 +365,13 @@ export default function Profile() {
                                 </NavLink>
                             </li>
                         }
+                        <div className="usa-nav__secondary main-menu-show">
+                            <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
+                                <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
+                                <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" />
+                                <button id="site-search" className="usa-button" type="submit" style={{backgroundColor: '#005ea2'}}><span className="usa-sr-only">Search</span></button>
+                            </form>
+                        </div>
                     </ul>
                 </div>
             </nav>

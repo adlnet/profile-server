@@ -16,18 +16,24 @@
 import React, { useEffect, useState } from "react";
 import API from "../../api";
 
+import { useSelector, useDispatch } from 'react-redux';
+
+
 import ProfileResult from "./ProfileResult";
 import ConceptResult from "./ConceptResult";
-import { useHistory } from 'react-router-dom'
+import { useHistory, useLocation, NavLink } from 'react-router-dom'
 import Pagination from "./Pagination"
 import store from "../../store";
-import { useLocation } from "react-router-dom";
 import Flyout from "../controls/flyout";
 import { Detail } from "../DetailComponents";
+import AccountButton from "../../components/users/AccountButton"
+
 export default function Search(props) {
     const [selectedType, setSelectedType] = useState("all");
     let [results, setResults] = useState([]);
     const [showFlyout, setShowFlyout] = useState(false);
+
+    const userData = useSelector((state) => state.userData);
 
     const location = useLocation();
     let tmpSearch = '';
@@ -258,7 +264,62 @@ export default function Search(props) {
             <div className="grid-container bg-base-lightest usa-nav__inner">
                 <button className="usa-nav__close"><i className="fa fa-close"></i></button>
                 <ul className="usa-nav__primary usa-accordion">
-
+                <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/profiles"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Profiles</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/organization"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Working Groups</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item main-menu-show">
+                            <NavLink to="/api-info"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">API Info</span>
+                            </NavLink>
+                        </li>
+                        {userData && userData.user && userData.user.type === 'admin' &&
+                            <li className="usa-nav__primary-item main-menu-show">
+                                <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin1">
+                                    <span className="text-bold">Admin</span>
+                                </button>
+                                <ul id="basic-nav-section-admin1" className="usa-nav__submenu" hidden>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/users"
+                                            className="usa-link"
+                                        >
+                                            Manage Users
+                                        </NavLink>
+                                    </li>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/verification"
+                                            className="usa-link"
+                                        >
+                                            Verify Profiles
+                                        </NavLink>
+                                    </li>
+                                    <li className="usa-nav__submenu-item">
+                                        <NavLink exact to="/admin/analytics"
+                                            className="usa-link"
+                                        >
+                                            Analytics
+                                        </NavLink>
+                                    </li>
+                                </ul>
+                            </li>
+                        }
+                        <li className="usa-nav__primary-item main-menu-show" style={{ marginLeft: 'auto' }}>
+                            <AccountButton controlIndex={999}></AccountButton>
+                        </li>
                     <li className="usa-nav__primary-item" onClick={() => _setSelectedType("all")}> <a className={"usa-nav__link " + (selectedType == "all" ? "usa-current" : "")} ><span className="text-bold">All</span></a></li>
                     <li className="usa-nav__primary-item" onClick={() => _setSelectedType("profiles")}> <a className={"usa-nav__link " + (selectedType == "profiles" ? "usa-current" : "")} ><span className="text-bold">Profiles</span></a></li>
                     <li className="usa-nav__primary-item" onClick={() => _setSelectedType("concepts")}> <a className={"usa-nav__link " + (selectedType == "concepts" ? "usa-current" : "")} ><span className="text-bold">Concepts</span></a></li>
