@@ -19,7 +19,7 @@ A full list of library dependencies can be found in:
 - client/package.json
 
 ## Client
-A React Single Page App created using `yarn create react-app client`. Follow the [Readme](./client/README.md) for development and builds. You will need to `$client: yarn` to install node_modules.
+A React Single Page App created using `yarn create react-app client`. Follow the [Deliverable History](https://github.com/adlnet/profile-server/wiki/Deliverable-History) for development and builds. You will need to `$client: yarn` to install node_modules.
 
 ## Server
 Express server configured to serve a React SPA. It also has the API designed for the Profile server. It uses MongoDB as its database. You will need to `$: yarn` to install server node_modules.
