@@ -1,0 +1,45 @@
+version: '3'
+services:
+  server:
+    network_mode: host
+    build:
+      context: .
+      args:
+        network: host
+    container_name: server
+    ports:
+#      - 80:80
+      - 3005:3005
+#      - 3000:3000
+    depends_on:
+      - mongoose
+#    networks:
+#      - public
+    restart: always
+      
+  mongoose:
+    network_mode: host
+    image: mongo
+    container_name: mongoose
+    ports:
+     - 27017:27017
+#    networks:
+#      - public
+  
+  client:
+    network_mode: host
+    build:
+      context: ./profile-server
+      args:
+        network: host
+    ports:
+     - 3000:3000
+    depends_on:
+      - server
+#    networks:
+#      - public
+    restart: always
+      
+#networks:
+#  public: 
+#    driver: bridge

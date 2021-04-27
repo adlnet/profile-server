@@ -1,0 +1,16 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title>
+
+	</title>
+</head>
+<body>
+Your verification request for {{profilename}} version {{profileversion}} was {{approvalstatus}}.
+<br><br>
+{{#reason}}
+The following reason was given:<br>
+{{text}}
+{{/reason}}
+</body>
+</html>
