@@ -1,45 +1,66 @@
 version: '3'
 services:
   server:
-    network_mode: host
     build:
       context: .
-      args:
-        network: host
+#      args:
+#        network: host
     container_name: server
     ports:
-#      - 80:80
       - 3005:3005
-#      - 3000:3000
     depends_on:
       - mongoose
-#    networks:
-#      - public
     restart: always
+    network_mode: host
       
   mongoose:
-    network_mode: host
     image: mongo
     container_name: mongoose
     ports:
      - 27017:27017
-#    networks:
-#      - public
+    network_mode: host
   
   client:
-    network_mode: host
     build:
       context: ./profile-server
-      args:
-        network: host
+#      args:
+#        network: host
     ports:
      - 3000:3000
     depends_on:
       - server
-#    networks:
-#      - public
     restart: always
+    network_mode: host
+    
+  nginx:
+    restart: always
+    build:
+      context: nginx
+      args:
+        - HOSTNAME=${HOSTNAME}
+    ports:
+      - 80:80
+      - 443:443
+    container_name: docker_nginx
+    volumes:
+      - ./nginx/letsencrypt:/usr/share/nginx/html
+      - ./certbot/etc:/usr/share/keys
+    network_mode: host
+
+  # Certbot for SSL automation
+  #
+  certbot:
+    container_name: 'docker_certbot'
+    image: certbot/certbot
+    volumes:
+      - ./keys:/var/lib/letsencrypt
+      - ./nginx/letsencrypt:/data/letsencrypt
+      - ./certbot/etc:/etc/letsencrypt
+      - ./certbot/log:/var/log/letsencrypt
+    depends_on:
+      - nginx
+    ports:
+      - 8080:8080
+    network_mode: host
       
-#networks:
-#  public: 
-#    driver: bridge
+
