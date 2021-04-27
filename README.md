@@ -32,8 +32,9 @@ A React Single Page App created using `yarn create react-app client`. Follow the
 Express server configured to serve a React SPA. It also has the API designed for the Profile server. It uses MongoDB as its database. You will need to `$: yarn` to install server node_modules.
 
 ## Dev Setup
-1. In a terminal, run 'docker-compose up -d'
-2. Go to localhost to test installation runs (No Admin has been created, will update as needed)
+1. Create the .env file in the `Root Project Folder`
+2. In a terminal, run 'docker-compose up -d'
+3. Go to localhost to test installation runs (No Admin has been created, will update as needed)
 
 ## Run
 A browser tab should open and show the index page of the app after executing the `$client: yarn start` command in the client folder. _If it didn't automatically open, you can navigate to http://localhost:3000_
