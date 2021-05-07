@@ -11,14 +11,14 @@ services:
     depends_on:
       - mongoose
     restart: always
-    network_mode: host
+    #network_mode: host
       
   mongoose:
     image: mongo
     container_name: mongoose
     ports:
      - 27017:27017
-    network_mode: host
+    #network_mode: host
   
   client:
     build:
@@ -30,7 +30,7 @@ services:
     depends_on:
       - server
     restart: always
-    network_mode: host
+    #network_mode: host
     
   nginx:
     restart: always
@@ -45,7 +45,7 @@ services:
     volumes:
       - ./nginx/letsencrypt:/usr/share/nginx/html
       - ./certbot/etc:/usr/share/keys
-    network_mode: host
+    #network_mode: host
 
   # Certbot for SSL automation
   #
@@ -61,6 +61,6 @@ services:
       - nginx
     ports:
       - 8080:8080
-    network_mode: host
+    #network_mode: host
       
 
