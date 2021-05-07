@@ -9,4 +9,4 @@
  WORKDIR /app/profile-server
  RUN yarn
 # CMD ["node", "server.js"]
- CMD ["yarn", "start"]
+ CMD ["yarn", "test"]
