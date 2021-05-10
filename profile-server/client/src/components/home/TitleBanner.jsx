@@ -75,6 +75,20 @@ export default function TitleBanner() {
                                 <span className="text-bold">API Info</span>
                             </NavLink>
                         </li>
+                        <li className="usa-nav__primary-item">
+                            <NavLink to="/help"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">Getting Started</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item">
+                            <NavLink to="/FAQs"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">FAQs</span>
+                            </NavLink>
+                        </li>
                         {userData && userData.user && userData.user.type === 'admin' &&
                             <li className="usa-nav__primary-item">
                                 <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin">
