@@ -8,5 +8,6 @@
  
  WORKDIR /app/profile-server
  RUN yarn
+ RUN yarn install
 # CMD ["node", "server.js"]
- CMD ["yarn", "test"]
+ CMD ["yarn", "start"]
