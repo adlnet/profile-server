@@ -13,7 +13,12 @@ services:
     restart: always
 #    network_mode: host
     networks:
-      - public
+      - public    
+    environment:
+      DANGEROUSLY_DISABLE_HOST_CHECK: "true"
+#      REACT_APP_API_ENDPOINT: "http://server:3005"
+
+
   mongoose:
     image: mongo
     container_name: mongoose
@@ -36,6 +41,11 @@ services:
 #    network_mode: host
     networks:
       - public
+    environment:
+      DANGEROUSLY_DISABLE_HOST_CHECK: "true"
+#      REACT_APP_API_ENDPOINT: "http://server:3005"
+
+
     
   nginx:
     restart: always
