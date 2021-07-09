@@ -20,6 +20,7 @@ import Home from "./pages/Home";
 import Organizations from './pages/Organizations';
 import Organization from './pages/Organization';
 import Profile from './pages/Profile';
+import IRI from './pages/IRI';
 import CreateOrganization from './components/organizations/CreateOrganization';
 import ErrorPage from './components/errors/ErrorPage';
 import Profiles from "./pages/Profiles";
@@ -56,6 +57,9 @@ export default class App extends Component {
                 <SuccessBanner />
                 <GlobalErrorBoundary>
                     <Switch>
+                        <Route path="/api/iri/:iri">
+                            <IRI />
+                        </Route>
                         <Route path="/profile/:profileId">
                             <Profile />
                         </Route>
