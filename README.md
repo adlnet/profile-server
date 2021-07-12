@@ -2,7 +2,7 @@
 The overall goal of the ADL Initiative’s xAPI profile effort is to advance semantic interoperability and simplify xAPI implementation, helping to make data-driven learning accessible and impactful to practitioners and learners.  The xAPI Profile Server offers an enhanced set of tools to create profiles, link vocabularies semantically, persist identifiers, and provide lookup services for tool vendors and practitioners.
 
 More information on this project is available at **[adlnet.gov](https://adlnet.gov/projects/xapi-profile-server/)**.
-
+ 
 ### Project Structure
 Docker Folder/
 | Root Project folder/  
