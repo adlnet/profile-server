@@ -1,3 +1,6 @@
 node_modules
 .env
 /server/profileValidator/xapi-authored-profiles
+docker-compose.yml
+/builds
+/node_modules

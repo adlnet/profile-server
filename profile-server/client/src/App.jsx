@@ -20,10 +20,13 @@ import Home from "./pages/Home";
 import Organizations from './pages/Organizations';
 import Organization from './pages/Organization';
 import Profile from './pages/Profile';
+import IRI from './pages/IRI';
 import CreateOrganization from './components/organizations/CreateOrganization';
 import ErrorPage from './components/errors/ErrorPage';
 import Profiles from "./pages/Profiles";
 import APIInfo from "./pages/APIInfo";
+import HelpPage from "./pages/HelpPage";
+import FAQPage from "./pages/FAQPage";
 
 import SelectOrganization from "./components/profiles/SelectOrganization";
 import Analytics from "./components/admin/Analytics";
@@ -32,7 +35,7 @@ import User from './pages/Users.jsx';
 
 import history from "./history";
 
-import OfficialBanner from './components/OfficialBanner';
+//import OfficialBanner from './components/OfficialBanner';
 import TitleBanner from './components/home/TitleBanner';
 import PrivateRoute from './components/users/PrivateRoute';
 import AdminRoute from './components/users/AdminRoute';
@@ -47,13 +50,16 @@ export default class App extends Component {
 
     render() {
         return (<>
-            <OfficialBanner />
+            {/*<OfficialBanner /> -->*/}
             <Router history={history}>
                 <TitleBanner />
                 <ErrorBoundary />
                 <SuccessBanner />
                 <GlobalErrorBoundary>
                     <Switch>
+                        <Route path="/api/iri/:iri">
+                            <IRI />
+                        </Route>
                         <Route path="/profile/:profileId">
                             <Profile />
                         </Route>
@@ -86,6 +92,12 @@ export default class App extends Component {
                         </Route>
                         <Route path="/api-info">
                             <APIInfo></APIInfo>
+                        </Route>
+                        <Route path="/help">
+                            <HelpPage></HelpPage>
+                        </Route>
+                        <Route path="/FAQs">
+                            <FAQPage></FAQPage>
                         </Route>
                         <AdminRoute exact path="/admin/users">
                             <Users />
