@@ -11,14 +11,22 @@ services:
     depends_on:
       - mongoose
     restart: always
-    network_mode: host
-      
+#    network_mode: host
+    networks:
+      - public    
+    environment:
+      DANGEROUSLY_DISABLE_HOST_CHECK: "true"
+#      REACT_APP_API_ENDPOINT: "http://server:3005"
+
+
   mongoose:
     image: mongo
     container_name: mongoose
     ports:
-     - 27017:27017
-    network_mode: host
+      - 27017:27017
+#    network_mode: host
+    networks:
+      - public
   
   client:
     build:
@@ -30,7 +38,14 @@ services:
     depends_on:
       - server
     restart: always
-    network_mode: host
+#    network_mode: host
+    networks:
+      - public
+    environment:
+      DANGEROUSLY_DISABLE_HOST_CHECK: "true"
+#      REACT_APP_API_ENDPOINT: "http://server:3005"
+
+
     
   nginx:
     restart: always
@@ -45,7 +60,9 @@ services:
     volumes:
       - ./nginx/letsencrypt:/usr/share/nginx/html
       - ./certbot/etc:/usr/share/keys
-    network_mode: host
+#    network_mode: host
+    networks:
+      - public
 
   # Certbot for SSL automation
   #
@@ -57,10 +74,14 @@ services:
       - ./nginx/letsencrypt:/data/letsencrypt
       - ./certbot/etc:/etc/letsencrypt
       - ./certbot/log:/var/log/letsencrypt
-    depends_on:
-      - nginx
+#    depends_on:
+#      - nginx
     ports:
       - 8080:8080
-    network_mode: host
-      
+#    network_mode: host
+    networks:
+      - public
 
+networks:
+  public:
+    driver: bridge      

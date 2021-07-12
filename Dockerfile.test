@@ -10,4 +10,4 @@
  RUN yarn
  RUN yarn install
 # CMD ["node", "server.js"]
- CMD ["yarn", "start"]
+ CMD ["yarn", "test"]

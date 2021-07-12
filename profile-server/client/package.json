@@ -57,7 +57,7 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://localhost:3005",
+  "proxy": "http://server:3005",
   "devDependencies": {
     "@svgr/cli": "^5.4.0"
   }
