@@ -119,12 +119,17 @@ exports.JsonLdToModel = function () {
 
     function toIsDeprecated(deprecated) {
         let isDeprecated;
-        if (!deprecated || deprecated.toLowerCase() === 'false') {
+        try {
+            if (!deprecated || deprecated.toLowerCase() === 'false') {
+                isDeprecated = false;
+            } else if (deprecated.toLowerCase() === 'true') {
+                isDeprecated = true;
+            } else {
+                throw new validationError(`${deprecated} is not a valid value for deprecated.`);
+            }
+        }
+        catch {
             isDeprecated = false;
-        } else if (deprecated.toLowerCase() === 'true') {
-            isDeprecated = true;
-        } else {
-            throw new validationError(`${deprecated} is not a valid value for deprecated.`);
         }
 
         return isDeprecated;
