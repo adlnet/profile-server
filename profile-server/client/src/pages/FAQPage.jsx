@@ -113,7 +113,13 @@ export default function FAQPage(props) {
         <h1 style={{ color: "#1c3664" }}>Frequently Asked Questions</h1>
         <p>
           This page will be populated as the ADL Initiative is asked questions.
-          If you have any questions or concerns, please contact us.
+          If you have any questions or concerns, please contact us /n/n.
+
+          Most profile questions can vbe answered by browsing the  {" "}
+
+          <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
+               Profile Server Info Page. 
+            </a>
         </p>
       </section>
       <section>
