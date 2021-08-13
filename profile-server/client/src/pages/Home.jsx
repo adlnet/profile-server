@@ -178,7 +178,10 @@ const Home = () => {
             <a href="/help#resourcestop" target>
                before you begin 
             </a>
-            {" "}section.
+            {" "}section, or visit the {" "}
+            <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
+               Profile Server Info Page. 
+            </a>
           </p>
         </div>
       </section>
