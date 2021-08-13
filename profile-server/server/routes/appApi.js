@@ -59,8 +59,8 @@ router.use('/profile', profiles);
 const versions = require('./profileVersions');
 router.use('/version', versions);
 
-//const iri = require('./iri');
-//router.use('/api/iri', iri)
+const iri = require('./iri');
+router.use('/api/iri', iri)
 
 // set up GET request router when searching by IRI
 router.get('/api/iri/:iri', (req, res) => {
