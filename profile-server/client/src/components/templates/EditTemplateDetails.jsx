@@ -25,8 +25,9 @@ import { useSelector } from 'react-redux';
 import CancelButton from '../controls/cancelButton';
 import DeprecateButton from '../controls/deprecateButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import DeleteButton from '../controls/DeleteButton';
 
-export default function EditTemplateDetails({ initialValues, onSubmit, onCancel, isPublished, onDeprecate }) {
+export default function EditTemplateDetails({ initialValues, onSubmit, onCancel, isPublished, onDeprecate, onDelete }) {
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
     const generatedIRIBase = `${currentProfileVersion.iri}/templates/`;
 
@@ -106,6 +107,13 @@ export default function EditTemplateDetails({ initialValues, onSubmit, onCancel,
                                     style={{ marginTop: "0.6em" }}
                                     type="reset"
                                     onClick={onDeprecate}
+                                    componentType="statement template"
+                                />
+                                <DeleteButton
+                                    className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                    style={{ marginTop: "0.6em" }}
+                                    type="reset"
+                                    onClick={onDelete}
                                     componentType="statement template"
                                 />
                             </div>

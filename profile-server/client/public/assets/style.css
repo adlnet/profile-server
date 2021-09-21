@@ -699,6 +699,11 @@ h2.profile-edit button {
   margin-top: 16px;
   margin-right: 24px;
 }
+.usa-button.delete-button {
+  margin-top: 16px;
+  margin-right: 24px;
+  background-color: red;
+}
 
 .disabled {
   opacity: 0.3;
