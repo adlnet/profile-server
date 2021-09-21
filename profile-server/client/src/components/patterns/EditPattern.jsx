@@ -39,17 +39,16 @@ export default function EditPattern({ pattern, onEdit, isPublished, setEditing, 
                 : (type === "alternates") ?
                     <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
                     : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
-                        : ""
+                        : 
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onClick={onDelete}
+                                componentType="pattern"
+                            />
+                        </div>
         }
-
-        <div className="grid-col display-flex flex-column flex-align-end">
-            <DeleteButton
-                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
-                style={{ marginTop: "0.6em" }}
-                type="reset"
-                onClick={onDelete}
-                componentType="pattern"
-            />
-        </div>
     </>);
 }

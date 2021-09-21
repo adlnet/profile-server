@@ -144,6 +144,8 @@ function renderButtons(props) {
                     {props.previousStep && props.nextStep && <button key="2" disabled={props.isNotValidated} onClick={props.nextStep} className="usa-button usa-button--primary"> Continue </button>}
                     {props.button}
                     {props.deprecateButton}
+                    <br />
+                    {props.deleteButton}
                 </div>
             </div>
         </div>
