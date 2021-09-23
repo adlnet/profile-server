@@ -15,7 +15,7 @@
 **************************************************************** */
 import React, { useEffect } from 'react';
 import { useRouteMatch, useParams, Switch, Route, Link, useHistory, Redirect } from 'react-router-dom';
-import { editConcept, loadProfileConcepts, selectConcept, removeConceptLink } from "../../actions/concepts";
+import { editConcept, loadProfileConcepts, selectConcept, removeConceptLink, deleteConcept } from "../../actions/concepts";
 import { Detail, Translations, } from '../DetailComponents';
 import { useSelector, useDispatch, } from 'react-redux';
 import Lock from "../../components/users/lock";
@@ -58,6 +58,15 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
 
     function onDeprecate(reasonInfo) {
         handleEditConcept({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED);
+    }
+
+    async function handleDeleteConcept() {
+        await dispatch(deleteConcept( params.organizationId, profileId, versionId, concept ));
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`);
+    }
+
+    function onDelete() {
+        handleDeleteConcept();
     }
 
     if (!concept) return '';
@@ -121,6 +130,7 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
                             isPublished={isPublished}
                             setIsEditing={setIsEditing}
                             onDeprecate={onDeprecate}
+                            onDelete={onDelete}
                         />
                     </Lock>
                     : <Redirect to={url} />

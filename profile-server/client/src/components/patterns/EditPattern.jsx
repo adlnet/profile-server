@@ -45,7 +45,7 @@ export default function EditPattern({ pattern, onEdit, isPublished, setEditing, 
                                 className="usa-button usa-button--unstyled text-secondary-dark text-bold"
                                 style={{ marginTop: "0.6em" }}
                                 type="reset"
-                                onClick={onDelete}
+                                onConfirm={onDelete}
                                 componentType="pattern"
                             />
                         </div>

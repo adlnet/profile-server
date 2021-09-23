@@ -324,6 +324,7 @@ exports.updateConcept = async function (req, res) {
 
 exports.deleteConcept = async function (req, res) {
     try {
+        //todo: determine if necessary: await module.exports.unlinkConcept(req.params.concept, null, req.params.version);
         await conceptModel.deleteByUuid(req.params.concept);
     } catch (err) {
         console.error(err);
@@ -338,7 +339,22 @@ exports.deleteConcept = async function (req, res) {
     });
 };
 
-exports.unlinkConcept = async function (req, res) {
+exports.unlinkConcept = async function(concept, profileVersion, version) {
+    if (!profileVersion) {
+        profileVersion = await profileVersionModel.findByUuid(version);
+    }
+
+    // only unlink external concepts (aka different parent profile version)
+    if (concept.parentProfile.uuid !== profileVersion.uuid) {
+        if (profileVersion.externalConcepts && profileVersion.externalConcepts.length) {
+            profileVersion.externalConcepts = profileVersion.externalConcepts.filter(c => c._id.toString() !== concept._id.toString());
+            await profileVersion.save();
+        }
+    }
+}
+
+
+exports.unlinkConceptReq = async function (req, res) {
     try {
         const concept = req.resource;
         const profileVersion = await profileVersionModel.findByUuid(req.params.version);
@@ -349,13 +365,8 @@ exports.unlinkConcept = async function (req, res) {
             });
         }
 
-        // only unlink external concepts (aka different parent profile version)
-        if (concept.parentProfile.uuid !== profileVersion.uuid) {
-            if (profileVersion.externalConcepts && profileVersion.externalConcepts.length) {
-                profileVersion.externalConcepts = profileVersion.externalConcepts.filter(c => c._id.toString() !== concept._id.toString());
-                await profileVersion.save();
-            }
-        }
+        module.exports.unlinkConcept(concept, profileVersion)
+        
     } catch (err) {
         if (console.prodLog) console.prodLog(err);
         else console.error(err);

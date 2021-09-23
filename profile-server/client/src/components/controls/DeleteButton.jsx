@@ -16,7 +16,7 @@
 import React, { useState } from 'react'
 import ModalBoxWithoutClose from './modalBoxWithoutClose';
 
-export default function DeleteButton({ style, className, type, preventDefault, componentType }) {
+export default function DeleteButton({ style, className, type, preventDefault, componentType, onConfirm }) {
     const [showModal, setShowModal] = useState(false);
 
     function doModal(e) {
@@ -29,7 +29,7 @@ export default function DeleteButton({ style, className, type, preventDefault, c
         <ModalBoxWithoutClose show={showModal}>
             <div className="grid-row">
                 <div className="grid-col">
-                    <h2>Deprecate this <span style={{ textTransform: "capitalize" }}>{componentType}</span></h2>
+                    <h2>Delete this <span style={{ textTransform: "capitalize" }}>{componentType}</span></h2>
                 </div>
             </div>
             <div className="grid-row">
@@ -41,7 +41,11 @@ export default function DeleteButton({ style, className, type, preventDefault, c
             </div>
             <div className="grid-row">
                 <div className="grid-col" style={{ maxWidth: "fit-content" }}>
-                    <button className="usa-button delete-button" style={{ margin: "1.5em 0em" }} type="button">Delete</button>
+                    <button 
+                    className="usa-button delete-button" 
+                    style={{ margin: "1.5em 0em" }} 
+                    type="button"
+                    onClick={() => {onConfirm(); setShowModal(false);}}>Delete</button>
                 </div>
                 <div className="grid-col" style={{ maxWidth: "fit-content" }}>
                     <button className="usa-button usa-button--unstyled" onClick={() => setShowModal(false)} type="button" style={{ margin: "2.3em 1.5em" }}><b>Cancel</b></button>

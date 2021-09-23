@@ -134,7 +134,7 @@ export default function CreateProfileForm({ initialValue, handleSubmit, handleCa
                             className="usa-button usa-button--unstyled text-secondary-dark text-bold"
                             style={{ marginTop: "1.6em" }}
                             type="reset"
-                            onClick={handleDelete}
+                            onConfirm={handleDelete}
                             componentType="profile"
                         />
                     </div>

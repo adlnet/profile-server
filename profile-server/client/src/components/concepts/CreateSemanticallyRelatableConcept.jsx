@@ -154,7 +154,7 @@ export default function SemanticallyRelatableConcept({ startingValues, onCreate,
                                 className="usa-button usa-button--unstyled text-secondary-dark text-bold"
                                 style={{ marginTop: "0.6em" }}
                                 type="reset"
-                                onClick={onDelete}
+                                onConfirm={onDelete}
                                 componentType="concept"
                             />
                         </div>

@@ -50,6 +50,11 @@ export const REMOVE_CONCEPT_LINK = 'REMOVE_CONCEPT_LINK';
 export const ERROR_REMOVE_CONCEPT_LINK = 'ERROR_REMOVE_CONCEPT_LINK';
 export const FINISH_REMOVE_CONCEPT_LINK = 'FINISH_REMOVE_CONCEPT_LINK';
 
+export const START_DELETE_CONCEPT = 'START_DELETE_CONCEPT';
+export const DELETE_CONCEPT = 'DELETE_CONCEPT';
+export const ERROR_DELETE_CONCEPT = 'ERROR_DELETE_CONCEPT';
+export const FINISH_DELETE_CONCEPT = 'FINISH_DELETE_CONCEPT';
+
 export const START_LOAD_EXTERNAL_CONCEPTS = 'START_LOAD_EXTERNAL_CONCEPTS';
 export const FINISH_LOAD_EXTERNAL_CONCEPTS = 'FINISH_LOAD_EXTERNAL_CONCEPTS';
 
@@ -166,6 +171,33 @@ export function editConcept(concept, actualAction) {
         } finally {
             dispatch({
                 type: FINISH_EDIT_CONCEPT,
+            });
+        }
+    }
+}
+
+export function deleteConcept(organizationId, profileId, versionId, conceptId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_DELETE_CONCEPT,
+        });
+
+        try {
+            const concept = await API.deleteConcept(organizationId, profileId, versionId, conceptId);
+
+            dispatch({
+                type: DELETE_CONCEPT,
+                concept: concept,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_DELETE_CONCEPT,
+                errorType: 'concepts',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_DELETE_CONCEPT,
             });
         }
     }
