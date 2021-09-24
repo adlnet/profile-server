@@ -456,7 +456,7 @@ exports.publishProfile = async function (req, res, next) {
  * @param {*} next express next function
  */
 exports.deleteProfile = async function (req, res, next) {
-    let meta;
+    let meta = {};
     try {
         // CAREFUL!!!
         req.profile = req.resource;
@@ -467,10 +467,10 @@ exports.deleteProfile = async function (req, res, next) {
         // Not how this works. If it's locked, and you're here, you have the lock.
         // if (profile.locked) return res.status(409).send(responses.conflict('The profile is currently being edited'));
 
-        meta = await profile.getMetadata();
+        // meta = await profile.getMetadata();
 
-        await profile.deleteDraft();
-        // await profile.remove();
+        // await profile.deleteDraft();
+        await profile.remove();
     } catch (err) {
         return next(err);
     }

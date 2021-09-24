@@ -21,7 +21,7 @@ import Lock from "../components/users/lock";
 import Templates from '../components/templates/Templates';
 import Concepts from '../components/concepts/Concepts';
 import Patterns from '../components/patterns/Patterns'
-import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, editProfileVersion, resolveProfile, requestVerification } from "../actions/profiles";
+import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, editProfileVersion, resolveProfile, requestVerification, deleteProfile } from "../actions/profiles";
 import history from "../history";
 import CreateProfileForm from '../components/profiles/CreateProfileForm';
 import ProfileDetails from '../components/profiles/ProfileDetails';
@@ -152,6 +152,11 @@ export default function Profile() {
     }
     function handleCancelEditProfile() {
         history.push(url);
+    }
+
+    async function handleDeleteProfile() {
+        await dispatch(deleteProfile(organizationId, profile));
+        history.push(`/organization/${organizationId}`);
     }
 
     function isMaxVersion(version) {
@@ -399,6 +404,7 @@ export default function Profile() {
                             <CreateProfileForm
                                 handleSubmit={handleEditProfile}
                                 handleCancel={handleCancelEditProfile}
+                                handleDelete={handleDeleteProfile}
                                 initialValue={profileVersion}
                             />
                         </Lock> </>
