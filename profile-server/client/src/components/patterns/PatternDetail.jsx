@@ -18,7 +18,7 @@ import { useRouteMatch, useParams, useHistory, Link, Switch, Route, Redirect } f
 import { useSelector, useDispatch } from 'react-redux';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
-import { selectPattern, editPattern } from '../../actions/patterns';
+import { selectPattern, editPattern, deletePattern } from '../../actions/patterns';
 import EditPattern from './EditPattern';
 import Lock from '../users/lock';
 import { useState } from 'react';
@@ -54,6 +54,15 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
 
     function onDeprecate(reasonInfo) {
         handleEditPattern({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED)
+    }
+
+    function handleOnDelete() {
+        dispatch(deletePattern( pattern ));
+        history.push(url);
+    }
+
+    function onDelete() {
+        handleOnDelete();
     }
 
     if (!pattern) return '';
@@ -102,6 +111,7 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
                             isPublished={isPublished}
                             setEditing={setIsEditing}
                             onDeprecate={onDeprecate}
+                            onDelete={onDelete}
                         />
                     </Lock>
                     : <Redirect to={url} />

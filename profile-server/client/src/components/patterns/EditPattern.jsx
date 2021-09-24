@@ -35,10 +35,10 @@ export default function EditPattern({ pattern, onEdit, isPublished, setEditing, 
 
         {
             (type === "sequence") ?
-                <CreateSequencePattern key={`${patternId}-sequence`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
+                <CreateSequencePattern key={`${patternId}-sequence`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} onDelete={onDelete} />
                 : (type === "alternates") ?
-                    <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
-                    : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} />
+                    <CreateAlternatesPattern key={`${patternId}-alternates`} type={type} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} onDelete={onDelete} />
+                    : (type) ? <CreateSinglePattern key={`${patternId}-single`} pattern={pattern} components={pattern[pattern.type]} onSubmit={onEdit} isPublished={isPublished} root_url={root_url} setEditing={setEditing} onDeprecate={onDeprecate} onDelete={onDelete} />
                         : 
                         <div className="grid-col display-flex flex-column flex-align-end">
                             <DeleteButton
