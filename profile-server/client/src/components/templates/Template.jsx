@@ -22,7 +22,7 @@ import EditTemplateDetails from './EditTemplateDetails';
 import ConceptTable from './ConceptTable';
 import ConceptDetail from '../concepts/ConceptDetails';
 import StatementExample from './StatementExample';
-import { selectTemplate, editTemplate } from "../../actions/templates";
+import { selectTemplate, editTemplate, deleteTemplate } from "../../actions/templates";
 import RuleTable from '../rules/RuleTable';
 import Rule from '../rules/Rule';
 import DeterminingPropertyTable from '../determining-properties/DeterminingPropertyTable';
@@ -152,6 +152,19 @@ export default function Template({ isMember, isCurrentVersion }) {
     function onDeprecate(reasonInfo) {
         if (isEditable) {
             onEditDetailsSubmit({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED);
+        }
+    }
+
+    function onDeleteDetailsSubmit() {
+        if (isEditable) {
+            dispatch(deleteTemplate(template));
+            setIsEditingDetails(false);
+        }
+    }
+
+    function onDelete() {
+        if (isEditable) {
+            onDeleteDetailsSubmit();
         }
     }
 
@@ -306,6 +319,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                                             onCancel={() => setIsEditingDetails(false)}
                                             isPublished={isPublished}
                                             onDeprecate={onDeprecate}
+                                            onDelete={onDelete}
                                         /> </Lock> :
                                     <TemplateDetail
                                         onEditClick={() => setIsEditingDetails(true)}
