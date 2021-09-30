@@ -159,6 +159,7 @@ export default function Template({ isMember, isCurrentVersion }) {
         if (isEditable) {
             dispatch(deleteTemplate(template));
             setIsEditingDetails(false);
+            history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
         }
     }
 

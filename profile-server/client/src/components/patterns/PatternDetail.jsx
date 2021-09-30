@@ -58,7 +58,7 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
 
     function handleOnDelete() {
         dispatch(deletePattern( pattern ));
-        history.push(url);
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
     }
 
     function onDelete() {

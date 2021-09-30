@@ -18,6 +18,7 @@ const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
 const profileModel = require('../ODM/models').profile;
+const conceptService = require('../services/conceptService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
@@ -324,8 +325,16 @@ exports.updateConcept = async function (req, res) {
 
 exports.deleteConcept = async function (req, res) {
     try {
-        //todo: determine if necessary: await module.exports.unlinkConcept(req.params.concept, null, req.params.version);
-        await conceptModel.deleteByUuid(req.params.concept);
+        const conceptId = req.params.concept;
+        const organizationId = req.params.org;
+        let hasReferences = await conceptService.hasTemplateReferences(conceptId);
+        
+        if (hasReferences) {
+            conceptService.moveToOrphanContainer(req.user, organizationId, conceptId);
+        } else {
+            await conceptModel.deleteByUuid(conceptId);
+        }
+
     } catch (err) {
         console.error(err);
         return res.status(500).send({

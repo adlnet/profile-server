@@ -15,6 +15,7 @@
 **************************************************************** */
 const profileModel = require('../ODM/models').profile;
 const profileVersionModel = require('../ODM/models').profileVersion;
+const profileService = require('../services/profileService');
 const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const langmaps = require('../utils/langmaps');
@@ -428,12 +429,9 @@ exports.publishProfile = async function (req, res, next) {
     let parentProfile;
 
     try {
-        profile = await profileVersionModel.findByUuid(req.params.profile).populate('parentProfile');
-        await profile.publish(req.user, req.body.parentiri);
-        parentProfile = profile.parentProfile;
-
-        // depopulate
-        profile.parentProfile = profile.parentProfile.id;
+        const res = await profileService.publish(req.params.profile, req.user, req.body.parentiri);
+        profile = res.profile;
+        parentProfile = res.parentProfile;
         EventBus.emit('profilePublished', profile);
     } catch (err) {
         console.log(err);
