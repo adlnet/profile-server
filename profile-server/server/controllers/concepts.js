@@ -325,15 +325,24 @@ exports.updateConcept = async function (req, res) {
 
 exports.deleteConcept = async function (req, res) {
     try {
-        const conceptId = req.params.concept;
+        const conceptUuid = req.params.concept;
         const organizationId = req.params.org;
-        let hasReferences = await conceptService.hasTemplateReferences(conceptId);
+        const concept = await conceptModel.findOne({uuid: conceptUuid });
+        if (!concept) throw new Error('Concept not found');
+        let hasReferences = await conceptService.hasTemplateReferences(concept._id);
         
         if (hasReferences) {
-            conceptService.moveToOrphanContainer(req.user, organizationId, conceptId);
+            conceptService.moveToOrphanContainer(req.user, organizationId, concept);
         } else {
-            await conceptModel.deleteByUuid(conceptId);
+            await conceptModel.deleteByUuid(conceptUuid);
         }
+
+        const profileVersion = await profileVersionModel.findByUuid(req.params.version);
+        profileVersion.concepts = [...profileVersion.concepts].filter(t => !t.equals(concept._id));
+        profileVersion.externalConcepts = [...profileVersion.externalConcepts].filter(t => !t.equals(concept._id));
+        profileVersion.updatedOn = new Date();
+        profileVersion.updatedBy = req.user;
+        await profileVersion.save();
 
     } catch (err) {
         console.error(err);

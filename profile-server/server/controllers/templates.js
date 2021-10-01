@@ -16,6 +16,7 @@
 const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
+const templateService = require('../services/templateService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
@@ -310,8 +311,15 @@ exports.deleteTemplate = async function (req, res) {
             });
         }
 
-        if (template.parentProfile.equals(profileVersion._id)) {
-            await template.remove();
+        let hasReferences = await templateService.hasPatternReferences(template._id);
+
+        if (hasReferences) {
+            await templateService.moveToOrphanContainer(req.user, req.params.org, template);
+        }
+        else {
+            if (template.parentProfile.equals(profileVersion._id)) {
+                await template.remove();
+            }
         }
 
         profileVersion.templates = [...profileVersion.templates].filter(t => !t.equals(template._id));

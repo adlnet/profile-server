@@ -14,45 +14,41 @@
 * limitations under the License.
 **************************************************************** */
 const templateModel = require('../ODM/models').template;
-const conceptModel = require('../ODM/models').concept;
+const patternModel = require('../ODM/models').pattern;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const profileComponentService = require('../services/profileComponentService');
 const mongoose = require('mongoose');
 
-module.exports.hasTemplateReferences = async function(conceptId) {
+module.exports.hasPatternReferences = async function(templateId) {
 
-    let oid = mongoose.Schema.Types.ObjectId(conceptId);
+    let oid = mongoose.Schema.Types.ObjectId(templateId);
 
-    const templates = await templateModel.find({
+    const templates = await patternModel.find({
         $or:
         [
-            { verb: oid },
-            { objectActivityType: oid },
-            { contextGroupingActivityType: { $in: [oid] }},
-            { contextParentActivityType: { $in: [oid] }},
-            { contextOtherActivityType: { $in: [oid] }},
-            { contextCategoryActivityType: { $in: [oid] }},
-            { attachmentUsageType: { $in: [oid] }},
-            { objectStatementRefTemplate: { $in: [oid] }},
-            { contextStatementRefTemplate: { $in: [oid] }}
+            { optional: oid },
+            { oneOrMore: oid },
+            { zeroOrMore: oid },
+            { sequence: { $in: [oid] }},
+            { alternates: { $in: [oid] }},
         ]
     });
 
-    return (templates.length && templates.length > 0)
+    return (templates.length && templates.length > 0);
 }
 
-module.exports.moveToOrphanContainer = async function(user, organizationId, concept) {
+module.exports.moveToOrphanContainer = async function(user, organizationId, template) {
     const orphanProfile = await profileComponentService.getOrphanProfile(organizationId, user);
 
     if (!orphanProfile || (orphanProfile && !orphanProfile.currentPublishedVersion)) 
         throw new Error('Orphan profile is not published');
 
-    // Remove concept from current profileversion
+    // Remove template from current profileversion
     await new Promise((resolve, reject) => {
-        profileVersionModel.updateOne({ _id: concept.parentProfile},
+        profileVersionModel.updateOne({ _id: template.parentProfile},
         {
             $pull: {
-                concepts: concept._id
+                templates: template._id
             }
         },
         (err, affected, resp) => {
@@ -61,12 +57,12 @@ module.exports.moveToOrphanContainer = async function(user, organizationId, conc
         });
     });
 
-    // Add concept to orphan profileversion
+    // Add template to orphan profileversion
     await new Promise((resolve, reject) => {
         profileVersionModel.updateOne({ _id: orphanProfile.currentPublishedVersion},
         {
             $push: {
-                concepts: concept._id
+                templates: template._id
             }
         },
         (err, affected, resp) => {
@@ -75,9 +71,9 @@ module.exports.moveToOrphanContainer = async function(user, organizationId, conc
         });
     });
 
-    // Change concept parent to be the orphan container
+    // Change template parent to be the orphan container
     await new Promise((resolve, reject) => {
-        conceptModel.updateOne({ uuid: concept.uuid},
+        templateModel.updateOne({ uuid: template.uuid},
             {
                 parentProfile: orphanProfile.currentPublishedVersion
             },
