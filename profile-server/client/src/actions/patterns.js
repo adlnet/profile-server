@@ -264,9 +264,12 @@ export function deletePattern(pattern) {
 
             await API.deletePattern(organizationId, profileId, profileVersionId, pattern.uuid);
 
-            dispatch(selectProfile(organizationId, profileId));
-            dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
-            dispatch(loadProfilePatterns(profileVersionId));
+            // Allow current loop to finish first before reload.
+            setTimeout(() => {
+                dispatch(selectProfile(organizationId, profileId));
+                dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
+                dispatch(loadProfilePatterns(profileVersionId));
+            });
         } catch (err) {
             dispatch({
                 type: ERROR_DELETE_PATTERN,

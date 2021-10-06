@@ -40,7 +40,7 @@ export default function CreatePattern(props) {
             dispatch({type:'REMOVE_IMPORT_QUEUE_ITEM', payload:{type:'patterns', index: importedPattern.index}});
         }
 
-        history.push(props.root_url);        
+        history.push(props.root_url);
     }    
 
     return (
