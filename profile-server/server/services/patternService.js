@@ -18,9 +18,9 @@ const profileVersionModel = require('../ODM/models').profileVersion;
 const profileComponentService = require('../services/profileComponentService');
 const mongoose = require('mongoose');
 
-module.exports.hasProfileReferences = async function(patternId) {
-
-    let oid = mongoose.Schema.Types.ObjectId(patternId);
+module.exports.hasProfileReferences = async function(oid) {
+    if (!oid) throw new Error('patternId not provided');
+    if (typeof oid !== 'object') oid = mongoose.Schema.Types.ObjectId(oid);
 
     const templates = await profileVersionModel.find({
         $or:
@@ -30,7 +30,7 @@ module.exports.hasProfileReferences = async function(patternId) {
     });
 
     // Needs more than just current profile link to return true.
-    return (templates.length && templates.length > 1);
+    return (templates.length > 1);
 }
 
 module.exports.moveToOrphanContainer = async function(user, organizationId, pattern) {

@@ -27,7 +27,7 @@ import CancelButton from '../controls/cancelButton';
 import DeleteButton from '../controls/DeleteButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
-export default function CreateProfileForm({ initialValue, handleSubmit, handleCancel, handleDelete }) {
+export default function CreateProfileForm({ initialValue, handleSubmit, handleCancel, handleDeleteProfile, handleDeleteProfileDraft }) {
 
     const profileRootIRI = useSelector(state => state.application.profileRootIRI);
 
@@ -129,15 +129,27 @@ export default function CreateProfileForm({ initialValue, handleSubmit, handleCa
                         cancelAction={handleCancel} 
                     />
 
-                    <div className="grid-col display-flex flex-column flex-align-end">
-                        <DeleteButton
-                            className="usa-button usa-button--unstyled text-secondary-dark text-bold"
-                            style={{ marginTop: "1.6em" }}
-                            type="reset"
-                            onConfirm={handleDelete}
-                            componentType="profile"
-                        />
-                    </div>
+                    {(isPublished) ?
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "1.6em" }}
+                                type="reset"
+                                onConfirm={handleDeleteProfile}
+                                componentType="profile"
+                            />
+                        </div>
+                        :
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "1.6em" }}
+                                type="reset"
+                                onConfirm={handleDeleteProfileDraft}
+                                componentType="profile draft"
+                            />
+                        </div>
+                    }
                 </div>
                 
             </>)}

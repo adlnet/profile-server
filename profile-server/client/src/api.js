@@ -200,6 +200,10 @@ class API {
         await this.deleteJSON(`${appApiRoot}/org/${orgId}/profile/${profile.uuid}`);
         return;
     }
+    async deleteProfileDraft(orgId, profile) {
+        await this.deleteJSON(`${appApiRoot}/org/${orgId}/profile/${profile.uuid}/draft`);
+        return;
+    }
 
     async createProfileVersion(organizationId, profileId, profileVersion) {
         let body = await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version`, profileVersion);

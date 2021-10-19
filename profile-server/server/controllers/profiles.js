@@ -446,29 +446,42 @@ exports.publishProfile = async function (req, res, next) {
 };
 
 /**
- * Deletes a profile draft. Only drafts can be deleted. And the
- * provided api key must be of the organization that owns the profile.
+ * Deletes a profile. The provided api key must be of the organization that owns the profile.
  *
  * @param {*} req express request object
  * @param {*} res express response object
  * @param {*} next express next function
  */
-exports.deleteProfile = async function (req, res, next) {
+exports.deletePublishedProfile = async function (req, res, next) {
     let meta = {};
     try {
-        // CAREFUL!!!
+        req.profile = req.resource;
+        const profile = req.profile;
+        if (req.validationScope === 'public') return res.status(401).send(responses.unauthorized('Not Authorized'));
+        await profileService.deletePublishedProfile(req.user, req.params.org, profile);
+    } catch (err) {
+        return next(err);
+    }
+
+    res.send(responses.metadata(true, meta));
+};
+
+/**
+ * Deletes a profile draft. The provided api key must be of the organization that owns the profile.
+ *
+ * @param {*} req express request object
+ * @param {*} res express response object
+ * @param {*} next express next function
+ */
+ exports.deleteProfileDraft = async function (req, res, next) {
+    let meta = {};
+    try {
         req.profile = req.resource;
         const profile = req.profile;
         if (req.validationScope === 'public') return res.status(401).send(responses.unauthorized('Not Authorized'));
         if (profile.state !== 'draft') return res.status(405).send(responses.notAllowed('Not Allowed: Only drafts can be deleted.'));
 
-        // Not how this works. If it's locked, and you're here, you have the lock.
-        // if (profile.locked) return res.status(409).send(responses.conflict('The profile is currently being edited'));
-
-        // meta = await profile.getMetadata();
-
-        // await profile.deleteDraft();
-        await profile.remove();
+        await profileService.deleteProfileDraft(profile);
     } catch (err) {
         return next(err);
     }

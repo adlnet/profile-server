@@ -22,6 +22,7 @@ export const START_GET_PROFILES = 'START_GET_PROFILES';
 export const START_CREATE_PROFILE = 'START_CREATE_PROFILE';
 export const START_UPDATE_PROFILE = 'START_UPDATE_PROFILE';
 export const START_DELETE_PROFILE = 'START_DELETE_PROFILE';
+export const START_DELETE_PROFILE_DRAFT = 'START_DELETE_PROFILE_DRAFT';
 export const START_POPULATE_PROFILE = 'START_POPULATE_PROFILE';
 export const START_VERIFICATION_REQUEST = 'START_VERIFICATION_REQUEST';
 
@@ -30,6 +31,7 @@ export const FINISH_GET_PROFILE = 'FINISH_GET_PROFILE';
 export const FINISH_GET_PROFILES = 'FINISH_GET_PROFILES';
 export const FINISH_UPDATE_PROFILE = 'FINISH_UPDATE_PROFILE';
 export const FINISH_DELETE_PROFILE = 'FINISH_DELETE_PROFILE';
+export const FINISH_DELETE_PROFILE_DRAFT = 'FINISH_DELETE_PROFILE_DRAFT';
 export const FINISH_POPULATE_PROFILE = 'FINISH_POPULATE_PROFILE';
 export const FINISH_VERIFICATION_REQUEST = 'FINISH_VERIFICATION_REQUEST';
 
@@ -49,6 +51,7 @@ export const ERROR_GET_PROFILE = 'ERROR_GET_PROFILE';
 export const ERROR_GET_PROFILES = 'ERROR_GET_PROFILES';
 export const ERROR_UPDATE_PROFILE = 'ERROR_UPDATE_PROFILE';
 export const ERROR_DELETE_PROFILE = 'ERROR_DELETE_PROFILE';
+export const ERROR_DELETE_PROFILE_DRAFT = 'ERROR_DELETE_PROFILE_DRAFT';
 export const ERROR_VERIFICATION_REQUEST = 'ERROR_VERIFICATION_REQUEST';
 
 export const SELECT_PROFILE = 'SELECT_PROFILE';
@@ -271,7 +274,10 @@ export function deleteProfile(orgId, profile) {
         try {
             await API.deleteProfile(orgId, profile);
 
-            dispatch(selectOrganization(orgId));
+            // Do next update tick to avoid missing content error
+            setTimeout(() => {
+                dispatch(selectOrganization(orgId));
+            });
         } catch (err) {
             dispatch({
                 type: ERROR_DELETE_PROFILE,
@@ -281,6 +287,34 @@ export function deleteProfile(orgId, profile) {
         } finally {
             dispatch({
                 type: FINISH_DELETE_PROFILE,
+            });
+        }
+    };
+}
+
+export function deleteProfileDraft(orgId, profile) {
+    return async function (dispatch) {
+
+        dispatch({
+            type: START_DELETE_PROFILE_DRAFT,
+        });
+
+        try {
+            await API.deleteProfileDraft(orgId, profile);
+
+            // Do next update tick to avoid missing content error
+            setTimeout(() => {
+                dispatch(selectOrganization(orgId));
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_DELETE_PROFILE_DRAFT,
+                errorType: 'profiles',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_DELETE_PROFILE_DRAFT,
             });
         }
     };

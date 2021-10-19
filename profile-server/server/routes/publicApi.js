@@ -102,7 +102,14 @@ router.delete('/profile/:profile',
     profileController.middleware.populateProfile,
     profileController.middleware.prepForLock,
     unlock(true, true),
-    profileController.deleteProfile);
+    profileController.deletePublishedProfile);
+
+router.delete('/profile/:profile/draft',
+    apiKeyController.middleware.validateApiKey('profile'),
+    profileController.middleware.populateProfile,
+    profileController.middleware.prepForLock,
+    unlock(true, true),
+    profileController.deleteProfileDraft);
 
 // Get the metadata of the profile, such as versions, status, publish state and group.
 router.get('/profile/:profile/meta',

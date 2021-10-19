@@ -19,9 +19,9 @@ const profileVersionModel = require('../ODM/models').profileVersion;
 const profileComponentService = require('../services/profileComponentService');
 const mongoose = require('mongoose');
 
-module.exports.hasPatternReferences = async function(templateId) {
-
-    let oid = mongoose.Schema.Types.ObjectId(templateId);
+module.exports.hasPatternReferences = async function(oid) {
+    if (!oid) throw new Error('templateId not provided');
+    if (typeof oid !== 'object') oid = mongoose.Schema.Types.ObjectId(oid);
 
     const templates = await patternModel.find({
         $or:
@@ -34,7 +34,7 @@ module.exports.hasPatternReferences = async function(templateId) {
         ]
     });
 
-    return (templates.length && templates.length > 0);
+    return (templates.length > 1);
 }
 
 module.exports.moveToOrphanContainer = async function(user, organizationId, template) {
