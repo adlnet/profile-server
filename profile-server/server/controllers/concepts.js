@@ -17,7 +17,6 @@ const conceptModel = require('../ODM/models').concept;
 const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
-const profileModel = require('../ODM/models').profile;
 const conceptService = require('../services/conceptService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
