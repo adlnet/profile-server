@@ -1351,3 +1351,21 @@ path.rv-xy-plot__series.rv-xy-plot__series--line {
     background-color: white;
   }
 }
+
+.claim-btn {
+  display: block;
+  width: 7em;
+  margin-left: auto;
+  margin-right: 0;
+  color: black;
+  background-color: yellow;
+  margin-bottom: 5px;
+}
+
+.claim-btn span {
+  color: black;
+}
+
+.claim-btn i {
+  color: black;
+}

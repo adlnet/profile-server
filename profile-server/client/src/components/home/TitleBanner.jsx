@@ -89,6 +89,13 @@ export default function TitleBanner() {
                                 <span className="text-bold">FAQs</span>
                             </NavLink>
                         </li>
+                        <li className="usa-nav__primary-item">
+                            <NavLink to="/deleted-items/organization/c39c10a3-7443-40c2-8547-0c3788c7e03c/profile/4a94dedb-398a-4b48-8a39-f71e62aa4daf/version/a61fa028-7cf1-44fa-85bb-0a9c8f9f86a9"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">Deleted Items</span>
+                            </NavLink>
+                        </li>
                         {userData && userData.user && userData.user.type === 'admin' &&
                             <li className="usa-nav__primary-item">
                                 <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin">

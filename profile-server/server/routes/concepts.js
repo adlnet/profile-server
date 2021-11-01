@@ -40,6 +40,7 @@ concepts.delete('/link/:concept', ...permissionStack, lock(true), controller.unl
 
 concepts.get('/:concept/lock', ...permissionStack, lock());
 concepts.get('/:concept/unlock', ...permissionStack, unlock());
+concepts.post('/:concept/claim', ...permissionStack, lock(true), controller.claimConcept);
 
 concepts.get('/:concept', controller.getConcept);
 concepts.put('/:concept', ...permissionStack, unlock(true), controller.updateConcept);

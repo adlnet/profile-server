@@ -83,3 +83,7 @@ module.exports.moveToOrphanContainer = async function(user, organizationId, temp
             });
     });
 }
+
+module.exports.claimDeleted = async function(templateId) {
+    
+}

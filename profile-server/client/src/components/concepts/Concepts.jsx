@@ -26,7 +26,7 @@ import { createConcept, loadProfileConcepts } from "../../actions/concepts";
 import ConceptDetail from "./ConceptDetails"
 import SortingTable from '../SortingTable';
 
-export default function Concepts({ isMember, isCurrentVersion }) {
+export default function Concepts({ isMember, isCurrentVersion, isOrphan }) {
     const { path, url } = useRouteMatch();
     const dispatch = useDispatch();
     const location = useLocation();  
@@ -103,7 +103,7 @@ export default function Concepts({ isMember, isCurrentVersion }) {
                     <AddConcepts rootUrl={url} addToName="Profile"></AddConcepts>
                 </Route>
                 <Route path={`${path}/:conceptId`}>
-                    <ConceptDetail isMember={isMember} isCurrentVersion={isCurrentVersion} />
+                    <ConceptDetail isMember={isMember} isCurrentVersion={isCurrentVersion} isOrphan={isOrphan} />
                 </Route>
 
             </Switch>

@@ -42,7 +42,7 @@ module.exports.deletePublishedProfile = async function(user, organizationId, pro
         let concept = await conceptModel.findOne({ _id: profileVersion.concepts[i] });
         if (!concept) continue;
 
-        let hasReferences = await conceptService.hasTemplateReferences(concept._id);
+        let hasReferences = await conceptService.isReferencedElsewhere(concept._id);
         if (hasReferences) {
             await conceptService.moveToOrphanContainer(user, organizationId, concept);
         } else {

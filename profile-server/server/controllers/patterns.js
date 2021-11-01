@@ -420,3 +420,19 @@ exports.deletePattern = async function (req, res) {
         success: true,
     });
 };
+
+exports.claimPattern = async function (req, res) {
+    try {
+        const pattern = req.resource;
+        await patternService.claimDeleted(pattern);        
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
+}

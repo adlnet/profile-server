@@ -81,7 +81,7 @@ export default function Patterns(props) {
                 }
             </Route>
             <Route path={`${path}/:patternId`}>
-                <PatternDetail {...props} root_url={url} />
+                <PatternDetail {...props} root_url={url} isOrphan={props.isOrphan} />
             </Route>
             {/* <Redirect from="/" to="" /> */}
         </Switch>

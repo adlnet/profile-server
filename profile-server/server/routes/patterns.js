@@ -37,6 +37,7 @@ patterns.post('/', controller.createPattern);
 
 patterns.get('/:pattern/lock', ...permissionStack, lock());
 patterns.get('/:pattern/unlock', ...permissionStack, unlock());
+patterns.post('/:pattern/claim', ...permissionStack, lock(true), controller.claimPattern);
 
 patterns.get('/:pattern', controller.getPattern);
 patterns.put('/:pattern', ...permissionStack, unlock(true), controller.updatePattern);

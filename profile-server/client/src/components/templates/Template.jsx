@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect, useState } from 'react';
-import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect, useLocation, Link } from 'react-router-dom';
+import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect, useLocation, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import TemplateDetail from "./TemplateDetail";
@@ -44,7 +44,7 @@ import Breadcrumb from '../controls/breadcrumbs';
 import DeprecatedAlert from '../controls/deprecatedAlert';
 import { ADDED, EDITED, REMOVED, DEPRECATED } from '../../actions/successAlert';
 
-export default function Template({ isMember, isCurrentVersion }) {
+export default function Template({ isMember, isCurrentVersion, isOrphan }) {
 
     const { url, path } = useRouteMatch();
     const templatesListURL = url.split('/').slice(0, -1).join('/');
@@ -295,7 +295,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                             <div className="usa-alert__body">
                                 <p className="usa-alert__text">
                                     Editing is limited. This statement template has already been published in the profile and may be in use.
-                        </p>
+                                </p>
                             </div>
                         </div>
                     }
@@ -311,6 +311,13 @@ export default function Template({ isMember, isCurrentVersion }) {
                             </button>
                         </h2>
                         <div id="a1" className="usa-accordion__content">
+                            { isOrphan && 
+                                <NavLink exact
+                                    to={`${url}/add`}
+                                    className="usa-button claim-btn margin-top-2 margin-right-0">
+                                    <i className="fa fa-plus margin-right-05"></i> <span> Claim</span>
+                                </NavLink>
+                            }
                             {
                                 isEditingDetails ?
                                     <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>

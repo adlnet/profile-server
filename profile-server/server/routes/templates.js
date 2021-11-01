@@ -41,7 +41,7 @@ templates.delete('/link/:template', ...permissionStack, lock(true), controller.u
 
 templates.get('/:template/lock', ...permissionStack, lock());
 templates.get('/:template/unlock', ...permissionStack, unlock());
-
+templates.post('/:template/claim', ...permissionStack, lock(), controller.claimTemplate);
 
 templates.get('/:template', controller.getTemplate);
 templates.put('/:template', ...permissionStack, unlock(true), controller.updateTemplate);

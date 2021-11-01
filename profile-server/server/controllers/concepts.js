@@ -17,6 +17,7 @@ const conceptModel = require('../ODM/models').concept;
 const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
+const profileModel = require('../ODM/models').profile;
 const conceptService = require('../services/conceptService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
@@ -328,7 +329,7 @@ exports.deleteConcept = async function (req, res) {
         const organizationId = req.params.org;
         const concept = await conceptModel.findOne({uuid: conceptUuid });
         if (!concept) throw new Error('Concept not found');
-        let hasReferences = await conceptService.hasTemplateReferences(concept._id);
+        let hasReferences = await conceptService.isReferencedElsewhere(concept._id);
         
         if (hasReferences) {
             conceptService.moveToOrphanContainer(req.user, organizationId, concept);
@@ -395,3 +396,24 @@ exports.unlinkConceptReq = async function (req, res) {
 
     res.send({ success: true });
 };
+
+exports.claimConcept = async function (req, res) {
+    try {
+        const concept = req.resource;
+        const orphanProfileVersion = await profileVersionModel.findByUuid(concept.parentProfile.uuid);
+        const newProfile = await profileModel.findOne({ _id: req.params.profile });
+
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentPublishedVersion || newProfile.currentDraftVersion)});
+
+        await conceptService.claimDeleted(concept, orphanProfileVersion, newProfileVersion);
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
+}

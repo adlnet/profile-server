@@ -410,6 +410,10 @@ class API {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/${concept.uuid}`);
         return;
     }
+    async claimConcept(organizationId, profileId, versionId, conceptId) {
+        await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/${conceptId}/claim`);
+        return;
+    }
     async removeConceptLink(organizationId, profileId, versionId, conceptId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/link/${conceptId}`);
         return;

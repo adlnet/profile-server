@@ -368,3 +368,19 @@ exports.unlinkTemplate = async function (req, res) {
 
     return res.send({ success: true });
 };
+
+exports.claimTemplate = async function (req, res) {
+    try {
+        const template = req.resource;
+        await templateService.claimDeleted(concept);
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
+}

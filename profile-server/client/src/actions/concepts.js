@@ -55,6 +55,11 @@ export const DELETE_CONCEPT = 'DELETE_CONCEPT';
 export const ERROR_DELETE_CONCEPT = 'ERROR_DELETE_CONCEPT';
 export const FINISH_DELETE_CONCEPT = 'FINISH_DELETE_CONCEPT';
 
+export const START_CLAIM_CONCEPT = 'START_CLAIM_CONCEPT';
+export const CLAIM_CONCEPT = 'CLAIM_CONCEPT';
+export const ERROR_CLAIM_CONCEPT = 'ERROR_CLAIM_CONCEPT';
+export const FINISH_CLAIM_CONCEPT = 'FINISH_CLAIM_CONCEPT';
+
 export const START_LOAD_EXTERNAL_CONCEPTS = 'START_LOAD_EXTERNAL_CONCEPTS';
 export const FINISH_LOAD_EXTERNAL_CONCEPTS = 'FINISH_LOAD_EXTERNAL_CONCEPTS';
 
@@ -198,6 +203,33 @@ export function deleteConcept(organizationId, profileId, versionId, conceptId) {
         } finally {
             dispatch({
                 type: FINISH_DELETE_CONCEPT,
+            });
+        }
+    }
+}
+
+export function claimConcept(organizationId, profileId, versionId, conceptId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_CLAIM_CONCEPT,
+        });
+
+        try {
+            const concept = await API.claimConcept(organizationId, profileId, versionId, conceptId);
+
+            dispatch({
+                type: CLAIM_CONCEPT,
+                concept: concept,
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_CLAIM_CONCEPT,
+                errorType: 'concepts',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_CLAIM_CONCEPT,
             });
         }
     }

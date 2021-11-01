@@ -17,7 +17,7 @@ import React from 'react';
 
 import ProfileTableRow from './ProfileTableRow';
 
-export default function ProfileTable({ profiles, siteUrl, isMember }) {
+export default function ProfileTable({ profiles, siteUrl, isMember, optionalSingleSelectionCallback }) {
     return (
         <div className="grid-row">
             <table className="usa-table usa-table--borderless" width="100%">
@@ -30,7 +30,7 @@ export default function ProfileTable({ profiles, siteUrl, isMember }) {
                 </thead>
                 <tbody style={{ lineHeight: 3 }}>
                     {(profiles && profiles.length > 0)
-                        ? profiles.map((profile) => <ProfileTableRow key={profile.uuid} profile={profile} site_url={siteUrl} isMember={isMember} />)
+                        ? profiles.map((profile) => <ProfileTableRow key={profile.uuid} profile={profile} site_url={siteUrl} isMember={isMember} onOptionalSingleSelect={optionalSingleSelectionCallback} />)
                         : <tr key={1}><td className="font-sans-xs" style={{ paddingLeft: 0 }} colSpan="6"><p>There are no profiles from this working group.</p></td></tr>}
                 </tbody>
             </table>
