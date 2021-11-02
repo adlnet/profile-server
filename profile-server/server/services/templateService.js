@@ -34,7 +34,14 @@ module.exports.hasPatternReferences = async function(oid) {
         ]
     });
 
-    return (templates.length > 1);
+    const externalReferences = await profileVersionModel.find({
+        $or:
+        [
+            { templates: { $in: [oid] }}
+        ]
+    });
+
+    return ((templates.length > 1) || (externalReferences.length > 1));
 }
 
 module.exports.moveToOrphanContainer = async function(user, organizationId, template) {

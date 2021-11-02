@@ -27,7 +27,6 @@ export default function ClaimButton({ className, preventDefault, onConfirm }) {
     const organization = useSelector((state) => state.application.selectedOrganization);
 
     function doModal(e) {
-        console.error(organization)
         if (preventDefault) e.preventDefault();
         setShowModal(true);
     }
