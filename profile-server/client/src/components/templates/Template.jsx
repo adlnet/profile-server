@@ -38,11 +38,13 @@ import CreateStatementExample from './CreateStatementExample';
 import Lock from "../../components/users/lock";
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 
-import { loadProfileTemplates, removeTemplateLink } from "../../actions/templates";
+import { loadProfileTemplates, removeTemplateLink, claimTemplate } from "../../actions/templates";
 import { reloadCurrentProfile } from '../../actions/profiles';
 import Breadcrumb from '../controls/breadcrumbs';
 import DeprecatedAlert from '../controls/deprecatedAlert';
 import { ADDED, EDITED, REMOVED, DEPRECATED } from '../../actions/successAlert';
+import ClaimButton from '../controls/ClaimButton';
+
 
 export default function Template({ isMember, isCurrentVersion, isOrphan }) {
 
@@ -71,6 +73,7 @@ export default function Template({ isMember, isCurrentVersion, isOrphan }) {
     const [isCreatingExample, setIsCreatingExample] = useState(false);
     const [detpropOverwrite, setConfirmDetPropOverwrite] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const { organizationId } = useParams();
 
     if (!template) return 'Template not populated';
 
@@ -167,6 +170,12 @@ export default function Template({ isMember, isCurrentVersion, isOrphan }) {
         if (isEditable) {
             onDeleteDetailsSubmit();
         }
+    }
+
+    async function onClaimTemplate(profile) {
+        const versionId = (profile.currentDraftVersion ? profile.currentDraftVersion.uuid : profile.currentPublishedVersion.uuid);
+        await dispatch(claimTemplate(profile.organization, profile.id, versionId, templateId));
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${versionId}/templates`);
     }
 
     function checkDeterminingPropertyConflict(detpropType, noconflictFunction, cancelFunction) {
@@ -311,12 +320,12 @@ export default function Template({ isMember, isCurrentVersion, isOrphan }) {
                             </button>
                         </h2>
                         <div id="a1" className="usa-accordion__content">
-                            { isOrphan && 
-                                <NavLink exact
-                                    to={`${url}/add`}
-                                    className="usa-button claim-btn margin-top-2 margin-right-0">
-                                    <i className="fa fa-plus margin-right-05"></i> <span> Claim</span>
-                                </NavLink>
+                            {isOrphan &&
+                                <div className="grid-col display-flex flex-column flex-align-end">
+                                    <ClaimButton
+                                        className="usa-button claim-btn margin-top-2 margin-right-0"
+                                        onConfirm={onClaimTemplate} />
+                                </div>
                             }
                             {
                                 isEditingDetails ?

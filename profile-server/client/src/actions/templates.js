@@ -41,6 +41,11 @@ export const START_DELETE_TEMPLATE = 'START_DELETE_TEMPLATE';
 export const FINISH_DELETE_TEMPLATE = 'FINISH_DELETE_TEMPLATE';
 export const ERROR_DELETE_TEMPLATE = 'ERROR_DELETE_TEMPLATE';
 
+export const START_CLAIM_TEMPLATE = "START_CLAIM_TEMPLATE";
+export const CLAIM_TEMPLATE = "CLAIM_TEMPLATE";
+export const ERROR_CLAIM_TEMPLATE = "ERROR_CLAIM_TEMPLATE";
+export const FINISH_CLAIM_TEMPLATE = "FINISH_CLAIM_TEMPLATE";
+
 export const START_SEARCH_TEMPLATES = 'START_SEARCH_TEMPLATES';
 export const FINISH_SEARCH_TEMPLATES = 'FINISH_SEARCH_TEMPLATES';
 export const ERROR_SEARCH_TEMPLATES = 'ERROR_SEARCH_TEMPLATES';
@@ -419,5 +424,30 @@ export function searchTemplates(search) {
         });
 
     };
+}
 
+export function claimTemplate(organizationId, profileId, versionId, templateId) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_CLAIM_TEMPLATE,
+        });
+
+        try {
+            await API.claimTemplate(organizationId, profileId, versionId, templateId);
+
+            dispatch({
+                type: CLAIM_TEMPLATE
+            });
+        } catch (err) {
+            dispatch({
+                type: ERROR_CLAIM_TEMPLATE,
+                errorType: 'templates',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_CLAIM_TEMPLATE,
+            });
+        }
+    }
 }

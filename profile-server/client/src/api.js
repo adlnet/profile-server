@@ -422,11 +422,15 @@ class API {
     async removeTemplateLink(selectedOrganizationId, profileId, selectedProfileVersionId, templateId) {
         await this.deleteJSON(`${appApiRoot}/org/${selectedOrganizationId}/profile/${profileId}/version/${selectedProfileVersionId}/template/link/${templateId}`)
     }
-
     async deleteTemplate(organizationId, profileId, versionId, templateId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/template/${templateId}`);
         return;
     }
+    async claimTemplate(organizationId, profileId, versionId, templateId) {
+        await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/template/${templateId}/claim`);
+        return;
+    }
+
     async deletePattern(organizationId, profileId, versionId, patternId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/pattern/${patternId}`);
         return;

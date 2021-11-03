@@ -16,6 +16,7 @@
 const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
+const profileModel = require('../ODM/models').profile;
 const templateService = require('../services/templateService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
@@ -372,7 +373,11 @@ exports.unlinkTemplate = async function (req, res) {
 exports.claimTemplate = async function (req, res) {
     try {
         const template = req.resource;
-        await templateService.claimDeleted(concept);
+        const orphanProfileVersion = await profileVersionModel.findByUuid(template.parentProfile.uuid);
+        const newProfile = await profileModel.findOne({ _id: req.params.profile });
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
+
+        await templateService.claimDeleted(template, orphanProfileVersion, newProfileVersion);
     } catch (err) {
         if (console.prodLog) console.prodLog(err);
         else console.error(err);

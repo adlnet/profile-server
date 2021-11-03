@@ -91,6 +91,45 @@ module.exports.moveToOrphanContainer = async function(user, organizationId, temp
     });
 }
 
-module.exports.claimDeleted = async function(templateId) {
-    
+module.exports.claimDeleted = async function(template, orphanProfileVersion, newProfileVersion) {
+
+    // Remove template from orphan profile version
+    await new Promise((resolve, reject) => {
+        profileVersionModel.updateOne({ _id: orphanProfileVersion._id},
+        {
+            $pull: {
+                templates: template._id
+            }
+        },
+        (err, affected, resp) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    });
+
+    // Add template to desired profile version
+    await new Promise((resolve, reject) => {
+        profileVersionModel.updateOne({ _id: newProfileVersion._id},
+        {
+            $addToSet: {
+                templates: template._id
+            }
+        },
+        (err, affected, resp) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    });
+
+    // Change template parent to be the desired profile version
+    await new Promise((resolve, reject) => {
+        templateModel.updateOne({ uuid: template.uuid},
+            {
+                parentProfile: newProfileVersion._id
+            },
+            (err, affected, resp) => {
+                if (err) reject(err);
+                else resolve();
+            });
+    });
 }

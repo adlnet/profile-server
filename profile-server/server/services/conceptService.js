@@ -111,11 +111,11 @@ module.exports.claimDeleted = async function(concept, orphanProfileVersion, newP
         });
     });
 
-    // Add concept to new profileversion
+    // Add concept to desired profile version
     await new Promise((resolve, reject) => {
         profileVersionModel.updateOne({ _id: newProfileVersion._id},
         {
-            $push: {
+            $addToSet: {
                 concepts: concept._id
             },
             $pull: {
@@ -128,7 +128,7 @@ module.exports.claimDeleted = async function(concept, orphanProfileVersion, newP
         });
     });
 
-    // Change concept parent to be the new profile
+    // Change concept parent to be the desired profile version
     await new Promise((resolve, reject) => {
         conceptModel.updateOne({ uuid: concept.uuid},
             {
