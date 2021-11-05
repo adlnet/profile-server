@@ -17,6 +17,7 @@ const patternModel = require('../ODM/models').pattern;
 const patternComponentModel = require('../ODM/models').patternComponent;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
+const profileModel = require('../ODM/models').profile;
 const patternService = require('../services/patternService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
@@ -382,7 +383,7 @@ exports.deletePattern = async function (req, res) {
         }
 
         if (!pattern.type) throw new Error('Pattern must have a type');
-        await pattern.populate(pattern.type).execPopulate();
+        // await pattern.populate(pattern.type).execPopulate();
 
         let hasReferences = await patternService.hasProfileReferences(pattern._id);
 
@@ -424,7 +425,12 @@ exports.deletePattern = async function (req, res) {
 exports.claimPattern = async function (req, res) {
     try {
         const pattern = req.resource;
-        await patternService.claimDeleted(pattern);        
+        const orphanProfileVersion = await profileVersionModel.findByUuid(pattern.parentProfile.uuid);
+        const newProfile = await profileModel.findOne({ _id: req.params.profile });
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
+
+        await patternService.claimDeleted(pattern, orphanProfileVersion, newProfileVersion);   
+
     } catch (err) {
         if (console.prodLog) console.prodLog(err);
         else console.error(err);

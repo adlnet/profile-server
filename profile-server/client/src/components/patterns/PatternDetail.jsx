@@ -18,13 +18,14 @@ import { useRouteMatch, useParams, useHistory, Link, Switch, Route, Redirect, Na
 import { useSelector, useDispatch } from 'react-redux';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
-import { selectPattern, editPattern, deletePattern } from '../../actions/patterns';
+import { selectPattern, editPattern, deletePattern, claimPattern } from '../../actions/patterns';
 import EditPattern from './EditPattern';
 import Lock from '../users/lock';
 import { useState } from 'react';
 import Breadcrumb from '../controls/breadcrumbs';
 import DeprecatedAlert from '../controls/deprecatedAlert';
 import { DEPRECATED } from '../../actions/successAlert';
+import ClaimButton from '../controls/ClaimButton';
 
 
 export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs, root_ur, isOrphan }) {
@@ -56,13 +57,18 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
         handleEditPattern({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED)
     }
 
-    function handleOnDelete() {
-        dispatch(deletePattern(pattern));
+    async function handleOnDelete() {
+        await dispatch(deletePattern(pattern));
         history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
     }
 
     function onDelete() {
         handleOnDelete();
+    }
+
+    async function onClaimPattern(profile) {
+        await dispatch(claimPattern(selectedOrganizationId, profile._id, selectedProfileVersionId, patternId));
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/patterns`);
     }
 
     if (!pattern) return '';
@@ -98,13 +104,11 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
                     </Link>
                 }
                 {isOrphan &&
-                    <Link
-                        to={`${url}/add/`}
-                        className="usa-button claim-btn padding-x-105 margin-top-2 margin-right-0 "
-                    >
-                        <span className="fa fa-plus fa-lg margin-right-1"></span>
-                        Claim
-                    </Link>
+                    <div className="grid-col display-flex flex-column flex-align-end">
+                        <ClaimButton
+                            className="usa-button claim-btn margin-top-2 margin-right-0"
+                            onConfirm={onClaimPattern} />
+                    </div>
                 }
             </div>
         </div>

@@ -22,15 +22,15 @@ module.exports.hasProfileReferences = async function(oid) {
     if (!oid) throw new Error('patternId not provided');
     if (typeof oid !== 'object') oid = mongoose.Schema.Types.ObjectId(oid);
 
-    const templates = await profileVersionModel.find({
+    const profRefs = await profileVersionModel.find({
         $or:
         [
-            { templates: { $in: [oid] }}
+            { patterns: { $in: [oid] }}
         ]
     });
 
     // Needs more than just current profile link to return true.
-    return (templates.length > 1);
+    return (profRefs.length > 1);
 }
 
 module.exports.moveToOrphanContainer = async function(user, organizationId, pattern) {
@@ -67,7 +67,7 @@ module.exports.moveToOrphanContainer = async function(user, organizationId, patt
         });
     });
 
-    // Change template parent to be the orphan container
+    // Change pattern parent to be the orphan container
     await new Promise((resolve, reject) => {
         patternModel.updateOne({ uuid: pattern.uuid},
             {
@@ -80,6 +80,45 @@ module.exports.moveToOrphanContainer = async function(user, organizationId, patt
     });
 }
 
-module.exports.claimDeleted = async function(patternId) {
+module.exports.claimDeleted = async function(pattern, orphanProfileVersion, newProfileVersion) {
 
+    // Remove pattern from orphan profile version
+    await new Promise((resolve, reject) => {
+        profileVersionModel.updateOne({ _id: orphanProfileVersion._id},
+        {
+            $pull: {
+                patterns: pattern._id
+            }
+        },
+        (err, affected, resp) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    });
+
+    // Add pattern to desired profile version
+    await new Promise((resolve, reject) => {
+        profileVersionModel.updateOne({ _id: newProfileVersion._id},
+        {
+            $addToSet: {
+                patterns: pattern._id
+            }
+        },
+        (err, affected, resp) => {
+            if (err) reject(err);
+            else resolve();
+        });
+    });
+
+    // Change pattern parent to be the desired profile version
+    await new Promise((resolve, reject) => {
+        patternModel.updateOne({ uuid: pattern.uuid},
+            {
+                parentProfile: newProfileVersion._id
+            },
+            (err, affected, resp) => {
+                if (err) reject(err);
+                else resolve();
+            });
+    });
 }

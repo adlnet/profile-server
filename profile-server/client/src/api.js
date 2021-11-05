@@ -435,6 +435,10 @@ class API {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/pattern/${patternId}`);
         return;
     }
+    async claimPattern(organizationId, profileId, versionId, patternId) {
+        await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/pattern/${patternId}/claim`);
+        return;
+    }
 
     async getApiKeys(organizationId) {
         const body = await this.getJSON(`${appApiRoot}/org/${organizationId}/apiKey`);
