@@ -45,7 +45,14 @@ module.exports.isReferencedElsewhere = async function(oid) {
         ]
     });
 
-    return ((templates.length > 1) || externalReferences.length > 0);
+    const directReferences = await profileVersionModel.find({
+        $or:
+        [
+            { concepts: { $in: [oid] }}
+        ]
+    });
+
+    return ((templates.length > 0) || externalReferences.length > 0 || directReferences > 1);
 }
 
 module.exports.moveToOrphanContainer = async function(user, organizationId, concept) {

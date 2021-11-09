@@ -24,6 +24,8 @@ import PagingTable from '../components/PagingTable';
 import { useState } from 'react';
 import { checkStatus } from '../actions/user';
 
+let canClickOrganizationEntries = false;
+
 export default function Organizations(props) {
     const dispatch = useDispatch();
     const organizations = useSelector((state) => state.organizations);
@@ -33,6 +35,8 @@ export default function Organizations(props) {
     const [showModal, setShowModal] = useState(false);
 
     useEffect(() => {
+        // Regular clicking disabled if single selection mode is on.
+        canClickOrganizationEntries = (!props.optionalSingleSelectionCallback);
         dispatch(getOrganizations());
         dispatch(checkStatus());
     }, [dispatch]);
@@ -57,7 +61,7 @@ export default function Organizations(props) {
 
     return (<>
         <main id="main-content" className="grid-container padding-bottom-4 margin-top-4">
-            <div className="grid-row display-flex flex-row flex-align-end">
+            { canClickOrganizationEntries && <div className="grid-row display-flex flex-row flex-align-end">
                 <div className="grid-col">
                     <h1>Working Groups</h1>
                 </div>
@@ -72,6 +76,7 @@ export default function Organizations(props) {
                     </Link>
                 </div>
             </div >
+            }
             <div className="grid-row bg-base-lightest">
                 <div className="grid-col-12 padding-3">
 
@@ -143,6 +148,7 @@ export default function Organizations(props) {
                     emptyMessage="There are no organizations.  You need to create one."
                     searchTerm={searchterm}
                     clearSearch={clearSearch}
+                    optionalSingleSelectionCallback={props.optionalSingleSelectionCallback}
                 />
             </div>
         </main> </>
@@ -236,6 +242,7 @@ function NameLink(
         <Link
             to={`organization/${uuid}`}
             className="usa-link button-link"
+            style={!canClickOrganizationEntries ? {pointerEvents: "none"} : null}
         >
             <span>{value}</span>
         </Link >

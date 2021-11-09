@@ -49,7 +49,7 @@ export default function ProfileTableRow({ profile, site_url, isMember, onOptiona
                                 {profile.currentDraftVersion.name}
                             </Link> :
                             <Link
-                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion.uuid}`}
+                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion?.uuid}`}
                                 className="usa-link button-link"
                                 style={canClick ? {pointerEvents: "none"} : null}
                             >

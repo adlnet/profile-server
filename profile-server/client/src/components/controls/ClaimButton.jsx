@@ -13,32 +13,54 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useRouteMatch } from 'react-router-dom';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
 
 import ModalBox from '../controls/modalBox';
 import ProfileTable from '../profiles/ProfileTable';
+import SelectOrganizationModal from './SelectOrganizationModal';
+import { selectOrganization } from "../../actions/organizations";
+
 
 export default function ClaimButton({ className, preventDefault, onConfirm }) {
     const [showModal, setShowModal] = useState(false);
+    const [profiles, setProfiles] = useState([]);
+    const dispatch = useDispatch();
     const { url } = useRouteMatch();
+    const orgModal = useRef();
 
-    const organization = useSelector((state) => state.application.selectedOrganization);
+    let targetOrganizationUuid = null;
 
-    function doModal(e) {
+    function doProfileModal(e) {
         if (preventDefault) e.preventDefault();
         setShowModal(true);
     }
 
-    function onSingleSelection(profile) {
+    function doOrganizationModal(e) {
+        if (preventDefault) e.preventDefault();
+        console.log(orgModal);
+        orgModal.current.open();
+    }
+
+    function onSelectedProfile(profile) {
         setShowModal(false);
-        onConfirm(profile);
+        onConfirm(profile, targetOrganizationUuid);
+    }
+
+    function onSelectedOrg(org) {
+        return new Promise(async (resolve, reject) => {
+            await dispatch(selectOrganization(org.uuid, (res) => {
+                targetOrganizationUuid = res.uuid;
+                setProfiles(res.profiles);
+                setShowModal(true);
+            }));
+        });
     }
 
     return (<>
         <button className={className}
-                onClick={doModal}>
+                onClick={doOrganizationModal}>
             <i className="fa fa-plus margin-right-05"></i>Claim
         </button>
         <ModalBox show={showModal} onClose={() => setShowModal(false)}>
@@ -49,13 +71,14 @@ export default function ClaimButton({ className, preventDefault, onConfirm }) {
             </div>
             <div className="grid-row">
                 <div className="grid-col">
-                    <ProfileTable profiles={organization.profiles} 
+                    <ProfileTable profiles={profiles}
                         siteUrl={url} 
                         isMember={true} 
-                        optionalSingleSelectionCallback={onSingleSelection}
+                        optionalSingleSelectionCallback={onSelectedProfile}
                         forceShowDrafts={true} />
                 </div>
             </div>
         </ModalBox>
+        <SelectOrganizationModal ref={orgModal} onConfirm={onSelectedOrg} />
     </>);
 }

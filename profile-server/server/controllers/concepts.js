@@ -403,7 +403,7 @@ exports.claimConcept = async function (req, res) {
         const orphanProfileVersion = await profileVersionModel.findByUuid(concept.parentProfile.uuid);
         const newProfile = await profileModel.findOne({ _id: req.params.profile });
 
-        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentPublishedVersion || newProfile.currentDraftVersion)});
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
 
         await conceptService.claimDeleted(concept, orphanProfileVersion, newProfileVersion);
     } catch (err) {

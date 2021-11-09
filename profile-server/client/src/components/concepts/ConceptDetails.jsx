@@ -70,9 +70,9 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs,
         handleDeleteConcept();
     }
 
-    async function onClaimConcept(profile) {
-        await dispatch(claimConcept(organizationId, profile._id, versionId, conceptId));
-        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`);
+    async function onClaimConcept(profile, targetOrganizationId) {
+        await dispatch(claimConcept(targetOrganizationId, profile._id, versionId, conceptId));
+        history.push(`/organization/${selectedOrganizationId}/profile/${profile.uuid}/version/${selectedProfileVersionId}/concepts`);
     }
 
     if (!concept) return '';
