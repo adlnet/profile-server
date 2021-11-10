@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const organizationModel = require('../ODM/models').organization;
+const profileModel = require('../ODM/models').profile;
 const userModel = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
 const { resendValidation } = require('./users');
@@ -55,6 +56,7 @@ function searchOrganizations(search, limit, page, sort) {
 
 exports.getOrganizations = async function (req, res) {
     let organizations;
+    let orphanProfile;
     try {
         if (req.query.search !== undefined) {
             organizations = searchOrganizations(req.query.search, req.query.limit, req.query.page, req.query.sort);
@@ -66,6 +68,8 @@ exports.getOrganizations = async function (req, res) {
                 .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
                 .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' });
         }
+
+        orphanProfile = await profileModel.findOne({ orphanContainer: true});
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -82,6 +86,16 @@ exports.getOrganizations = async function (req, res) {
             if (organizations[i].membership[0]) { organizations[i].membership = organizations[i].membership[0].level; } else delete organizations[i].membership;
         }
     }
+
+    // Remove orphanProfile from results
+    for (const i in organizations) {
+        for(const j in organizations[i].profiles) {
+            if (organizations[i].profiles[j].uuid === orphanProfile.uuid) {
+                delete organizations[i].profiles[j];
+            }
+        }
+    }
+
     res.send({
         success: true,
         organizations: organizations,

@@ -35,6 +35,9 @@ module.exports.publish = async function(profileId, user, parentiri) {
 }
 
 module.exports.deletePublishedProfile = async function(user, organizationId, profile) {
+    if (profile.orphanContainer === true) {
+        throw new Error('Deleting the orphan profile is not allowed');
+    }
     const profileVersion = await profileVersionModel.findOne({ _id: profile.currentPublishedVersion });
     
     // Delete Concepts
@@ -85,6 +88,9 @@ module.exports.deletePublishedProfile = async function(user, organizationId, pro
 }
 
 module.exports.deleteProfileDraft = async function(profile) {
+    if (profile.orphanContainer === true) {
+        throw new Error('Deleting the orphan profile is not allowed');
+    }
     if (!profile.currentDraftVersion) throw new Error('Profile draft version was not found');
 
     let draftProfileVersion = await profileVersionModel.findOne({ _id: profile.currentDraftVersion});
