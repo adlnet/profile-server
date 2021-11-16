@@ -165,6 +165,18 @@ export default function Profiles(props) {
             : -1;
       });
     }
+
+    // Filter out the orphan container profile entry
+    if (p && p.length) {
+      let filteredProfilesArray = [...p];
+      for (let i = filteredProfilesArray.length - 1; i >= 0; i--) {
+          if (filteredProfilesArray[i].name === 'Orphan Container Profile') {
+                  filteredProfilesArray.splice(i, 1)
+          }
+      }
+      p = filteredProfilesArray;
+    }
+
     setProfiles(p);
   }
 
