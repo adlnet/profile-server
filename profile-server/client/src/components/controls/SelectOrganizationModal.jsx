@@ -48,7 +48,8 @@ const SelectOrganizationModal = forwardRef(({ className, preventDefault, onConfi
             <div className="grid-row">
                 <div className="grid-col">
                     <Organizations 
-                        optionalSingleSelectionCallback={onSingleSelection} />
+                        optionalSingleSelectionCallback={onSingleSelection}
+                        hideNonJoined={true} />
                 </div>
             </div>
         </ModalBox>

@@ -59,6 +59,24 @@ export default function Organizations(props) {
         setSearchterm('')
     }
 
+    if (props.hideNonJoined) {
+        const membersOfOrgs = [];
+
+        for(let org of data) {
+            let userFound = false;
+            for(let member of org.members) {
+                if (member.user.uuid === user.uuid) {
+                    userFound = true;
+                }
+            }
+            if (userFound) {
+                membersOfOrgs.push(org);
+            }
+        }
+
+        data = membersOfOrgs;
+    }
+
     return (<>
         <main id="main-content" className="grid-container padding-bottom-4 margin-top-4">
             { canClickOrganizationEntries && <div className="grid-row display-flex flex-row flex-align-end">

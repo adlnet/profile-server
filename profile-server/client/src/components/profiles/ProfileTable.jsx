@@ -20,14 +20,16 @@ import ProfileTableRow from './ProfileTableRow';
 export default function ProfileTable({ profiles, siteUrl, isMember, optionalSingleSelectionCallback }) {
 
     // Filter out the orphan container profile entry
-    let filteredProfilesArray = [...profiles];
-    for (let i = filteredProfilesArray.length - 1; i >= 0; i--) {
-        if (filteredProfilesArray[i].currentPublishedVersion && 
-            filteredProfilesArray[i].currentPublishedVersion.name === 'Orphan Container Profile') {
-                filteredProfilesArray.splice(i, 1)
+    if (profiles) {
+        let filteredProfilesArray = [...profiles];
+        for (let i = filteredProfilesArray.length - 1; i >= 0; i--) {
+            if (filteredProfilesArray[i].currentPublishedVersion && 
+                filteredProfilesArray[i].currentPublishedVersion.name === 'Orphan Container Profile') {
+                    filteredProfilesArray.splice(i, 1)
+            }
         }
+        profiles = filteredProfilesArray;
     }
-    profiles = filteredProfilesArray;
 
     return (
         <div className="grid-row">
