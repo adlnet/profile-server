@@ -16,6 +16,7 @@
 const profileModel = require('../ODM/models').profile;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const profileService = require('../services/profileService');
+const profileComponentService = require('../services/profileComponentService');
 const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const langmaps = require('../utils/langmaps');
@@ -488,6 +489,34 @@ exports.deletePublishedProfile = async function (req, res, next) {
 
     res.send(responses.metadata(true, meta));
 };
+
+exports.getOrphanContainer = async function (req, res, next) {
+    let orphanProfile = {};
+    let orgUuid = '';
+    let profileVersionUuid = '';
+    try {
+        let org = await organizationModel.findOne();
+        if (!org) {
+            throw new Exception('No orgs exist yet. Cannot get orphan container profile.');
+        }
+        orphanProfile = await profileComponentService.getOrphanProfile(org.uuid, req.user);
+
+        let profileVersion = await profileVersionModel.findOne({ _id: orphanProfile.currentPublishedVersion});
+        // Add supplemental data
+        orgUuid = org.uuid;
+        profileVersionUuid = profileVersion.uuid;
+    }
+    catch (err) {
+        return next(err);
+    }
+    
+    res.send({
+        success: true,
+        orphanProfile: orphanProfile,
+        organizationUuid: orgUuid,
+        currentPublishedVersionUuid: profileVersionUuid
+    });
+}
 
 /**
  * Imports the profile (jsonld) from the body of the request and

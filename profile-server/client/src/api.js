@@ -186,6 +186,14 @@ class API {
 
         return body.profiles;
     }
+    async getOrphanContainerProfile() {
+        let res = await this.getJSON(`${appApiRoot}/profile/orphan-container`);
+
+        let results = res.orphanProfile;
+        results.organizationUuid = res.organizationUuid;
+        results.currentPublishedVersionUuid = res.currentPublishedVersionUuid;
+        return results;
+    }
     async createProfile(orgId, profile) {
         let body = await this.postJSON(`${appApiRoot}/org/${orgId}/profile`, profile);
 

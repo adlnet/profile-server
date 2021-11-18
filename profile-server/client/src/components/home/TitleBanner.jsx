@@ -19,15 +19,22 @@ import AccountButton from "../../components/users/AccountButton"
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { loadProfileRootIRI } from '../../actions/profiles';
+import API from '../../api';
+
 // usa-nav__primary-item>a:hover and [href]:focus cause the blue box
 export default function TitleBanner() {
     const dispatch = useDispatch();
     let userData = useSelector((store) => store.userData);
     let history = useHistory();
     let [searchString, setSearchString] = useState();
+    let [orphanProfile, setOrphanProfile] = useState({});
 
     useEffect(() => {
         dispatch(loadProfileRootIRI())
+
+        API.getOrphanContainerProfile().then((res) => {
+            setOrphanProfile(res);
+        });
     }, [])
     function search(e) {
         history.push({ pathname: "/search", state: { search: searchString } });
@@ -35,6 +42,13 @@ export default function TitleBanner() {
         setSearchString("");
         return false;
     }
+
+    function getNavlinkForDeletedTab() {
+        let path = "/deleted-items/organization/"+orphanProfile.organizationUuid+"/profile/"+orphanProfile.uuid+"/version/"+orphanProfile.currentPublishedVersionUuid;
+        return path;
+    }
+    
+
     return (<>
         <div className="usa-overlay"></div>
         <header className="usa-header usa-header--extended" id="title-banner">
@@ -90,7 +104,7 @@ export default function TitleBanner() {
                             </NavLink>
                         </li>
                         <li className="usa-nav__primary-item">
-                            <NavLink to="/deleted-items/organization/c39c10a3-7443-40c2-8547-0c3788c7e03c/profile/4a94dedb-398a-4b48-8a39-f71e62aa4daf/version/a61fa028-7cf1-44fa-85bb-0a9c8f9f86a9"
+                            <NavLink to={getNavlinkForDeletedTab()}
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current">
                                 <span className="text-bold">Deleted Items</span>

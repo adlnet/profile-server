@@ -54,6 +54,7 @@ const getProfile = getResource(Profile, 'profile');
 profiles.post('/', ...orgPermissionStack, controller.createProfile);
 profiles.get('/', controller.getProfiles);
 profiles.get('/published', controller.getPublishedProfilesPage);
+profiles.get('/orphan-container', controller.getOrphanContainer);
 
 profiles.post('/:profile/publish', controller.publishProfile);
 
