@@ -21,6 +21,7 @@ const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const langmaps = require('../utils/langmaps');
 const responses = require('../reponseTypes/responses');
+const uuid = require('uuid');
 
 const mongoSanitize = require('mongo-sanitize');
 const EventBus = require('../utils/eventBus.js');
@@ -497,7 +498,16 @@ exports.getOrphanContainer = async function (req, res, next) {
     try {
         let org = await organizationModel.findOne();
         if (!org) {
-            throw new Exception('No orgs exist yet. Cannot get orphan container profile.');
+            // Create an org
+            organization = new organizationModel({
+                name: 'Default',
+                description: 'Default generated organization',
+                collaborationLink: 'http://',
+                orphanContainer: true
+            });
+            await organization.save();
+
+            org = await organizationModel.findOne();
         }
         orphanProfile = await profileComponentService.getOrphanProfile(org.uuid, req.user);
 

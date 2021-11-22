@@ -103,6 +103,7 @@ export default function TitleBanner() {
                                 <span className="text-bold">FAQs</span>
                             </NavLink>
                         </li>
+                        {userData && userData.user &&
                         <li className="usa-nav__primary-item">
                             <NavLink to={getNavlinkForDeletedTab()}
                                 className="usa-nav__link nav-link-adjustment"
@@ -110,6 +111,7 @@ export default function TitleBanner() {
                                 <span className="text-bold">Deleted Items</span>
                             </NavLink>
                         </li>
+                        }
                         {userData && userData.user && userData.user.type === 'admin' &&
                             <li className="usa-nav__primary-item">
                                 <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin">
