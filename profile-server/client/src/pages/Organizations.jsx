@@ -44,6 +44,18 @@ export default function Organizations(props) {
     let toDisplay = searchResults || organizations || [];
 
     let data = useMemo(() => toDisplay, [toDisplay]);
+
+    // Hide orphanContainer profile if exists.
+    if (data) {
+        let filteredOrgsArray = [...data];
+        for (let i = filteredOrgsArray.length - 1; i >= 0; i--) {
+            if (filteredOrgsArray[i].orphanContainer === true) {
+                    filteredOrgsArray.splice(i, 1)
+            }
+        }
+        data = filteredOrgsArray;
+    }
+
     let columns = useMemo(() => getColumns(user, async (organization, user) => {
         await dispatch(requestJoinOrganization(organization.uuid, user));
         await dispatch(getOrganizations());

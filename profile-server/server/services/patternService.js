@@ -22,10 +22,13 @@ module.exports.hasProfileReferences = async function(oid) {
     if (!oid) throw new Error('patternId not provided');
     if (typeof oid !== 'object') oid = mongoose.Schema.Types.ObjectId(oid);
 
+    const pattern = await patternModel.findOne({_id: oid});
+
     const profRefs = await profileVersionModel.find({
-        $or:
+        $and:
         [
-            { patterns: { $in: [oid] }}
+            { patterns: { $in: [oid] }},
+            { parentProfile: { $nin: [pattern.parentProfile] }}
         ]
     });
 

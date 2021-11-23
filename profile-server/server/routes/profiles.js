@@ -68,8 +68,8 @@ profiles.get('/:profile/unlock', ...permissionStack, unlock());
 
 
 profiles.put('/:profile', ...permissionStack, unlock(true), controller.updateProfile);
-profiles.delete('/:profile', ...permissionStack, lock(true), controller.deletePublishedProfile);
-profiles.delete('/:profile/draft', ...permissionStack, lock(true), controller.deleteProfileDraft);
+profiles.delete('/:profile', ...permissionStack, controller.deletePublishedProfile);
+profiles.delete('/:profile/draft', ...permissionStack, controller.deleteProfileDraft);
 
 const profileVersions = require('./profileVersions');
 

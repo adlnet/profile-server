@@ -175,7 +175,7 @@ export default function Template({ isMember, isCurrentVersion, isOrphan }) {
     async function onClaimTemplate(profile) {
         const versionId = (profile.currentDraftVersion ? profile.currentDraftVersion.uuid : profile.currentPublishedVersion.uuid);
         await dispatch(claimTemplate(profile.organization, profile.id, versionId, templateId));
-        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${versionId}/templates`);
+        history.push(`/deleted-items/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${versionId}`);
     }
 
     function checkDeterminingPropertyConflict(detpropType, noconflictFunction, cancelFunction) {

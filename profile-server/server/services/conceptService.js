@@ -23,6 +23,8 @@ module.exports.isReferencedElsewhere = async function(oid) {
     if (!oid) throw new Error('conceptId not provided');
     if (typeof oid !== 'object') oid = mongoose.Schema.Types.ObjectId(oid);
 
+    const concept = await conceptModel.findOne({ _id: oid});
+
     const templates = await templateModel.find({
         $or:
         [
@@ -39,16 +41,18 @@ module.exports.isReferencedElsewhere = async function(oid) {
     });
 
     const externalReferences = await profileVersionModel.find({
-        $or:
+        $and:
         [
-            { externalConcepts: { $in: [oid] }}
+            { externalConcepts: { $in: [oid] }},
+            { parentProfile: { $nin: [concept.parentProfile] }}
         ]
     });
 
     const directReferences = await profileVersionModel.find({
-        $or:
+        $and:
         [
-            { concepts: { $in: [oid] }}
+            { concepts: { $in: [oid] }},
+            { parentProfile: { $nin: [concept.parentProfile] }}
         ]
     });
 

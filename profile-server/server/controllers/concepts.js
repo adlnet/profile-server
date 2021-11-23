@@ -400,7 +400,7 @@ exports.unlinkConceptReq = async function (req, res) {
 exports.claimConcept = async function (req, res) {
     try {
         const concept = req.resource;
-        const orphanProfileVersion = await profileVersionModel.findByUuid(concept.parentProfile.uuid);
+        const orphanProfileVersion = await profileVersionModel.findOne({ _id: concept.parentProfile });
         const newProfile = await profileModel.findOne({ _id: req.params.profile });
 
         const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});

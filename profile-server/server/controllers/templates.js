@@ -373,7 +373,7 @@ exports.unlinkTemplate = async function (req, res) {
 exports.claimTemplate = async function (req, res) {
     try {
         const template = req.resource;
-        const orphanProfileVersion = await profileVersionModel.findByUuid(template.parentProfile.uuid);
+        const orphanProfileVersion = await profileVersionModel.findOne({ _id: template.parentProfile});
         const newProfile = await profileModel.findOne({ _id: req.params.profile });
         const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
 

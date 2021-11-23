@@ -425,7 +425,7 @@ exports.deletePattern = async function (req, res) {
 exports.claimPattern = async function (req, res) {
     try {
         const pattern = req.resource;
-        const orphanProfileVersion = await profileVersionModel.findByUuid(pattern.parentProfile.uuid);
+        const orphanProfileVersion = await profileVersionModel.findOne({ _id: pattern.parentProfile});
         const newProfile = await profileModel.findOne({ _id: req.params.profile });
         const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
 

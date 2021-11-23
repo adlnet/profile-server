@@ -233,7 +233,11 @@ exports.updateOrganization = async function (req, res) {
 
 exports.deleteOrganization = async function (req, res) {
     try {
-        await organizationModel.deleteByUuid(req.params.org);
+        const orgToDelete = await organizationModel.findOne({ uuid: req.params.org });
+
+        if (orgToDelete && !orgToDelete.orphanContainer) {
+            await organizationModel.deleteByUuid(req.params.org);
+        }
     } catch (err) {
         console.error(err);
         return res.status(500).send({

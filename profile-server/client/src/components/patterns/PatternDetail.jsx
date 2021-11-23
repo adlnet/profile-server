@@ -68,7 +68,7 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
 
     async function onClaimPattern(profile) {
         await dispatch(claimPattern(selectedOrganizationId, profile._id, selectedProfileVersionId, patternId));
-        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/patterns`);
+        history.push(`/deleted-items/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
     }
 
     if (!pattern) return '';

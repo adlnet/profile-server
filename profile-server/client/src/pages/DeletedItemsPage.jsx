@@ -46,7 +46,6 @@
     useEffect(() => {
         // url might be /profile/:uuid .. or /organization/uuid/profile/uuid/version/uuid
         if (profileId && versionId) {
-            console.log('selecting the profile');
             dispatch(selectProfile(organizationId, profileId));
             dispatch(selectProfileVersion(organizationId, profileId, versionId));
         } else if (profileId) {
@@ -56,7 +55,6 @@
         }
 
         if (organizationId) {
-            console.log('selecting org');
             dispatch(selectOrganization(organizationId));
         }
     }, [organizationId, profileId, versionId]);

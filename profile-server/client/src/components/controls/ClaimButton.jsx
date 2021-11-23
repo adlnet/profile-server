@@ -26,11 +26,11 @@ import { selectOrganization } from "../../actions/organizations";
 export default function ClaimButton({ className, preventDefault, onConfirm }) {
     const [showModal, setShowModal] = useState(false);
     const [profiles, setProfiles] = useState([]);
+    const [targetOrganizationUuid, setTargetOrganizationUuid] = useState();
     const dispatch = useDispatch();
     const { url } = useRouteMatch();
     const orgModal = useRef();
 
-    let targetOrganizationUuid = null;
 
     function doProfileModal(e) {
         if (preventDefault) e.preventDefault();
@@ -51,7 +51,8 @@ export default function ClaimButton({ className, preventDefault, onConfirm }) {
     function onSelectedOrg(org) {
         return new Promise(async (resolve, reject) => {
             await dispatch(selectOrganization(org.uuid, (res) => {
-                targetOrganizationUuid = res.uuid;
+                // targetOrganizationUuid = res.uuid;
+                setTargetOrganizationUuid(res.uuid);
                 setProfiles(res.profiles);
                 setShowModal(true);
             }));

@@ -48,7 +48,11 @@ class API {
                 errorMessage = res.statusText;
             }
 
-            throw new Error(errorMessage);
+            const tryingToUnlockResource = (res.url.indexOf('/unlock') !== -1);
+
+            if (!tryingToUnlockResource) {
+                throw new Error(errorMessage);
+            }
         }
     }
 

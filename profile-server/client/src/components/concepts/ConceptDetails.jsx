@@ -63,7 +63,7 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs,
 
     async function handleDeleteConcept() {
         await dispatch(deleteConcept(params.organizationId, profileId, versionId, concept));
-        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/concepts`);
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
     }
 
     function onDelete() {
@@ -72,7 +72,7 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs,
 
     async function onClaimConcept(profile, targetOrganizationId) {
         await dispatch(claimConcept(targetOrganizationId, profile._id, versionId, conceptId));
-        history.push(`/organization/${selectedOrganizationId}/profile/${profile.uuid}/version/${selectedProfileVersionId}/concepts`);
+        history.push(`/deleted-items/organization/${targetOrganizationId}/profile/${profile.uuid}/version/${selectedProfileVersionId}`);
     }
 
     if (!concept) return '';
