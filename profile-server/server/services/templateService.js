@@ -23,7 +23,7 @@ module.exports.hasPatternReferences = async function(oid) {
     if (!oid) throw new Error('templateId not provided');
     if (typeof oid !== 'object') oid = mongoose.Schema.Types.ObjectId(oid);
 
-    const template = await templateModel.findOne({ _id: oid});
+    // const template = await templateModel.findOne({ _id: oid});
 
     const templates = await patternModel.find({
         $or:
@@ -39,8 +39,8 @@ module.exports.hasPatternReferences = async function(oid) {
     const externalReferences = await profileVersionModel.find({
         $and:
         [
-            { templates: { $in: [oid] }},
-            { parentProfile: { $nin: [template.parentProfile] }}
+            { templates: { $in: [oid] }}
+            // { parentProfile: { $nin: [template.parentProfile] }}
         ]
     });
 
