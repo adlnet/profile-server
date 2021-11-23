@@ -120,6 +120,8 @@ export default function CreateSequencePattern(props) {
 
                     props.onSubmit(pattern);
                 } else {
+                    values.type = (props.type || values.componenttype);
+                    values.primary = (values.primaryorsecondary === "primary")
                     props.onSubmit(values);
                 }
             }}
