@@ -41,10 +41,10 @@ templates.delete('/link/:template', ...permissionStack, lock(true), controller.u
 
 templates.get('/:template/lock', ...permissionStack, lock());
 templates.get('/:template/unlock', ...permissionStack, unlock());
-
+templates.post('/:template/claim', ...[mustBeLoggedIn, getResource(Template, 'template', 'uuid')], controller.claimTemplate);
 
 templates.get('/:template', controller.getTemplate);
 templates.put('/:template', ...permissionStack, unlock(true), controller.updateTemplate);
-templates.delete('/:template', ...permissionStack, lock(true), controller.deleteTemplate);
+templates.delete('/:template', ...permissionStack, controller.deleteTemplate);
 
 module.exports = templates;

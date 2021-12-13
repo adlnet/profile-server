@@ -18,6 +18,7 @@ const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
 const profileModel = require('../ODM/models').profile;
+const conceptService = require('../services/conceptService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
@@ -324,7 +325,25 @@ exports.updateConcept = async function (req, res) {
 
 exports.deleteConcept = async function (req, res) {
     try {
-        await conceptModel.deleteByUuid(req.params.concept);
+        const conceptUuid = req.params.concept;
+        const organizationId = req.params.org;
+        const concept = await conceptModel.findOne({uuid: conceptUuid });
+        if (!concept) throw new Error('Concept not found');
+        let hasReferences = await conceptService.isReferencedElsewhere(concept._id);
+        
+        if (hasReferences) {
+            conceptService.moveToOrphanContainer(req.user, organizationId, concept);
+        } else {
+            await conceptModel.deleteByUuid(conceptUuid);
+        }
+
+        const profileVersion = await profileVersionModel.findByUuid(req.params.version);
+        profileVersion.concepts = [...profileVersion.concepts].filter(t => !t.equals(concept._id));
+        profileVersion.externalConcepts = [...profileVersion.externalConcepts].filter(t => !t.equals(concept._id));
+        profileVersion.updatedOn = new Date();
+        profileVersion.updatedBy = req.user;
+        await profileVersion.save();
+
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -338,7 +357,22 @@ exports.deleteConcept = async function (req, res) {
     });
 };
 
-exports.unlinkConcept = async function (req, res) {
+exports.unlinkConcept = async function(concept, profileVersion, version) {
+    if (!profileVersion) {
+        profileVersion = await profileVersionModel.findByUuid(version);
+    }
+
+    // only unlink external concepts (aka different parent profile version)
+    if (concept.parentProfile.uuid !== profileVersion.uuid) {
+        if (profileVersion.externalConcepts && profileVersion.externalConcepts.length) {
+            profileVersion.externalConcepts = profileVersion.externalConcepts.filter(c => c._id.toString() !== concept._id.toString());
+            await profileVersion.save();
+        }
+    }
+}
+
+
+exports.unlinkConceptReq = async function (req, res) {
     try {
         const concept = req.resource;
         const profileVersion = await profileVersionModel.findByUuid(req.params.version);
@@ -349,13 +383,8 @@ exports.unlinkConcept = async function (req, res) {
             });
         }
 
-        // only unlink external concepts (aka different parent profile version)
-        if (concept.parentProfile.uuid !== profileVersion.uuid) {
-            if (profileVersion.externalConcepts && profileVersion.externalConcepts.length) {
-                profileVersion.externalConcepts = profileVersion.externalConcepts.filter(c => c._id.toString() !== concept._id.toString());
-                await profileVersion.save();
-            }
-        }
+        module.exports.unlinkConcept(concept, profileVersion)
+        
     } catch (err) {
         if (console.prodLog) console.prodLog(err);
         else console.error(err);
@@ -367,3 +396,24 @@ exports.unlinkConcept = async function (req, res) {
 
     res.send({ success: true });
 };
+
+exports.claimConcept = async function (req, res) {
+    try {
+        const concept = req.resource;
+        const orphanProfileVersion = await profileVersionModel.findOne({ _id: concept.parentProfile });
+        const newProfile = await profileModel.findOne({ _id: req.params.profile });
+
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
+
+        await conceptService.claimDeleted(concept, orphanProfileVersion, newProfileVersion);
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
+}

@@ -699,6 +699,11 @@ h2.profile-edit button {
   margin-top: 16px;
   margin-right: 24px;
 }
+.usa-button.delete-button {
+  margin-top: 16px;
+  margin-right: 24px;
+  background-color: red;
+}
 
 .disabled {
   opacity: 0.3;
@@ -1345,4 +1350,22 @@ path.rv-xy-plot__series.rv-xy-plot__series--line {
   .usa-nav__inner{
     background-color: white;
   }
+}
+
+.claim-btn {
+  display: block;
+  width: 7em;
+  margin-left: auto;
+  margin-right: 0;
+  color: black;
+  background-color: yellow;
+  margin-bottom: 5px;
+}
+
+.claim-btn span {
+  color: black;
+}
+
+.claim-btn i {
+  color: black;
 }

@@ -27,6 +27,7 @@ import Profiles from "./pages/Profiles";
 import APIInfo from "./pages/APIInfo";
 import HelpPage from "./pages/HelpPage";
 import FAQPage from "./pages/FAQPage";
+import DeletedItemsPage from "./pages/DeletedItemsPage";
 
 import SelectOrganization from "./components/profiles/SelectOrganization";
 import Analytics from "./components/admin/Analytics";
@@ -98,6 +99,9 @@ export default class App extends Component {
                         </Route>
                         <Route path="/FAQs">
                             <FAQPage></FAQPage>
+                        </Route>
+                        <Route path="/deleted-items/organization/:organizationId/profile/:profileId/version/:versionId">
+                            <DeletedItemsPage></DeletedItemsPage>
                         </Route>
                         <AdminRoute exact path="/admin/users">
                             <Users />

@@ -37,9 +37,10 @@ patterns.post('/', controller.createPattern);
 
 patterns.get('/:pattern/lock', ...permissionStack, lock());
 patterns.get('/:pattern/unlock', ...permissionStack, unlock());
+patterns.post('/:pattern/claim', ...[mustBeLoggedIn, getResource(Pattern, 'pattern', 'uuid')], controller.claimPattern);
 
 patterns.get('/:pattern', controller.getPattern);
 patterns.put('/:pattern', ...permissionStack, unlock(true), controller.updatePattern);
-patterns.delete('/:pattern', ...permissionStack, lock(true), controller.deletePattern);
+patterns.delete('/:pattern', ...permissionStack, controller.deletePattern);
 
 module.exports = patterns;

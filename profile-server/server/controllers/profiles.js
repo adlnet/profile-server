@@ -15,10 +15,13 @@
 **************************************************************** */
 const profileModel = require('../ODM/models').profile;
 const profileVersionModel = require('../ODM/models').profileVersion;
+const profileService = require('../services/profileService');
+const profileComponentService = require('../services/profileComponentService');
 const organizationModel = require('../ODM/models').organization;
 const createIRI = require('../utils/createIRI');
 const langmaps = require('../utils/langmaps');
 const responses = require('../reponseTypes/responses');
+const uuid = require('uuid');
 
 const mongoSanitize = require('mongo-sanitize');
 const EventBus = require('../utils/eventBus.js');
@@ -428,12 +431,9 @@ exports.publishProfile = async function (req, res, next) {
     let parentProfile;
 
     try {
-        profile = await profileVersionModel.findByUuid(req.params.profile).populate('parentProfile');
-        await profile.publish(req.user, req.body.parentiri);
-        parentProfile = profile.parentProfile;
-
-        // depopulate
-        profile.parentProfile = profile.parentProfile.id;
+        const res = await profileService.publish(req.params.profile, req.user, req.body.parentiri);
+        profile = res.profile;
+        parentProfile = res.parentProfile;
         EventBus.emit('profilePublished', profile);
     } catch (err) {
         console.log(err);
@@ -448,35 +448,85 @@ exports.publishProfile = async function (req, res, next) {
 };
 
 /**
- * Deletes a profile draft. Only drafts can be deleted. And the
- * provided api key must be of the organization that owns the profile.
+ * Deletes a profile. The provided api key must be of the organization that owns the profile.
  *
  * @param {*} req express request object
  * @param {*} res express response object
  * @param {*} next express next function
  */
-exports.deleteProfile = async function (req, res, next) {
-    let meta;
+exports.deletePublishedProfile = async function (req, res, next) {
+    let meta = {};
     try {
-        // CAREFUL!!!
         req.profile = req.resource;
         const profile = req.profile;
         if (req.validationScope === 'public') return res.status(401).send(responses.unauthorized('Not Authorized'));
-        if (profile.state !== 'draft') return res.status(405).send(responses.notAllowed('Not Allowed: Only drafts can be deleted.'));
-
-        // Not how this works. If it's locked, and you're here, you have the lock.
-        // if (profile.locked) return res.status(409).send(responses.conflict('The profile is currently being edited'));
-
-        meta = await profile.getMetadata();
-
-        await profile.deleteDraft();
-        // await profile.remove();
+        await profileService.deletePublishedProfile(req.user, req.params.org, profile);
     } catch (err) {
         return next(err);
     }
 
     res.send(responses.metadata(true, meta));
 };
+
+/**
+ * Deletes a profile draft. The provided api key must be of the organization that owns the profile.
+ *
+ * @param {*} req express request object
+ * @param {*} res express response object
+ * @param {*} next express next function
+ */
+ exports.deleteProfileDraft = async function (req, res, next) {
+    let meta = {};
+    try {
+        req.profile = req.resource;
+        const profile = req.profile;
+        if (req.validationScope === 'public') return res.status(401).send(responses.unauthorized('Not Authorized'));
+        if (profile.state !== 'draft') return res.status(405).send(responses.notAllowed('Not Allowed: Only drafts can be deleted.'));
+
+        await profileService.deleteProfileDraft(profile);
+    } catch (err) {
+        return next(err);
+    }
+
+    res.send(responses.metadata(true, meta));
+};
+
+exports.getOrphanContainer = async function (req, res, next) {
+    let orphanProfile = {};
+    let orgUuid = '';
+    let profileVersionUuid = '';
+    try {
+        let org = await organizationModel.findOne();
+        if (!org) {
+            // Create an org
+            organization = new organizationModel({
+                name: 'Default',
+                description: 'Default generated organization',
+                collaborationLink: 'http://',
+                orphanContainer: true
+            });
+            await organization.save();
+
+            org = await organizationModel.findOne();
+        }
+        orphanProfile = await profileComponentService.getOrphanProfile(org.uuid, req.user);
+
+        let profileVersion = await profileVersionModel.findOne({ _id: orphanProfile.currentPublishedVersion});
+        // Add supplemental data
+        orgUuid = org.uuid;
+        profileVersionUuid = profileVersion.uuid;
+    }
+    catch (err) {
+        return next(err);
+    }
+    
+    res.send({
+        success: true,
+        orphanProfile: orphanProfile,
+        organizationUuid: orgUuid,
+        currentPublishedVersionUuid: profileVersionUuid
+    });
+}
 
 /**
  * Imports the profile (jsonld) from the body of the request and

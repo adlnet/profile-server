@@ -58,6 +58,10 @@ const profile = new mongoose.Schema({
         type: String,
         default: 'draft',
     },
+    orphanContainer: {
+        type: Boolean,
+        default: false
+    }
 }, { toJSON: { virtuals: true } });
 
 profile.plugin(uniqueValidator);

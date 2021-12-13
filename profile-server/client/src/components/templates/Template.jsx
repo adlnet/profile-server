@@ -14,7 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect, useState } from 'react';
-import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect, useLocation, Link } from 'react-router-dom';
+import { useRouteMatch, Switch, Route, useHistory, useParams, Redirect, useLocation, NavLink } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 
 import TemplateDetail from "./TemplateDetail";
@@ -22,7 +22,7 @@ import EditTemplateDetails from './EditTemplateDetails';
 import ConceptTable from './ConceptTable';
 import ConceptDetail from '../concepts/ConceptDetails';
 import StatementExample from './StatementExample';
-import { selectTemplate, editTemplate } from "../../actions/templates";
+import { selectTemplate, editTemplate, deleteTemplate } from "../../actions/templates";
 import RuleTable from '../rules/RuleTable';
 import Rule from '../rules/Rule';
 import DeterminingPropertyTable from '../determining-properties/DeterminingPropertyTable';
@@ -38,13 +38,15 @@ import CreateStatementExample from './CreateStatementExample';
 import Lock from "../../components/users/lock";
 import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 
-import { loadProfileTemplates, removeTemplateLink } from "../../actions/templates";
+import { loadProfileTemplates, removeTemplateLink, claimTemplate } from "../../actions/templates";
 import { reloadCurrentProfile } from '../../actions/profiles';
 import Breadcrumb from '../controls/breadcrumbs';
 import DeprecatedAlert from '../controls/deprecatedAlert';
 import { ADDED, EDITED, REMOVED, DEPRECATED } from '../../actions/successAlert';
+import ClaimButton from '../controls/ClaimButton';
 
-export default function Template({ isMember, isCurrentVersion }) {
+
+export default function Template({ isMember, isCurrentVersion, isOrphan }) {
 
     const { url, path } = useRouteMatch();
     const templatesListURL = url.split('/').slice(0, -1).join('/');
@@ -71,6 +73,7 @@ export default function Template({ isMember, isCurrentVersion }) {
     const [isCreatingExample, setIsCreatingExample] = useState(false);
     const [detpropOverwrite, setConfirmDetPropOverwrite] = useState(false);
     const [showModal, setShowModal] = useState(false);
+    const { organizationId } = useParams();
 
     if (!template) return 'Template not populated';
 
@@ -153,6 +156,26 @@ export default function Template({ isMember, isCurrentVersion }) {
         if (isEditable) {
             onEditDetailsSubmit({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED);
         }
+    }
+
+    function onDeleteDetailsSubmit() {
+        if (isEditable) {
+            dispatch(deleteTemplate(template));
+            setIsEditingDetails(false);
+            history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
+        }
+    }
+
+    function onDelete() {
+        if (isEditable) {
+            onDeleteDetailsSubmit();
+        }
+    }
+
+    async function onClaimTemplate(profile) {
+        const versionId = (profile.currentDraftVersion ? profile.currentDraftVersion.uuid : profile.currentPublishedVersion.uuid);
+        await dispatch(claimTemplate(profile.organization, profile.id, versionId, templateId));
+        history.push(`/deleted-items/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${versionId}`);
     }
 
     function checkDeterminingPropertyConflict(detpropType, noconflictFunction, cancelFunction) {
@@ -281,7 +304,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                             <div className="usa-alert__body">
                                 <p className="usa-alert__text">
                                     Editing is limited. This statement template has already been published in the profile and may be in use.
-                        </p>
+                                </p>
                             </div>
                         </div>
                     }
@@ -297,6 +320,13 @@ export default function Template({ isMember, isCurrentVersion }) {
                             </button>
                         </h2>
                         <div id="a1" className="usa-accordion__content">
+                            {isOrphan &&
+                                <div className="grid-col display-flex flex-column flex-align-end">
+                                    <ClaimButton
+                                        className="usa-button claim-btn margin-top-2 margin-right-0"
+                                        onConfirm={onClaimTemplate} />
+                                </div>
+                            }
                             {
                                 isEditingDetails ?
                                     <Lock resourceUrl={`/org/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}/template/${template.uuid}`}>
@@ -306,6 +336,7 @@ export default function Template({ isMember, isCurrentVersion }) {
                                             onCancel={() => setIsEditingDetails(false)}
                                             isPublished={isPublished}
                                             onDeprecate={onDeprecate}
+                                            onDelete={onDelete}
                                         /> </Lock> :
                                     <TemplateDetail
                                         onEditClick={() => setIsEditingDetails(true)}

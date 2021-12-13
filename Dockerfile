@@ -4,7 +4,7 @@
  COPY ./profile-server /app
  WORKDIR /app
  
- RUN apk update || : && apk add python
+ RUN apk update || : && apk add python3
  
  WORKDIR /app/profile-server
  RUN yarn

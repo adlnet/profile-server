@@ -23,22 +23,22 @@ import CreateExtensionConcept from './CreateExtensionConcept';
 import CreateActivityConcept from './CreateActivityConcept';
 import ErrorPage from '../errors/ErrorPage';
 
-export default function EditConcept({ initialValues, onCancel, onCreate, isPublished, setIsEditing, onDeprecate }) {
+export default function EditConcept({ initialValues, onCancel, onCreate, isPublished, setIsEditing, onDeprecate, onDelete }) {
     const { path } = useRouteMatch();
     setIsEditing(true);
     return (<>
         <Switch>
             <Route exact path={`${path}/document`}>
-                <CreateDocumentConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
+                <CreateDocumentConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} onDelete={onDelete} />
             </Route>
             <Route exact path={`${path}/extension`}>
-                <CreateExtensionConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
+                <CreateExtensionConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} onDelete={onDelete} />
             </Route>
             <Route exact path={`${path}/activity`}>
-                <CreateActivityConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
+                <CreateActivityConcept initialValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} onDelete={onDelete} />
             </Route>
             <Route exact path={`${path}/:conceptType(Verb|ActivityType|AttachmentUsageType)?`}>
-                <CreateSemanticallyRelatableConcept startingValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} />
+                <CreateSemanticallyRelatableConcept startingValues={initialValues} onCreate={onCreate} onCancel={onCancel} isPublished={isPublished} onDeprecate={onDeprecate} onDelete={onDelete} />
             </Route>
             <Route>
                 <ErrorPage />

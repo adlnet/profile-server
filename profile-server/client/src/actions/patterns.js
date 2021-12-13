@@ -39,6 +39,10 @@ export const START_DELETE_PATTERN = 'START_DELETE_PATTERN';
 export const FINISH_DELETE_PATTERN = 'FINISH_DELETE_PATTERN';
 export const ERROR_DELETE_PATTERN = 'ERROR_DELETE_PATTERN';
 
+export const START_CLAIM_PATTERN = 'START_CLAIM_PATTERN';
+export const ERROR_CLAIM_PATTERN = 'ERROR_CLAIM_PATTERN';
+export const FINISH_CLAIM_PATTERN = 'FINISH_CLAIM_PATTERN';
+
 export const START_GET_PATTERN = 'START_GET_PATTERN';
 export const FINISH_GET_PATTERN = 'FINISH_GET_PATTERN';
 export const ERROR_GET_PATTERN = 'ERROR_GET_PATTERN';
@@ -254,19 +258,22 @@ export function deletePattern(pattern) {
         });
 
         try {
-            let profileVersionId = state.application.selectedProfileVersionId
-            if (state.application.selectedProfileVersion.state === 'published') {
-                const newProfileVersion = await API.createProfileVersion(
-                    state.application.selectedOrganizationId, state.application.selectedProfileId,
-                    Object.assign({}, state.application.selectedProfileVersion))
-                profileVersionId = newProfileVersion.uuid;
-            }
+            let profileVersionId = state.application.selectedProfileVersionId;
+            // if (state.application.selectedProfileVersion.state === 'published') {
+            //     const newProfileVersion = await API.createProfileVersion(
+            //         state.application.selectedOrganizationId, state.application.selectedProfileId,
+            //         Object.assign({}, state.application.selectedProfileVersion))
+            //     profileVersionId = newProfileVersion.uuid;
+            // }
 
             await API.deletePattern(organizationId, profileId, profileVersionId, pattern.uuid);
 
-            dispatch(selectProfile(organizationId, profileId));
-            dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
-            dispatch(loadProfilePatterns(profileVersionId));
+            // Allow current loop to finish first before reload.
+            setTimeout(() => {
+                dispatch(selectProfile(organizationId, profileId));
+                dispatch(selectProfileVersion(organizationId, profileId, profileVersionId));
+                dispatch(loadProfilePatterns(profileVersionId));
+            });
         } catch (err) {
             dispatch({
                 type: ERROR_DELETE_PATTERN,
@@ -360,4 +367,29 @@ export function updateSelectedComponents(components) {
             components: components,
         })
     }
+}
+
+export function claimPattern(organizationId, profileId, versionId, patternId) {
+    return async function (dispatch) {
+
+        dispatch({
+            type: START_CLAIM_PATTERN,
+        });
+
+        let patterns;
+        try {
+            patterns = await API.claimPattern(organizationId, profileId, versionId, patternId);
+        } catch (err) {
+            dispatch({
+                type: ERROR_CLAIM_PATTERN,
+                errorType: 'pattern',
+                error: err.message,
+            })
+        } finally {
+            dispatch({
+                type: FINISH_CLAIM_PATTERN,
+                patterns: patterns,
+            });
+        }
+    };
 }

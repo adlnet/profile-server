@@ -25,17 +25,24 @@ import ArrangeOrder from './ArrangeOrder';
 import CancelButton from '../controls/cancelButton';
 import { isValidIRI } from '../fields/Iri';
 import DeprecateButton from '../controls/deprecateButton';
+import DeleteButton from '../controls/DeleteButton';
 
 export default function CreateSequencePattern(props) {
 
     props.updateType && props.updateType('sequence');
-    const { isPublished, root_url, onDeprecate } = props;
+    const { isPublished, root_url, onDeprecate, onDelete } = props;
 
     const selectedResults = useSelector((state) => state.searchResults.selectedComponents);
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = `${currentProfileVersion.iri}/patterns/`;
 
+    const deleteButton = <DeleteButton
+        className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+        style={{ marginTop: "0.6em" }}
+        type="reset"
+        onConfirm={onDelete}
+        componentType="pattern"/>;
 
     let startingValues;
     if (props.pattern) {
@@ -113,6 +120,8 @@ export default function CreateSequencePattern(props) {
 
                     props.onSubmit(pattern);
                 } else {
+                    values.type = (props.type || values.componenttype);
+                    values.primary = (values.primaryorsecondary === "primary")
                     props.onSubmit(values);
                 }
             }}
@@ -129,7 +138,8 @@ export default function CreateSequencePattern(props) {
                                         title="Define Pattern"
                                         isNotValidated={!!Object.keys(props.errors).length}
                                         cancel={getCancelButton()}
-                                        deprecateButton={startingValues && <DeprecateButton className="usa-button usa-button--unstyled text-secondary-dark text-bold" style={{ marginTop: "2em" }} type="reset" onClick={onDeprecate} componentType="pattern" />}
+                                        deprecateButton={startingValues && <DeprecateButton className="usa-button usa-button--unstyled text-secondary-dark text-bold" style={{ marginTop: "1em" }} type="reset" onClick={onDeprecate} componentType="pattern" />}
+                                        deleteButton={startingValues && deleteButton}
                                     >
                                         <DefinePattern {...props} isEditing={!!props.values.uuid} generatedIRIBase={generatedIRIBase} />
                                     </Step>
@@ -157,7 +167,14 @@ export default function CreateSequencePattern(props) {
                             </div>
                             <div className="grid-col-3">
                                 <div className="pin-right">
-                                    <DeprecateButton className="usa-button usa-button--unstyled text-secondary-dark text-bold" style={{ marginTop: "2em" }} type="reset" onClick={onDeprecate} componentType="pattern" />
+                                    <DeprecateButton 
+                                        className="usa-button usa-button--unstyled text-secondary-dark text-bold" 
+                                        style={{ marginTop: "2em" }} 
+                                        type="reset" 
+                                        onClick={onDeprecate} 
+                                        componentType="pattern" 
+                                    />
+                                    {deleteButton}
                                 </div>
                             </div>
                         </div>

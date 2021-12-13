@@ -67,6 +67,10 @@ const organization = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: 'user',
     },
+    orphanContainer: {
+        type: Boolean,
+        default: false
+    }
 }, { toJSON: { virtuals: true } });
 
 organization.plugin(uniqueValidator);

@@ -16,16 +16,26 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-export default function ProfileTableRow({ profile, site_url, isMember }) {
+export default function ProfileTableRow({ profile, site_url, isMember, onOptionalSingleSelect, forceShowDrafts }) {
     if (!isMember && profile && !profile.currentPublishedVersion) return <></>;
+
+    function selectedRow(e) {
+        if (onOptionalSingleSelect) {
+            onOptionalSingleSelect(profile);
+        }
+    }
+
+    let canClick = (onOptionalSingleSelect);
+
     return (
-        <tr>
+        <tr onClick={selectedRow}>
             <th width="20%" scope="row">
                 {
                     !isMember && profile && profile.currentPublishedVersion ?
                         <Link
                             to={`/profile/${profile.currentPublishedVersion.uuid}`}
                             className="usa-link button-link"
+                            style={canClick ? {pointerEvents: "none"} : null}
                         >
                             {profile.currentPublishedVersion.name}
                         </Link>
@@ -34,12 +44,14 @@ export default function ProfileTableRow({ profile, site_url, isMember }) {
                             <Link
                                 to={`${site_url}/profile/${profile.uuid}/version/${profile.currentDraftVersion.uuid}`}
                                 className="usa-link button-link"
+                                style={canClick ? {pointerEvents: "none"} : null}
                             >
                                 {profile.currentDraftVersion.name}
                             </Link> :
                             <Link
-                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion.uuid}`}
+                                to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion?.uuid}`}
                                 className="usa-link button-link"
+                                style={canClick ? {pointerEvents: "none"} : null}
                             >
                                 {profile.currentPublishedVersion.name}
                                 {profile.currentPublishedVersion.isVerified && <img className="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />}
@@ -48,9 +60,6 @@ export default function ProfileTableRow({ profile, site_url, isMember }) {
             </th>
             <td>{profile.currentDraftVersion && isMember ? 'Draft' : profile.currentPublishedVersion && profile.currentPublishedVersion.isVerified ? 'Verified' : 'Published'}</td>
             <td><span className="font-sans-3xs">{(profile.updatedOn) ? (new Date(profile.updatedOn)).toLocaleDateString() : 'Unknown'}</span></td>
-
-
-
         </tr>
     )
 }

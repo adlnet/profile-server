@@ -50,7 +50,6 @@ export default function ProfileDetails({ isMember, isCurrentVersion }) {
 
     return (
         <>
-
             <div className="grid-row profile-edit">
                 <h2 className="profile-edit">
                     {isMember && isCurrentVersion &&

@@ -16,6 +16,8 @@
 const templateModel = require('../ODM/models').template;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
+const profileModel = require('../ODM/models').profile;
+const templateService = require('../services/templateService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
@@ -310,8 +312,15 @@ exports.deleteTemplate = async function (req, res) {
             });
         }
 
-        if (template.parentProfile.equals(profileVersion._id)) {
-            await template.remove();
+        let hasReferences = await templateService.hasPatternReferences(template._id);
+
+        if (hasReferences) {
+            await templateService.moveToOrphanContainer(req.user, req.params.org, template);
+        }
+        else {
+            if (template.parentProfile.equals(profileVersion._id)) {
+                await template.remove();
+            }
         }
 
         profileVersion.templates = [...profileVersion.templates].filter(t => !t.equals(template._id));
@@ -360,3 +369,23 @@ exports.unlinkTemplate = async function (req, res) {
 
     return res.send({ success: true });
 };
+
+exports.claimTemplate = async function (req, res) {
+    try {
+        const template = req.resource;
+        const orphanProfileVersion = await profileVersionModel.findOne({ _id: template.parentProfile});
+        const newProfile = await profileModel.findOne({ _id: req.params.profile });
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
+
+        await templateService.claimDeleted(template, orphanProfileVersion, newProfileVersion);
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
+}

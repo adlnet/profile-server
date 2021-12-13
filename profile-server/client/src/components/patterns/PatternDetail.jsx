@@ -14,20 +14,21 @@
 * limitations under the License.
 **************************************************************** */
 import React, { useEffect } from 'react';
-import { useRouteMatch, useParams, useHistory, Link, Switch, Route, Redirect } from 'react-router-dom';
+import { useRouteMatch, useParams, useHistory, Link, Switch, Route, Redirect, NavLink } from 'react-router-dom';
 import { useSelector, useDispatch } from 'react-redux';
 
 import { Detail, Tags, Translations } from '../DetailComponents';
-import { selectPattern, editPattern } from '../../actions/patterns';
+import { selectPattern, editPattern, deletePattern, claimPattern } from '../../actions/patterns';
 import EditPattern from './EditPattern';
 import Lock from '../users/lock';
 import { useState } from 'react';
 import Breadcrumb from '../controls/breadcrumbs';
 import DeprecatedAlert from '../controls/deprecatedAlert';
 import { DEPRECATED } from '../../actions/successAlert';
+import ClaimButton from '../controls/ClaimButton';
 
 
-export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs, root_url }) {
+export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs, root_ur, isOrphan }) {
     const { url, path } = useRouteMatch();
     const [isEditing, setIsEditing] = useState(false);
     const params = useParams();
@@ -56,6 +57,20 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
         handleEditPattern({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED)
     }
 
+    async function handleOnDelete() {
+        await dispatch(deletePattern(pattern));
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
+    }
+
+    function onDelete() {
+        handleOnDelete();
+    }
+
+    async function onClaimPattern(profile) {
+        await dispatch(claimPattern(selectedOrganizationId, profile._id, selectedProfileVersionId, patternId));
+        history.push(`/deleted-items/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
+    }
+
     if (!pattern) return '';
 
     const renderBreadcrumbs = () => {
@@ -79,14 +94,21 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
             </div>
             <div className="grid-col display-flex flex-column flex-align-end">
                 {
-                    !isLinkedFromExternalProfile && isEditable && !isEditing &&
+                    !isLinkedFromExternalProfile && isEditable && !isEditing && !isOrphan &&
                     <Link
                         to={`${url}/edit/`}
                         className="usa-button padding-x-105 margin-top-2 margin-right-0 "
                     >
                         <span className="fa fa-pencil fa-lg margin-right-1"></span>
-                                        Edit Pattern
-                                    </Link>
+                        Edit Pattern
+                    </Link>
+                }
+                {isOrphan &&
+                    <div className="grid-col display-flex flex-column flex-align-end">
+                        <ClaimButton
+                            className="usa-button claim-btn margin-top-2 margin-right-0"
+                            onConfirm={onClaimPattern} />
+                    </div>
                 }
             </div>
         </div>
@@ -102,6 +124,7 @@ export default function PatternDetail({ isMember, isCurrentVersion, breadcrumbs,
                             isPublished={isPublished}
                             setEditing={setIsEditing}
                             onDeprecate={onDeprecate}
+                            onDelete={onDelete}
                         />
                     </Lock>
                     : <Redirect to={url} />
@@ -181,7 +204,7 @@ function PatternDetailHome({ pattern, setIsEditing, isPublished, isEditable, isL
                     <div className="usa-alert__body">
                         <p className="usa-alert__text">
                             <span style={{ fontWeight: "bold" }}>Linked Pattern.</span> This pattern is defined by another profile, {pattern.parentProfile.name}.
-                                    </p>
+                        </p>
                     </div>
                 </div>
             }

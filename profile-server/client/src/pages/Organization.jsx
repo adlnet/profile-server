@@ -35,7 +35,6 @@ import PrivateRoute from '../components/users/PrivateRoute';
 
 export default function Organization() {
 
-
     const dispatch = useDispatch();
     const history = useHistory();
     const { path, url } = useRouteMatch();

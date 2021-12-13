@@ -54,6 +54,7 @@ const getProfile = getResource(Profile, 'profile');
 profiles.post('/', ...orgPermissionStack, controller.createProfile);
 profiles.get('/', controller.getProfiles);
 profiles.get('/published', controller.getPublishedProfilesPage);
+profiles.get('/orphan-container', controller.getOrphanContainer);
 
 profiles.post('/:profile/publish', controller.publishProfile);
 
@@ -67,7 +68,8 @@ profiles.get('/:profile/unlock', ...permissionStack, unlock());
 
 
 profiles.put('/:profile', ...permissionStack, unlock(true), controller.updateProfile);
-profiles.delete('/:profile', ...permissionStack, lock(true), controller.deleteProfile);
+profiles.delete('/:profile', ...permissionStack, controller.deletePublishedProfile);
+profiles.delete('/:profile/draft', ...permissionStack, controller.deleteProfileDraft);
 
 const profileVersions = require('./profileVersions');
 

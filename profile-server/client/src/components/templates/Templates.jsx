@@ -23,7 +23,7 @@ import CreateTemplateForm from "./CreateTemplateForm";
 import SortingTable from '../SortingTable';
 import { loadProfileTemplates } from "../../actions/templates";
 
-export default function Templates({ isMember, isCurrentVersion }) {
+export default function Templates({ isMember, isCurrentVersion, isOrphan }) {
     const { url, path } = useRouteMatch();
     const dispatch = useDispatch();
     const { selectedProfileVersionId, selectedProfileId } = useSelector(state => state.application);
@@ -77,7 +77,7 @@ export default function Templates({ isMember, isCurrentVersion }) {
                     }
                 </Route>
                 <Route path={`${path}/:templateId`}>
-                    <Template isMember={isMember} isCurrentVersion={isCurrentVersion} />
+                    <Template isMember={isMember} isCurrentVersion={isCurrentVersion} isOrphan={isOrphan} />
                 </Route>
             </Switch>
         </>

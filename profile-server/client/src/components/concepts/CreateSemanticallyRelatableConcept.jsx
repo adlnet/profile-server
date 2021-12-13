@@ -24,8 +24,9 @@ import CancelButton from '../controls/cancelButton';
 import { isValidIRI } from '../fields/Iri';
 import DeprecateButton from '../controls/deprecateButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import DeleteButton from '../controls/DeleteButton';
 
-export default function SemanticallyRelatableConcept({ startingValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept }) {
+export default function SemanticallyRelatableConcept({ startingValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept, onDelete }) {
     const { conceptType } = useParams();
     const currentProfile = useSelector(state => state.application.selectedProfile);
     const currentProfileVersion = useSelector(state => state.application.selectedProfileVersion);
@@ -147,6 +148,13 @@ export default function SemanticallyRelatableConcept({ startingValues, onCreate,
                                 style={{ marginTop: "0.6em" }}
                                 type="reset"
                                 onClick={onDeprecate}
+                                componentType="concept"
+                            />
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onConfirm={onDelete}
                                 componentType="concept"
                             />
                         </div>

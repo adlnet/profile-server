@@ -29,8 +29,9 @@ import { isValidIRI } from '../fields/Iri';
 import { isValidInlineSchema } from '../fields/Schemas';
 import DeprecateButton from '../controls/deprecateButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import DeleteButton from '../controls/DeleteButton';
 
-export default function DocumentConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept }) {
+export default function DocumentConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept, onDelete }) {
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = currentProfileVersion.iri + "/document/";
@@ -213,6 +214,13 @@ export default function DocumentConcept({ initialValues, onCreate, onCancel, isP
                                 style={{ marginTop: "0.6em" }}
                                 type="reset"
                                 onClick={onDeprecate}
+                                componentType="concept"
+                            />
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onConfirm={onDelete}
                                 componentType="concept"
                             />
                         </div>

@@ -30,6 +30,7 @@ export default function PagingTable({
     getColumnProps = defaultPropGetter,
     getRowProps = defaultPropGetter,
     getCellProps = defaultPropGetter,
+    optionalSingleSelectionCallback
 }) {
 
     const instance = useTable({
@@ -54,6 +55,12 @@ export default function PagingTable({
     } = instance;
 
     // console.log({ instance })
+
+    function onRowSelect(e, item) {
+        if (optionalSingleSelectionCallback) {
+            optionalSingleSelectionCallback(item);
+        }
+    }
 
     return (<>
         {showPageHeader && <div className="padding-top-3">
@@ -95,7 +102,8 @@ export default function PagingTable({
                                 prepareRow(row);
                                 return (
 
-                                    <tr key={`${i}-body-tr`} {...row.getRowProps(getRowProps(row))}>
+                                    <tr onClick={(e) => onRowSelect(e, data[row.index])}
+                                        key={`${i}-body-tr`} {...row.getRowProps(getRowProps(row))}>
                                         {row.cells.map((cell, cidx) => {
                                             return (
 

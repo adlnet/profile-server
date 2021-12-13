@@ -39,7 +39,7 @@ module.exports = function enforcePermissions(resourceSelector = 'resource', requ
             return next();
         }
 
-        while (parent.parentProfile) {
+        while (parent && parent.parentProfile) {
             await parent.populate([{ path: 'parentProfile' }]).execPopulate();
             parent = parent.parentProfile;
         }

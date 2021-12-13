@@ -163,7 +163,7 @@ export function editOrganization(organization) {
     }
 }
 
-export function selectOrganization(orgId) {
+export function selectOrganization(orgId, optionalCallback) {
     return async function (dispatch) {
         dispatch({
             type: START_GET_ORG,
@@ -186,8 +186,9 @@ export function selectOrganization(orgId) {
 
         } finally {
             dispatch({
-                type: FINISH_GET_ORG,
+                type: FINISH_GET_ORG
             });
+            if (optionalCallback) optionalCallback(org);
         }
     };
 }

@@ -17,6 +17,8 @@ const patternModel = require('../ODM/models').pattern;
 const patternComponentModel = require('../ODM/models').patternComponent;
 const profileVersionModel = require('../ODM/models').profileVersion;
 const organizationModel = require('../ODM/models').organization;
+const profileModel = require('../ODM/models').profile;
+const patternService = require('../services/patternService');
 const createIRI = require('../utils/createIRI');
 const queryBuilder = require('../utils/searchQueryBuilder');
 const mongoSanitize = require('mongo-sanitize');
@@ -380,21 +382,29 @@ exports.deletePattern = async function (req, res) {
             });
         }
 
-        await pattern.populate(pattern.type).execPopulate();
+        if (!pattern.type) throw new Error('Pattern must have a type');
+        // await pattern.populate(pattern.type).execPopulate();
 
-        if (pattern.parentProfile.equals(profileVersion._id)) {
-            if (Array.isArray(pattern[pattern.type])) {
-                await Promise.all(
-                    pattern[pattern.type].map(async c => {
-                        c.remove();
-                    }),
-                );
-            } else if (pattern[pattern.type]) {
-                await pattern[pattern.type].remove();
-            }
-            await pattern.remove();
+        let hasReferences = await patternService.hasProfileReferences(pattern._id);
+
+        if (hasReferences) {
+            await patternService.moveToOrphanContainer(req.user, req.params.org, pattern);
         }
-
+        else {
+            if (pattern.parentProfile.equals(profileVersion._id)) {
+                if (Array.isArray(pattern[pattern.type])) {
+                    await Promise.all(
+                        pattern[pattern.type].map(async c => {
+                            c.remove();
+                        }),
+                    );
+                } else if (pattern[pattern.type]) {
+                    await pattern[pattern.type].remove();
+                }
+                await pattern.remove();
+            }
+        }
+        
         profileVersion.patterns = [...profileVersion.patterns].filter(t => !t.equals(pattern._id));
         profileVersion.updatedOn = new Date();
         profileVersion.updatedBy = req.user;
@@ -411,3 +421,24 @@ exports.deletePattern = async function (req, res) {
         success: true,
     });
 };
+
+exports.claimPattern = async function (req, res) {
+    try {
+        const pattern = req.resource;
+        const orphanProfileVersion = await profileVersionModel.findOne({ _id: pattern.parentProfile});
+        const newProfile = await profileModel.findOne({ _id: req.params.profile });
+        const newProfileVersion = await profileVersionModel.findOne({ _id: (newProfile.currentDraftVersion || newProfile.currentPublishedVersion)});
+
+        await patternService.claimDeleted(pattern, orphanProfileVersion, newProfileVersion);   
+
+    } catch (err) {
+        if (console.prodLog) console.prodLog(err);
+        else console.error(err);
+        return res.status(500).send({
+            success: false,
+            message: err.message,
+        });
+    }
+
+    res.send({ success: true });
+}

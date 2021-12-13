@@ -24,9 +24,10 @@ import Translations from '../fields/Translations';
 import { useSelector } from 'react-redux';
 import { Detail } from '../DetailComponents';
 import CancelButton from '../controls/cancelButton';
+import DeleteButton from '../controls/DeleteButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
-export default function CreateProfileForm({ initialValue, handleSubmit, handleCancel }) {
+export default function CreateProfileForm({ initialValue, handleSubmit, handleCancel, handleDeleteProfile, handleDeleteProfileDraft }) {
 
     const profileRootIRI = useSelector(state => state.application.profileRootIRI);
 
@@ -113,12 +114,44 @@ export default function CreateProfileForm({ initialValue, handleSubmit, handleCa
                         <Field name="tags" component={Tags} className="usa-input" id="input-tags" />
                     </form>
                 </div>
-                <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
-                    {
-                        initialValue ? "Save Changes" : "Create Profile"
+
+                <div className="grid-row">
+                    <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
+                        {
+                            initialValue ? "Save Changes" : "Create Profile"
+                        }
+                    </ValidationControlledSubmitButton>
+                    
+                    <CancelButton 
+                        className="usa-button usa-button--unstyled"
+                        style={{ marginTop: "0.8em" }}
+                        type="reset" 
+                        cancelAction={handleCancel} 
+                    />
+
+                    {(isPublished) ?
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "1.6em" }}
+                                type="reset"
+                                onConfirm={handleDeleteProfile}
+                                componentType="profile"
+                            />
+                        </div>
+                        :
+                        <div className="grid-col display-flex flex-column flex-align-end">
+                            <DeleteButton
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "1.6em" }}
+                                type="reset"
+                                onConfirm={handleDeleteProfileDraft}
+                                componentType="profile draft"
+                            />
+                        </div>
                     }
-                </ValidationControlledSubmitButton>
-                <CancelButton className="usa-button usa-button--unstyled" type="reset" cancelAction={handleCancel} />
+                </div>
+                
             </>)}
         </Formik>
     </>

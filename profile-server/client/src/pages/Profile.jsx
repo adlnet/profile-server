@@ -21,7 +21,9 @@ import Lock from "../components/users/lock";
 import Templates from '../components/templates/Templates';
 import Concepts from '../components/concepts/Concepts';
 import Patterns from '../components/patterns/Patterns'
-import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, editProfileVersion, resolveProfile, requestVerification } from "../actions/profiles";
+import { selectProfile, selectProfileVersion, publishProfileVersion, createNewProfileDraft, 
+    editProfileVersion, resolveProfile, requestVerification, deleteProfile, 
+    deleteProfileDraft } from "../actions/profiles";
 import history from "../history";
 import CreateProfileForm from '../components/profiles/CreateProfileForm';
 import ProfileDetails from '../components/profiles/ProfileDetails';
@@ -152,6 +154,22 @@ export default function Profile() {
     }
     function handleCancelEditProfile() {
         history.push(url);
+    }
+
+    async function handleDeleteProfile() {
+        await dispatch(deleteProfile(organizationId, profile));
+        history.push(`/`);
+        setTimeout(() => {
+            window.location.reload();
+        });
+    }
+
+    async function handleDeleteProfileDraft() {
+        await dispatch(deleteProfileDraft(organizationId, profile));
+        history.push(`/`);
+        setTimeout(() => {
+            window.location.reload();
+        });
     }
 
     function isMaxVersion(version) {
@@ -399,6 +417,8 @@ export default function Profile() {
                             <CreateProfileForm
                                 handleSubmit={handleEditProfile}
                                 handleCancel={handleCancelEditProfile}
+                                handleDeleteProfile={handleDeleteProfile}
+                                handleDeleteProfileDraft={handleDeleteProfileDraft}
                                 initialValue={profileVersion}
                             />
                         </Lock> </>

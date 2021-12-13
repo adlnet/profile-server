@@ -36,13 +36,14 @@ const permissionStack = [
 concepts.get('/', controller.getConcepts);
 concepts.post('/', controller.createConcept);
 
-concepts.delete('/link/:concept', ...permissionStack, lock(true), controller.unlinkConcept);
+concepts.delete('/link/:concept', ...permissionStack, lock(true), controller.unlinkConceptReq);
 
 concepts.get('/:concept/lock', ...permissionStack, lock());
 concepts.get('/:concept/unlock', ...permissionStack, unlock());
+concepts.post('/:concept/claim', ...[mustBeLoggedIn, getResource(Concept, 'concept', 'uuid')], controller.claimConcept);
 
 concepts.get('/:concept', controller.getConcept);
 concepts.put('/:concept', ...permissionStack, unlock(true), controller.updateConcept);
-concepts.delete('/concept', ...permissionStack, lock(true), controller.deleteConcept);
+concepts.delete('/:concept', ...permissionStack, controller.deleteConcept);
 
 module.exports = concepts;

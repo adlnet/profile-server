@@ -24,8 +24,9 @@ import { isValidIRI } from '../fields/Iri';
 import DeprecateButton from '../controls/deprecateButton';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 import ErrorValidation from '../controls/errorValidation';
+import DeleteButton from '../controls/DeleteButton';
 
-export default function ActivityConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept }) {
+export default function ActivityConcept({ initialValues, onCreate, onCancel, isPublished, onDeprecate, importedConcept, onDelete }) {
     const currentProfileVersion = useSelector(state => state.application.selectedProfile);
 
     const generatedIRIBase = currentProfileVersion.iri + "/activity/";
@@ -123,6 +124,13 @@ export default function ActivityConcept({ initialValues, onCreate, onCancel, isP
                                 style={{ marginTop: "0.6em" }}
                                 type="reset"
                                 onClick={onDeprecate}
+                                componentType="concept"
+                            />
+                            <DeleteButton 
+                                className="usa-button usa-button--unstyled text-secondary-dark text-bold"
+                                style={{ marginTop: "0.6em" }}
+                                type="reset"
+                                onConfirm={onDelete}
                                 componentType="concept"
                             />
                         </div>

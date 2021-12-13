@@ -48,7 +48,11 @@ class API {
                 errorMessage = res.statusText;
             }
 
-            throw new Error(errorMessage);
+            const tryingToUnlockResource = (res.url.indexOf('/unlock') !== -1);
+
+            if (!tryingToUnlockResource) {
+                throw new Error(errorMessage);
+            }
         }
     }
 
@@ -186,6 +190,14 @@ class API {
 
         return body.profiles;
     }
+    async getOrphanContainerProfile() {
+        let res = await this.getJSON(`${appApiRoot}/profile/orphan-container`);
+
+        let results = res.orphanProfile;
+        results.organizationUuid = res.organizationUuid;
+        results.currentPublishedVersionUuid = res.currentPublishedVersionUuid;
+        return results;
+    }
     async createProfile(orgId, profile) {
         let body = await this.postJSON(`${appApiRoot}/org/${orgId}/profile`, profile);
 
@@ -198,6 +210,10 @@ class API {
     }
     async deleteProfile(orgId, profile) {
         await this.deleteJSON(`${appApiRoot}/org/${orgId}/profile/${profile.uuid}`);
+        return;
+    }
+    async deleteProfileDraft(orgId, profile) {
+        await this.deleteJSON(`${appApiRoot}/org/${orgId}/profile/${profile.uuid}/draft`);
         return;
     }
 
@@ -406,6 +422,10 @@ class API {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/${concept.uuid}`);
         return;
     }
+    async claimConcept(organizationId, profileId, versionId, conceptId) {
+        await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/${conceptId}/claim`);
+        return;
+    }
     async removeConceptLink(organizationId, profileId, versionId, conceptId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/concept/link/${conceptId}`);
         return;
@@ -414,13 +434,21 @@ class API {
     async removeTemplateLink(selectedOrganizationId, profileId, selectedProfileVersionId, templateId) {
         await this.deleteJSON(`${appApiRoot}/org/${selectedOrganizationId}/profile/${profileId}/version/${selectedProfileVersionId}/template/link/${templateId}`)
     }
-
     async deleteTemplate(organizationId, profileId, versionId, templateId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/template/${templateId}`);
         return;
     }
+    async claimTemplate(organizationId, profileId, versionId, templateId) {
+        await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/template/${templateId}/claim`);
+        return;
+    }
+
     async deletePattern(organizationId, profileId, versionId, patternId) {
         await this.deleteJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/pattern/${patternId}`);
+        return;
+    }
+    async claimPattern(organizationId, profileId, versionId, patternId) {
+        await this.postJSON(`${appApiRoot}/org/${organizationId}/profile/${profileId}/version/${versionId}/pattern/${patternId}/claim`);
         return;
     }
 

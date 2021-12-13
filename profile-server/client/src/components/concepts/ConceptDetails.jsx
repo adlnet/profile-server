@@ -15,7 +15,7 @@
 **************************************************************** */
 import React, { useEffect } from 'react';
 import { useRouteMatch, useParams, Switch, Route, Link, useHistory, Redirect } from 'react-router-dom';
-import { editConcept, loadProfileConcepts, selectConcept, removeConceptLink } from "../../actions/concepts";
+import { editConcept, loadProfileConcepts, selectConcept, removeConceptLink, deleteConcept, claimConcept } from "../../actions/concepts";
 import { Detail, Translations, } from '../DetailComponents';
 import { useSelector, useDispatch, } from 'react-redux';
 import Lock from "../../components/users/lock";
@@ -27,9 +27,10 @@ import { reloadCurrentProfile } from '../../actions/profiles';
 import Breadcrumb from '../controls/breadcrumbs';
 import DeprecatedAlert from '../controls/deprecatedAlert';
 import { DEPRECATED } from '../../actions/successAlert';
+import ClaimButton from '../controls/ClaimButton';
 
 
-export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs }) {
+export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs, isOrphan }) {
     const { url, path } = useRouteMatch();
     const params = useParams();
     const dispatch = useDispatch();
@@ -58,6 +59,20 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
 
     function onDeprecate(reasonInfo) {
         handleEditConcept({ isDeprecated: true, deprecatedReason: reasonInfo }, DEPRECATED);
+    }
+
+    async function handleDeleteConcept() {
+        await dispatch(deleteConcept(params.organizationId, profileId, versionId, concept));
+        history.push(`/organization/${selectedOrganizationId}/profile/${selectedProfileId}/version/${selectedProfileVersionId}`);
+    }
+
+    function onDelete() {
+        handleDeleteConcept();
+    }
+
+    async function onClaimConcept(profile, targetOrganizationId) {
+        await dispatch(claimConcept(targetOrganizationId, profile._id, versionId, conceptId));
+        history.push(`/deleted-items/organization/${targetOrganizationId}/profile/${profile.uuid}/version/${selectedProfileVersionId}`);
     }
 
     if (!concept) return '';
@@ -105,8 +120,15 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
                         className="usa-button padding-x-105 margin-top-2 margin-right-0 "
                     >
                         <span className="fa fa-pencil fa-lg margin-right-1"></span>
-                                        Edit Concept
-                                    </Link>
+                        Edit Concept
+                    </Link>
+                }
+                {isOrphan &&
+                    <div className="grid-col display-flex flex-column flex-align-end">
+                        <ClaimButton
+                            className="usa-button claim-btn margin-top-2 margin-right-0"
+                            onConfirm={onClaimConcept} />
+                    </div>
                 }
             </div>
         </div>
@@ -121,6 +143,7 @@ export default function ConceptDetail({ isMember, isCurrentVersion, breadcrumbs 
                             isPublished={isPublished}
                             setIsEditing={setIsEditing}
                             onDeprecate={onDeprecate}
+                            onDelete={onDelete}
                         />
                     </Lock>
                     : <Redirect to={url} />

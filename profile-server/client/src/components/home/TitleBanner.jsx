@@ -19,15 +19,22 @@ import AccountButton from "../../components/users/AccountButton"
 import { useSelector } from 'react-redux';
 import { useDispatch } from 'react-redux';
 import { loadProfileRootIRI } from '../../actions/profiles';
+import API from '../../api';
+
 // usa-nav__primary-item>a:hover and [href]:focus cause the blue box
 export default function TitleBanner() {
     const dispatch = useDispatch();
     let userData = useSelector((store) => store.userData);
     let history = useHistory();
     let [searchString, setSearchString] = useState();
+    let [orphanProfile, setOrphanProfile] = useState({});
 
     useEffect(() => {
         dispatch(loadProfileRootIRI())
+
+        API.getOrphanContainerProfile().then((res) => {
+            setOrphanProfile(res);
+        });
     }, [])
     function search(e) {
         history.push({ pathname: "/search", state: { search: searchString } });
@@ -35,6 +42,13 @@ export default function TitleBanner() {
         setSearchString("");
         return false;
     }
+
+    function getNavlinkForDeletedTab() {
+        let path = "/deleted-items/organization/"+orphanProfile.organizationUuid+"/profile/"+orphanProfile.uuid+"/version/"+orphanProfile.currentPublishedVersionUuid;
+        return path;
+    }
+    
+
     return (<>
         <div className="usa-overlay"></div>
         <header className="usa-header usa-header--extended" id="title-banner">
@@ -89,6 +103,15 @@ export default function TitleBanner() {
                                 <span className="text-bold">FAQs</span>
                             </NavLink>
                         </li>
+                        {userData && userData.user &&
+                        <li className="usa-nav__primary-item">
+                            <NavLink to={getNavlinkForDeletedTab()}
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current">
+                                <span className="text-bold">Deleted Items</span>
+                            </NavLink>
+                        </li>
+                        }
                         {userData && userData.user && userData.user.type === 'admin' &&
                             <li className="usa-nav__primary-item">
                                 <button className="usa-accordion__button usa-nav__link" aria-expanded="false" aria-controls="basic-nav-section-admin">
