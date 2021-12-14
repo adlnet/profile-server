@@ -58,9 +58,9 @@ export default class App extends Component {
                 <SuccessBanner />
                 <GlobalErrorBoundary>
                     <Switch>
-                        <Route path="/api/iri/:iri">
+                        {/* <Route path="/api/iri/:iri">
                             <IRI />
-                        </Route>
+                        </Route> */}
                         <Route path="/profile/:profileId">
                             <Profile />
                         </Route>
