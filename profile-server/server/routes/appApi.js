@@ -59,8 +59,8 @@ router.use('/profile', profiles);
 const versions = require('./profileVersions');
 router.use('/version', versions);
 
-const iri = require('./iri');
-router.use('/api/iri', iri)
+//const iri = require('./iri');
+//router.use('/api', iri)
 
 // set up GET request router when searching by IRI
 router.get('/api/iri/:iri', (req, res) => {
@@ -93,22 +93,10 @@ router.get('/api/iri/:iri', (req, res) => {
 
     // else if there is a result, parse the results array for the non-empty value and redirect it 
         } else {
-            console.log(results)
-            for (let i = 0; i < results.length; ++i) {
-                if (result[i] != null) {
-                    if (results[i].uuid.type == "concept") {
-                        res.redirect(301, `/concept/${results.uuid}`)
-                    } else if (results[i].uuid.type == "pattern") {
-                        res.redirect(301, `/pattern/${results.uuid}`)
-                    } else if (results[i].uuid.type == "template") {
-                        res.redirect(301, `/template/${results.uuid}`)
-                    } else if (results[i].uuid.type == "profile") {
-                        res.redirect(301, `/profile/${results.uuid}`)
-                    }
-                    return
-                }
-            }
-            res.redirect(400, '/')
+            /*
+                will need to add additional code
+            */
+            return;
         }
 
     // store the result of the profile & identifier so we can redirect to the appropriate url
