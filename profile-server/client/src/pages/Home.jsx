@@ -97,6 +97,18 @@ const Home = () => {
       </main>
 
       <section className="grid-container usa-section">
+        <div style={{ textAlign: "center" }}>
+            <p className="font-sans-lg">
+              If you are new the xAPI Profile specification, please read the {" "}
+              <a href="/help#resourcestop" target>
+                 before you begin 
+              </a>
+              {" "}section, or visit the {" "}
+              <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
+                 Profile Server Info Page. 
+              </a>
+            </p>
+        </div>
         <div className="grid-row grid-gap" style={{ color: "#1c3664" }}>
           <hr style={{ color: "#FFFFFF" }}></hr>
           <h1 className="font-sans-xl text-center">xAPI PROFILE GUIDELINES</h1>
@@ -171,18 +183,6 @@ const Home = () => {
               </p>
             </div>
           </div>
-        </div>
-        <div style={{ textAlign: "center" }}>
-          <p className="font-sans-lg">
-            If you are new the xAPI Profile specification, please read the {" "}
-            <a href="/help#resourcestop" target>
-               before you begin 
-            </a>
-            {" "}section, or visit the {" "}
-            <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
-               Profile Server Info Page. 
-            </a>
-          </p>
         </div>
       </section>
 

@@ -223,6 +223,18 @@ export default function Profiles(props) {
       <main id="main-content">
         <div className="grid-container margin-top-4">
           <section className="grid-container usa-section">
+            <div style={{ textAlign: "center" }}>
+              <p className="font-sans-lg">
+                If you are new the xAPI Profile specification, please read the{" "}
+                <a href="/help#resourcestop" target>
+                  before you begin
+                </a>{" "}
+                section, or visit the {" "}
+                <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
+                  Profile Server Info Page. 
+                </a>
+              </p>
+            </div>
             <div className="grid-row grid-gap" style={{ color: "#1c3664" }}>
               <hr style={{ color: "#FFFFFF" }}></hr>
               <h1 className="font-sans-xl text-center">
@@ -301,18 +313,6 @@ export default function Profiles(props) {
                 </div>
               </div>
             </div>
-            <div style={{ textAlign: "center" }}>
-              <p className="font-sans-lg">
-                If you are new the xAPI Profile specification, please read the{" "}
-                <a href="/help#resourcestop" target>
-                  before you begin
-                </a>{" "}
-                section, or visit the {" "}
-            <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
-               Profile Server Info Page. 
-            </a>
-              </p>
-            </div>
           </section>
 
           <div id="profiles" className="grid-row display-flex flex-row flex-align-end">
@@ -323,7 +323,7 @@ export default function Profiles(props) {
               <Link to="/profiles/create">
                 <button className="usa-button margin-y-2 margin-right-0">
                   <i className="fa fa-plus margin-right-05"></i>
-                  Create Profile
+                  Create xAPI Profile
                 </button>
               </Link>
             </div>
