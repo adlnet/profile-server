@@ -64,6 +64,9 @@ export default class App extends Component {
                         <Route path="/profile/:profileId">
                             <Profile />
                         </Route>
+                        <Route exact path="/">
+                            <Home />
+                        </Route>
                         <Route exact path="/organization">
                             <Organizations />
                         </Route>
@@ -112,9 +115,6 @@ export default class App extends Component {
                         <AdminRoute exact path="/admin/analytics">
                             <Analytics />
                         </AdminRoute>
-                        <Route exact path="/">
-                            <Home />
-                        </Route>
                         <Route>
                             <ErrorPage />
                         </Route>
