@@ -67,6 +67,14 @@ export default function TitleBanner() {
                     </button>
                     <ul className="usa-nav__primary usa-accordion">
                         <li className="usa-nav__primary-item">
+                            <NavLink to="/"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Home</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item">
                             <NavLink to="/profiles"
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current"
@@ -108,7 +116,7 @@ export default function TitleBanner() {
                             <NavLink to={getNavlinkForDeletedTab()}
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current">
-                                <span className="text-bold">Deleted Items</span>
+                                <span className="text-bold">Orphaned Items</span>
                             </NavLink>
                         </li>
                         }
