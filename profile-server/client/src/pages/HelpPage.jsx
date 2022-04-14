@@ -190,8 +190,8 @@ export default function HelpPage(props) {
           And your Profile will help you to realize your options for reports and
           analytics. Click{" "}
           <a
-            href="http://xapi.vocab.pub/assets/docs/use-case-statement-template-for-profiles.docx"
-            target="_blank"
+            href="../files/use-case-statement-template-for-profiles.docx"
+            download
           >
             HERE
           </a>{" "}
@@ -451,8 +451,8 @@ export default function HelpPage(props) {
           </li>
           <li>
             <a
-              href="http://xapi.vocab.pub/assets/docs/use-case-statement-template-for-profiles.docx"
-              target="_blank"
+              href="../files/use-case-statement-template-for-profiles.docx"
+              download
             >
               xAPI Use Cases &amp; Statements Template - Word Doc Download
             </a>

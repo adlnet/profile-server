@@ -67,6 +67,14 @@ export default function TitleBanner() {
                     </button>
                     <ul className="usa-nav__primary usa-accordion">
                         <li className="usa-nav__primary-item">
+                            <NavLink to="/"
+                                className="usa-nav__link nav-link-adjustment"
+                                activeClassName="usa-current"
+                            >
+                                <span className="text-bold">Home</span>
+                            </NavLink>
+                        </li>
+                        <li className="usa-nav__primary-item">
                             <NavLink to="/profiles"
                                 className="usa-nav__link nav-link-adjustment"
                                 activeClassName="usa-current"
@@ -149,7 +157,7 @@ export default function TitleBanner() {
                     <div className="usa-nav__secondary">
                         <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
                             <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
-                            <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" />
+                            <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" placeholder='Search for existing content'/>
                             <button id="site-search" className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
                         </form>
                     </div>
