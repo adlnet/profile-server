@@ -34,7 +34,7 @@ export default function Profiles({ profiles, isMember }) {
                     >
                         <button className="usa-button margin-top-2 margin-right-0">
                             <i className="fa fa-plus margin-right-05"></i>
-                    Create Profile</button>
+                    Create xAPI Profile</button>
                     </Link>
                 }
             </div>
