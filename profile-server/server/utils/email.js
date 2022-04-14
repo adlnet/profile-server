@@ -32,17 +32,30 @@ for (const i in templateCache) {
 
 const nodemailer = require('nodemailer');
 
-const transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(config.email_user)}:${encodeURIComponent(config.email_pass)}@${config.email_server}`);
+//const transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(config.email_user)}:${encodeURIComponent(config.email_pass)}@${config.email_server}`);
+const transporter = nodemailer.createTransport({
+    host: config.email_server, // Office 365 server
+    port: 587,     // secure SMTP,
+    secure: false,
+    requireTLS: true,
+    auth: {
+        user: config.email_user,
+        pass: config.email_pass
+    }
+});
 
 /**
  * Sends email
  * @param {object} mailOptions options to configure sending an email
  */
 function send(mailOptions) {
+    console.log(mailOptions);
     return new Promise((res, rej) => {
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.log(error);
+                
+                //console.log("Email server: " + config.email_server);
 
                 rej(error);
                 return;
