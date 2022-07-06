@@ -140,7 +140,7 @@ export default class App extends Component {
                                         </div>
                                         <div className="grid-col-auto mobile-lg:grid-col-12 desktop:grid-col-auto">
                                             <div className="usa-footer__contact-info">
-                                                <a href="mailto:support@adlnet.gov">support@adlnet.gov</a>
+                                                <a href="https://adlnet.atlassian.net/servicedesk/customer/portal/4">Help Desk Ticket</a>
                                             </div>
                                         </div>
                                     </div>

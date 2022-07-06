@@ -499,6 +499,9 @@ export default function HelpPage(props) {
           <div className="usa-footer__contact-info">
             <a href="mailto:support@adlnet.gov">support@adlnet.gov</a>
           </div>
+          <div className="usa-footer__contact-info" style={{ textAlign: "center" }}>
+            <a href="https://adlnet.atlassian.net/servicedesk/customer/portal/4">Submit a ticket</a>
+          </div>
         </p>
       </section>
     </div>

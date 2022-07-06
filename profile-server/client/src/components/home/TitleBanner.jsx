@@ -50,8 +50,8 @@ export default function TitleBanner() {
     
 
     return (<>
-        <div className="usa-overlay"></div>
         <header className="usa-header usa-header--extended" id="title-banner">
+            <p style={{ color: "#25303E" }}>Profile Server</p>
             <div className="usa-navbar">
                 <div className="usa-logo" id="extended-logo">
                     <em className="usa-logo__text">
@@ -154,16 +154,23 @@ export default function TitleBanner() {
                             <AccountButton></AccountButton>
                         </li>
                     </ul>
-                    <div className="usa-nav__secondary">
-                        <form className="usa-search usa-search--small " onSubmit={search} role="search" style={{ display: 'flex' }}>
-                            <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>
-                            <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" placeholder='Search for existing content'/>
-                            <button id="site-search" className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
-                        </form>
+                    <div class="column"> 
+                        <div className="usa-nav__secondary">
+                            <div class="row">
+                                <form className="usa-search usa-search--small"  onSubmit={search} role="search" style={{ display: 'flex' }} >
+                        
+                                    <label className="usa-sr-only" htmlFor="extended-search-field-small">Search small</label>   
+                                    <input className="usa-input" id="extended-search-field-small" value={searchString} onChange={e => setSearchString(e.target.value)} type="search" name="search" placeholder='Search for existing content'/>
+                                    <button id="site-search" className="usa-button" type="submit"><span className="usa-sr-only">Search</span></button>
+                                </form>
+                            </div>
+                            <div class="row">
+                                <button id="searchAll" type="submit" className="usa-button" onClick={search} name="search">Browse All Concepts</button>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </nav>
         </header>
     </>);
-
 }

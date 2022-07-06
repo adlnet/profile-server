@@ -113,13 +113,45 @@ export default function FAQPage(props) {
         <h1 style={{ color: "#1c3664" }}>Frequently Asked Questions</h1>
         <p>
           This page will be populated as the ADL Initiative is asked questions.
-          If you have any questions or concerns, please contact us /n/n.
+          If you have any questions or concerns, please contact us.
+        </p>
+        <p>
 
           Most profile questions can vbe answered by browsing the  {" "}
 
           <a href="https://adlnet.gov/guides/xapi-profile-server/" target>
-               Profile Server Info Page. 
-            </a>
+            Profile Server Info Page.
+          </a>
+        </p>
+        <p>Q: Can I delete concepts I create in the Profile Server?
+       <br></br>
+        A: Not really.  xAPI Concepts, Statement Templates, Patterns, and even Profiles can be deprecated, such that references don't break if these objects are removed
+          If one of those objects is deprecated AND not referenced, it will be deleted by ADL Staff.
+        </p>  
+        <p>Q: The generated IRIs all begin with the xAPI Profile Server web address, are we done using w3ids for persistent URLs?
+        <br></br>
+        A: Definitely not!  The best practice is to coin your own IRI that begins with https://w3id.org/xapi/ and is formatted appropriately to the concept, etc. type.</p>
+        <p>
+        Q: My verb is taken already.  What do I do?
+        <br></br>
+        A: First, for any concept, determine if the underlying meaning is the same and if it is, use that concept (e.g. verb) by referencing it.  If it isn't, you can still
+          use any "display" you want as two different profiles can use the same "name" of the verb, just not the same identifier.
+        </p>
+        <p>Q: Do I need a working group to create a profile?
+        <br></br>
+        A: No.  While this site will "make you" create a Working Group, the URL is more important.  If it doesn't link to a group that supports the profile, then a link to
+          a version of that profile document (narrative or technical) is completely acceptable.
+        </p>
+        <p>Q: Should I be creating Statement Templates in my profile?  I do want anyone to be able to use my concepts.
+        <br></br>
+        A: Absolutely.  Statement templates should be about as numerous as verbs in an xAPI Profile.  They provide the "if/then" rules for data validation. The only time
+          you have to worry about imposing requirements on others is if they use your profile, which is exactly what you want.  Concepts developed in one profile can be used in
+          any other profile.
+        </p>
+        <p>Q: Help!  I cannot reference any of the Concepts, Statement Templates, or Patterns I am creating in my profile.
+        <br></br>
+        A: This is a known bug.  Objects aren't referenceable until the profile is published, which can make it very difficult to complete accurately.  The best workaround
+          is to be careful with IRIs, publish, and then make edits/additions iteratively.
         </p>
       </section>
       <section>
@@ -130,6 +162,9 @@ export default function FAQPage(props) {
           </div>{" "}
           <div className="usa-footer__contact-info">
             <a href="mailto:support@adlnet.gov">support@adlnet.gov</a>
+          </div>
+          <div className="usa-footer__contact-info" style={{ textAlign: "center" }}>
+            <a href="https://adlnet.atlassian.net/servicedesk/customer/portal/4">Submit a ticket</a>
           </div>
         </p>
       </section>
