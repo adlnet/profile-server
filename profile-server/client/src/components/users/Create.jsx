@@ -21,6 +21,9 @@ import ErrorValidation from '../controls/errorValidation';
 import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user";
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import ReCAPTCHA from 'react-google-recaptcha';
+
+const recaptchaRef = React.createRef();
 
 export default function CreateAccount(props) {
     let dispatch = useDispatch();
@@ -34,6 +37,11 @@ export default function CreateAccount(props) {
 
     function login() {
         history.push('./login')
+    }
+
+    function onChange(value) {
+        console.log('Captcha value:', value);
+        recaptchaRef.current = value;
     }
 
 
@@ -55,7 +63,11 @@ export default function CreateAccount(props) {
             })}
             validateOnMount={true}
             onSubmit={(values) => {
-                createAccount(values);
+                console.log('Value Rn: ', recaptchaRef.current);
+                if (recaptchaRef.current != null)
+                {
+                    createAccount(values);
+                }
             }}
         >
             {(formikProps) => (
@@ -100,6 +112,10 @@ export default function CreateAccount(props) {
                             {
                                 userData.createFeedback && <div className="usa-error-message padding-right-1"><p>{userData.createFeedback}</p></div>
                             }
+                            <ReCAPTCHA
+                                sitekey="6Le9-wIhAAAAANvHOvIxfu83ofGN5ZVzoAoGIcoQ"
+                                onChange={onChange}
+                            />
                             <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
                                 Create Account
                             </ValidationControlledSubmitButton>

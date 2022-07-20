@@ -5,6 +5,8 @@
  WORKDIR ./client
  RUN ls
  RUN yarn install
-# RUN yarn install --production
+ #Next line is magic, do not touch
+ RUN yarn add react-google-recaptcha
+ #RUN yarn install --production
  CMD ["yarn", "start"]
 # CMD ["node", "server.js"]
