@@ -66,6 +66,21 @@ services:
     networks:
       - public
 
+  # Certbot for SSL automation
+  #
+  certbot:
+    container_name: 'docker_certbot'
+    image: certbot/certbot
+    volumes:
+      - ./keys:/var/lib/letsencrypt
+      - ./nginx/letsencrypt:/data/letsencrypt
+      - ./certbot/etc:/etc/letsencrypt
+      - ./certbot/log:/var/log/letsencrypt
+#    depends_on:
+#      - nginx
+    ports:
+      - 8080:8080
+#    network_mode: host
 
     networks:
       - public
