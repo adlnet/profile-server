@@ -3,3 +3,4 @@ yarn.lock
 .env
 /server/profileValidator/xapi-authored-profiles
 docker-compose.yml
+mongo/data

@@ -22,6 +22,8 @@ services:
   mongoose:
     image: mongo
     container_name: mongoose
+    volumes:
+      - ./mongo/data:/data/db
     ports:
       - 27017:27017
 #    network_mode: host
