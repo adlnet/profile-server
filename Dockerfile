@@ -12,6 +12,7 @@ FROM node:16-alpine
 RUN apk update || : && apk add python3
 
 COPY ./profile-server /app
+COPY .env /app/.env
 COPY --from=builder /client/build /app/client/build
 
 WORKDIR /app
