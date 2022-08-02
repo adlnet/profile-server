@@ -58,7 +58,7 @@
       "last 1 safari version"
     ]
   },
-  "proxy": "http://server:3005",
+  "proxy": "https://profiles.local.adlnet.gov",
   "devDependencies": {
     "@svgr/cli": "^5.4.0"
   }

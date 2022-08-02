@@ -4,6 +4,8 @@ services:
   server:
     build:
       context: .
+      args:
+        RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
     container_name: server
     ports:
       - 127.0.0.1:3005:3005
@@ -27,9 +29,12 @@ services:
       - MONGOMS_SYSTEM_BINARY=usr/bin/mongod
       - lockTimeout=600000
       - PUBLIC_URL=/public
+      - RECAPTCHA_SITE_KEY
+      - RECAPTCHA_SECRET_KEY
 
   mongoose:
     image: mongo
+    restart: always
     container_name: mongoose
     volumes:
       - ./data/mongo:/data/db
@@ -43,7 +48,7 @@ services:
     build:
       context: nginx
       args:
-        - HOSTNAME=${HOSTNAME}
+        HOSTNAME: ${HOSTNAME}
     ports:
       - 80:80
       - 443:443
@@ -70,3 +75,4 @@ services:
 networks:
   public:
     driver: bridge      
+

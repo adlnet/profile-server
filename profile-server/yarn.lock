@@ -3865,6 +3865,11 @@ expect@^24.9.0:
     jest-message-util "^24.9.0"
     jest-regex-util "^24.9.0"
 
+express-recaptcha@^5.1.0:
+  version "5.1.0"
+  resolved "https://registry.yarnpkg.com/express-recaptcha/-/express-recaptcha-5.1.0.tgz#e7aa67f85597ec4b90d68db540586f7205c46e7e"
+  integrity sha512-L9BSaHbwVzEAf38LNnFwEbk4qpX1LiD1z8viBGYBuxyBWWVKMgBrKDb1mNLq6uSxubJzZbyIz+0ldgTSXfxsvQ==
+
 express@~4.13.4:
   version "4.13.4"
   resolved "https://registry.yarnpkg.com/express/-/express-4.13.4.tgz#3c0b76f3c77590c8345739061ec0bd3ba067ec24"
@@ -9253,4 +9258,3 @@ yauzl@^2.10.0:
   dependencies:
     buffer-crc32 "~0.2.3"
     fd-slicer "~1.1.0"
-
