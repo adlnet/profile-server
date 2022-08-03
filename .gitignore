@@ -4,3 +4,5 @@ yarn.lock
 /server/profileValidator/xapi-authored-profiles
 docker-compose.yml
 mongo/data
+
+/**/yarn-error.log

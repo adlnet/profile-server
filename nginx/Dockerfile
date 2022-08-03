@@ -5,8 +5,10 @@ ARG HOSTNAME
 # Move our configuration into place
 #
 COPY default.conf /etc/nginx/nginx.conf
-#COPY default.conf /etc/nginx/conf.d/default.conf
 COPY proxy_headers.conf /etc/nginx/proxy_headers.conf
+
+### Replace the `default.conf` line above to develop on HTTP
+# COPY NoSSL.conf /etc/nginx/nginx.conf
 
 # Swap our environment variables
 #

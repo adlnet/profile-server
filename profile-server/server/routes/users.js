@@ -20,15 +20,15 @@ const controller = require('../controllers/users');
 const validate = require('../utils/validator');
 const createAccount = require('../schema/createAccount');
 const login = require('../schema/login');
-
+const captcha = require("./captcha");
 
 users.get('/status', controller.status);
 users.get('/salt', controller.salt);
 users.post('/login', validate(login), controller.login);
-users.post('/create', validate(createAccount), controller.createUser);
+users.post('/create', captcha.checkCaptcha(), validate(createAccount), controller.createUser);
 users.post('/logout', controller.logout);
 
-users.post('/forgot', controller.forgotPassword);
+users.post('/forgot', captcha.checkCaptcha(), controller.forgotPassword);
 users.post('/reset', controller.resetPassword);
 users.get('/checkResetKey', controller.checkResetKey);
 

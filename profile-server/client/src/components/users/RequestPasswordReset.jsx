@@ -20,10 +20,23 @@ import ErrorValidation from '../controls/errorValidation';
 import { useSelector } from 'react-redux';
 import api from "../../api";
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
+import ReCAPTCHA from 'react-google-recaptcha';
+
+const recaptchaRef = React.createRef();
 
 export default function RequestPasswordReset(props) {
     let userData = useSelector((store) => store.userData)
     const [showConfirmation, setShowConfirmation] = useState(false);
+
+    const initialValues = { 
+        email: "", 
+        recaptcha: ""
+    };
+
+    const validationSchema = Yup.object().shape({
+        email: Yup.string().required(),
+        recaptcha: Yup.string().required()
+    });
 
     return (
 
@@ -44,16 +57,14 @@ export default function RequestPasswordReset(props) {
             :
             <>
                 <Formik
-                    initialValues={{ email: '' }}
-                    validationSchema={Yup.object({
-                        email: Yup.string().email(),
-                    })}
+                    initialValues={initialValues}
+                    validationSchema={validationSchema}
+                    validateOnchange={false}
                     validateOnMount={true}
                     onSubmit={(values) => {
                         //dispatch(... something about request password reset)
-                        setShowConfirmation(true)
-                        api.postJSON("/app/user/forgot", values)
-                        console.log(values)
+                        setShowConfirmation(true);
+                        api.postJSON("/app/user/forgot", values);
                     }}
                 >
                     {(formikProps) => (
@@ -71,6 +82,14 @@ export default function RequestPasswordReset(props) {
                                         <label className="usa-label" htmlFor="email"><span className="details-label">Email Address</span></label>
                                         <Field name="email" type="text" className="usa-input" id="input-email" aria-required="true" />
                                     </ErrorValidation>
+
+                                    <ReCAPTCHA
+                                        ref={recaptchaRef}
+                                        sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                                        onChange={(value) => {
+                                            formikProps.setFieldValue("recaptcha", value);
+                                        }}
+                                    />
 
                                     <div className="grid-row">
                                         <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="submit" >

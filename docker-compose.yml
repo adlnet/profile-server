@@ -1,90 +1,78 @@
 version: '3'
 services:
+
   server:
     build:
       context: .
-#      args:
-#        network: host
+      args:
+        RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
     container_name: server
     ports:
-      - 3005:3005
+      - 127.0.0.1:3005:3005
     depends_on:
       - mongoose
     restart: always
-#    network_mode: host
     networks:
       - public    
     environment:
-      DANGEROUSLY_DISABLE_HOST_CHECK: "true"
-#      REACT_APP_API_ENDPOINT: "http://server:3005"
-
+      # - DANGEROUSLY_DISABLE_HOST_CHECK="true"
+      - port=3005
+      - connectionString
+      - profileRootIRI
+      - QUERY_RESULT_LIMIT
+      - email_user
+      - email_pass
+      - email_server
+      - system_email_from
+      - clientURL
+      - debug
+      - MONGOMS_SYSTEM_BINARY=usr/bin/mongod
+      - lockTimeout=600000
+      - PUBLIC_URL=/public
+      - RECAPTCHA_SITE_KEY
+      - RECAPTCHA_SECRET_KEY
 
   mongoose:
     image: mongo
+    restart: always
     container_name: mongoose
     volumes:
-      - ./mongo/data:/data/db
+      - ./data/mongo:/data/db
     ports:
-      - 27017:27017
-#    network_mode: host
+      - 127.0.0.1:27017:27017
     networks:
       - public
-  
-  client:
-    build:
-      context: ./profile-server
-#      args:
-#        network: host
-    ports:
-     - 3000:3000
-    depends_on:
-      - server
-    restart: always
-#    network_mode: host
-    networks:
-      - public
-    environment:
-      DANGEROUSLY_DISABLE_HOST_CHECK: "true"
-#      REACT_APP_API_ENDPOINT: "http://server:3005"
 
-
-    
   nginx:
     restart: always
     build:
       context: nginx
       args:
-        - HOSTNAME=${HOSTNAME}
+        HOSTNAME: ${HOSTNAME}
     ports:
       - 80:80
       - 443:443
     container_name: docker_nginx
     volumes:
-      - ./nginx/letsencrypt:/usr/share/nginx/html
-      - ./certbot/etc:/usr/share/keys
-#    network_mode: host
+      - ./data/nginx/letsencrypt:/usr/share/nginx/html
+      - ./data/certbot/etc:/usr/share/keys
     networks:
       - public
 
-  # Certbot for SSL automation
-  #
   certbot:
     container_name: 'docker_certbot'
     image: certbot/certbot
     volumes:
-      - ./keys:/var/lib/letsencrypt
-      - ./nginx/letsencrypt:/data/letsencrypt
-      - ./certbot/etc:/etc/letsencrypt
-      - ./certbot/log:/var/log/letsencrypt
-#    depends_on:
-#      - nginx
+      - ./data/keys:/var/lib/letsencrypt
+      - ./data/nginx/letsencrypt:/data/letsencrypt
+      - ./data/certbot/etc:/etc/letsencrypt
+      - ./data/certbot/log:/var/log/letsencrypt
     ports:
       - 8080:8080
-#    network_mode: host
-
     networks:
       - public
 
 networks:
   public:
     driver: bridge      
+

@@ -13,7 +13,7 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useHistory, useLocation } from 'react-router-dom';
 import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
@@ -22,6 +22,7 @@ import { useDispatch, useSelector } from 'react-redux';
 import * as user_actions from "../../actions/user";
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 import ReCAPTCHA from 'react-google-recaptcha';
+
 
 const recaptchaRef = React.createRef();
 
@@ -39,93 +40,98 @@ export default function CreateAccount(props) {
         history.push('./login')
     }
 
-    function onChange(value) {
-        console.log('Captcha value:', value);
-        recaptchaRef.current = value;
-    }
+    const initialValues = { 
+        firstname: "", 
+        lastname: "", 
+        email: "", 
+        password: "", 
+        password2: "", 
+        recaptcha: ""
+    };
 
+    const validationSchema = Yup.object().shape({
+        firstname: Yup.string().required(),
+        lastname: Yup.string().required(),
+        email: Yup.string().required(),
+        password: Yup.string().required(),
+        password2: Yup.string()
+            .oneOf([Yup.ref('password'), null], "Passwords don't match")
+            .required('Required'),
+        recaptcha: Yup.string().required()
+    });
 
-    return (<>
+    return (
         <Formik
-            initialValues={{ firstname: '', lastname: '', email: '', password: '', password2: '' }}
-            validationSchema={Yup.object({
-                firstname: Yup.string()
-                    .required('Required'),
-                lastname: Yup.string()
-                    .required('Required'),
-                email: Yup.string()
-                    .required('Required'),
-                password: Yup.string()
-                    .required('Required'),
-                password2: Yup.string()
-                    .oneOf([Yup.ref('password'), null], "Passwords don't match")
-                    .required('Required'),
-            })}
+            initialValues={initialValues}
+            validationSchema={validationSchema}
+            validateOnchange={false}
             validateOnMount={true}
             onSubmit={(values) => {
-                console.log('Value Rn: ', recaptchaRef.current);
-                if (recaptchaRef.current != null)
-                {
-                    createAccount(values);
-                }
+                createAccount(values);
             }}
         >
-            {(formikProps) => (
-                <div className="display-flex flex-column flex-align-center margin-top-5">
-                    <Form className="usa-form padding-x-4 padding-top-3 padding-bottom-4 border border-base-light" style={{ width: "30em" }}>
-                        <div className="grid-row ">
-                            <h2 className="margin-y-05">Create Account</h2>
-                        </div>
-                        <div className="grid-row">
-                            <div>
-                                Already have an account? <button className="usa-button usa-button--unstyled" style={{ marginTop: 0 }} type="button" onClick={() => login()}>Sign in</button></div>
-                        </div>
-                        <fieldset className="usa-fieldset">
+            {(formProps) => {
 
-                            <ErrorValidation name="firstname" type="input">
-                                <label className="usa-label" htmlFor="firstname"><span className="details-label">first name</span></label>
-                                <Field name="firstname" type="text" className="usa-input" id="input-firstname" aria-required="true" />
-                            </ErrorValidation>
-
-                            <ErrorValidation name="lastname" type="input">
-                                <label className="usa-label" htmlFor="lastname"><span className="details-label">last name</span></label>
-                                <Field name="lastname" type="text" className="usa-input" id="input-lastname" aria-required="true" />
-                            </ErrorValidation>
-
-                            <ErrorValidation name="email" type="input">
-                                <label className="usa-label" htmlFor="email"><span className="details-label">Email address</span></label>
-                                <Field name="email" type="text" className="usa-input" id="input-email" aria-required="true" />
-                            </ErrorValidation>
-
-                            <ErrorValidation name="password" type="input">
-                                <label className="usa-label" htmlFor="password"><span className="details-label">Password</span></label>
-                                <Field name="password" type={showPassword ? "text" : "password"} className="usa-input" id="input-password" aria-required="true" />
-                            </ErrorValidation>
-
-                            <ErrorValidation name="password2" type="input">
-                                <label className="usa-label" htmlFor="password2"><span className="details-label">Re-enter new Password</span></label>
-                                <Field name="password2" type={showPassword ? "text" : "password"} className="usa-input" id="input-password" aria-required="true" />
-                            </ErrorValidation>
-                            <div className="display-flex flex-column flex-align-end">
-                                <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show password</button>
+                return (
+                    <div className="display-flex flex-column flex-align-center margin-top-5">
+                        <Form className="usa-form padding-x-4 padding-top-3 padding-bottom-4 border border-base-light" style={{ width: "30em" }}>
+                            <div className="grid-row ">
+                                <h2 className="margin-y-05">Create Account</h2>
                             </div>
-                            {
-                                userData.createFeedback && <div className="usa-error-message padding-right-1"><p>{userData.createFeedback}</p></div>
-                            }
-                            <ReCAPTCHA
-                                sitekey="6Le9-wIhAAAAANvHOvIxfu83ofGN5ZVzoAoGIcoQ"
-                                onChange={onChange}
-                            />
-                            <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="button" onClick={formikProps.handleSubmit}>
-                                Create Account
-                            </ValidationControlledSubmitButton>
-                        </fieldset>
-                    </Form>
-                </div>
-            )}
+                            <div className="grid-row">
+                                <div>
+                                    Already have an account? <button className="usa-button usa-button--unstyled" style={{ marginTop: 0 }} type="button" onClick={() => login()}>Sign in</button></div>
+                            </div>
+                            <fieldset className="usa-fieldset">
+
+                                <ErrorValidation name="firstname" type="input">
+                                    <label className="usa-label" htmlFor="firstname"><span className="details-label">first name</span></label>
+                                    <Field name="firstname" type="text" className="usa-input" id="input-firstname" aria-required="true" />
+                                </ErrorValidation>
+
+                                <ErrorValidation name="lastname" type="input">
+                                    <label className="usa-label" htmlFor="lastname"><span className="details-label">last name</span></label>
+                                    <Field name="lastname" type="text" className="usa-input" id="input-lastname" aria-required="true" />
+                                </ErrorValidation>
+
+                                <ErrorValidation name="email" type="input">
+                                    <label className="usa-label" htmlFor="email"><span className="details-label">Email address</span></label>
+                                    <Field name="email" type="text" className="usa-input" id="input-email" aria-required="true" />
+                                </ErrorValidation>
+
+                                <ErrorValidation name="password" type="input">
+                                    <label className="usa-label" htmlFor="password"><span className="details-label">Password</span></label>
+                                    <Field name="password" type={showPassword ? "text" : "password"} className="usa-input" id="input-password" aria-required="true" />
+                                </ErrorValidation>
+
+                                <ErrorValidation name="password2" type="input">
+                                    <label className="usa-label" htmlFor="password2"><span className="details-label">Re-enter new Password</span></label>
+                                    <Field name="password2" type={showPassword ? "text" : "password"} className="usa-input" id="input-password" aria-required="true" />
+                                </ErrorValidation>
+
+                                <ReCAPTCHA
+                                    ref={recaptchaRef}
+                                    sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                                    onChange={(value) => {
+                                        formProps.setFieldValue("recaptcha", value);
+                                    }}
+                                />
+
+                                <div className="display-flex flex-column flex-align-end">
+                                    <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show password</button>
+                                </div>
+                                {
+                                    userData.createFeedback && <div className="usa-error-message padding-right-1"><p>{userData.createFeedback}</p></div>
+                                }
+                                <ValidationControlledSubmitButton errors={formProps.errors} className="usa-button submit-button" type="button" onClick={formProps.handleSubmit}>
+                                    Create Account
+                                </ValidationControlledSubmitButton>
+                            </fieldset>
+                        </Form>
+                    </div>
+                )
+            }}
 
         </Formik>
-
-    </>
     );
 }

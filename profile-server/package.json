@@ -39,6 +39,7 @@
     "debug": "~2.2.0",
     "dotenv": "^8.2.0",
     "express": "~4.13.4",
+    "express-recaptcha": "^5.1.0",
     "fs-walk": "^0.0.2",
     "fswalk": "^1.2.0",
     "helmet": "^3.23.3",
@@ -95,4 +96,3 @@
     "webpack-cli": "^3.3.10"
   }
 }
-

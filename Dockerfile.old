@@ -1,0 +1,9 @@
+FROM node:16-alpine as builder
+
+RUN apk update || : && apk add python3
+ 
+WORKDIR /app/profile-server
+RUN yarn
+RUN yarn install
+# CMD ["node", "server.js"]
+CMD ["yarn", "start"]

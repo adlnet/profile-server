@@ -1,2 +1,9 @@
 node_modules
-../client/mode_modules
+
+profile-server/data
+profile-server/node_modules
+
+profile-server/client/node_modules
+profile-server/client/build
+
+profile-server/server/node_modules
