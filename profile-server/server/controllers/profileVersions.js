@@ -91,6 +91,9 @@ exports.getProfileVersion = async function (req, res) {
         });
     }
 
+    if (profileVersion.moreInformation != undefined && profileVersion.moreInformation.startsWith("javascript:"))
+        profileVersion.moreInformation = "";
+
     res.send({
         success: true,
         profileVersion: profileVersion,
