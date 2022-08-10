@@ -58,12 +58,13 @@ class API {
 
     async putJSON(url, json) {
 
+        let token = await this.getCSRFToken();
         try {
             let res = await fetch(url, {
                 method: "PUT",
                 headers: {
-                    'Content-Type': 'application/json'
-
+                    'Content-Type': 'application/json',
+                    "X-CSRF-Token": token
                 },
                 body: JSON.stringify(json)
             })
@@ -76,10 +77,14 @@ class API {
     }
 
     async postImportedJSON(url, file, options) {
+        let token = await this.getCSRFToken();
         try {
             let res = await fetch(url, {
                 method: "POST",
                 body: file,
+                headers: {
+                    "X-CSRF-Token": token
+                },
                 ...options
             })
 
@@ -91,10 +96,14 @@ class API {
     }
 
     async deleteImportedJSON(url, file) {
+        let token = await this.getCSRFToken();
         try {
             let res = await fetch(url, {
                 method: "DELETE",
                 body: file,
+                headers: {
+                    "X-CSRF-Token": token
+                },
             })
 
             return this.checkStatus(res);
@@ -106,9 +115,13 @@ class API {
 
     async deleteJSON(url) {
 
+        let token = await this.getCSRFToken();
         try {
             let res = await fetch(url, {
                 method: "DELETE",
+                headers: {
+                    "X-CSRF-Token": token
+                },
             });
 
             return this.checkStatus(res);
@@ -119,12 +132,13 @@ class API {
     }
     async postJSONNoCheck(url, json) {
 
+        let token = await this.getCSRFToken();
         try {
             let res = await fetch(url, {
                 method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
-
+                    'Content-Type': 'application/json',
+                    "X-CSRF-Token": token
                 },
                 body: JSON.stringify(json)
             })
@@ -137,12 +151,13 @@ class API {
     }
     async postJSON(url, json) {
 
+        let token = await this.getCSRFToken();
         try {
             let res = await fetch(url, {
                 method: "POST",
                 headers: {
-                    'Content-Type': 'application/json'
-
+                    'Content-Type': 'application/json',
+                    "X-CSRF-Token": token
                 },
                 body: JSON.stringify(json)
             })
@@ -593,6 +608,9 @@ class API {
         return body.profile;
     }
 
-
+    async getCSRFToken() {
+        let body = await this.getJSON("/csrf");
+        return body.token;
+    }
 }
 export default new API()

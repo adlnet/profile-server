@@ -20,17 +20,6 @@ const models = require('../ODM/models');
 const validate = require('../utils/validator');
 const validIRI = require('../schema/validIRI');
 
-const cookieSession = require('cookie-session');
-const cookieParser = require('cookie-parser');
-
-router.use(cookieParser('asdfasdfasdfasdfasdf'));
-router.use(cookieSession({
-    name: 'profileSession', // stop colliding with other  projects
-    keys: ['asdfasdfasdfasdfasdf'],
-    // Cookie Options
-    maxAge: 0,
-}));
-
 // validate iris when they exist
 router.use(validate(validIRI));
 

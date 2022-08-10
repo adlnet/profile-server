@@ -18,6 +18,7 @@ const path = require('path');
 const favicon = require('serve-favicon');
 
 const cookieParser = require('cookie-parser');
+const cookieSession = require('cookie-session');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 
@@ -32,14 +33,32 @@ app.set('view engine', 'hjs');
 // uncomment after placing your favicon in /public
 // app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 
+const cookieSecret = (process.env.COOKIE_SECRET || "some-long-string-123");
+
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
-app.use(cookieParser());
+app.use(cookieParser(cookieSecret));
 app.use(express.static(path.join(__dirname, 'client', 'build')));
 app.use(express.static(path.join(__dirname, 'client', 'public')));
 app.use(compression());
 
+app.use(cookieSession({
+    name: 'profileSession', // stop colliding with other  projects
+    keys: [cookieSecret],
+    maxAge: 24 * 60 * 60 * 1000
+}));
+
+const csurf = require("csurf");
 const helmet = require("helmet");
+
+const csrfProtection = (req, res, next) => {
+    csurf({cookie: true})(req, res, function(err) {
+        if (err)
+            res.status(400).send("Improper CSRF Token.");
+        else
+            next();
+    });
+}
 
 // rewrite '/profile/:uuid' to route to either the UI or the API
 app.use(async (req, res, next) => {
@@ -49,11 +68,18 @@ app.use(async (req, res, next) => {
         }
     }
     next();
-})
+});
+
+app.use(csrfProtection);
+app.get("/csrf", (req, res, next) => {
+    res.json({
+        token: req.csrfToken()
+    });
+});
 
 app.use('/app', helmet(), require('./server/routes/appApi.js'));
 app.use('/api', require('./server/routes/publicApi.js'));
-app.get('*', (req, res, next) => {
+app.get('*', helmet(), (req, res, next) => {
     res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
 });
 
