@@ -14,6 +14,7 @@
 * limitations under the License.
 **************************************************************** */
 const express = require('express');
+const { xss } = require("express-xss-sanitizer");
 const path = require('path');
 const favicon = require('serve-favicon');
 
@@ -37,6 +38,7 @@ const cookieSecret = (process.env.COOKIE_SECRET || "some-long-string-123");
 
 app.use(bodyParser.json({ limit: '50mb' }));
 app.use(bodyParser.urlencoded({ extended: false, limit: '50mb' }));
+app.use(xss());
 app.use(cookieParser(cookieSecret));
 app.use(express.static(path.join(__dirname, 'client', 'build')));
 app.use(express.static(path.join(__dirname, 'client', 'public')));
@@ -58,7 +60,7 @@ const csrfProtection = (req, res, next) => {
         else
             next();
     });
-}
+};
 
 // rewrite '/profile/:uuid' to route to either the UI or the API
 app.use(async (req, res, next) => {
@@ -71,18 +73,17 @@ app.use(async (req, res, next) => {
 });
 
 app.use(csrfProtection);
-app.get("/csrf", (req, res, next) => {
+app.get("/csrf", csrfProtection, (req, res, next) => {
     res.json({
         token: req.csrfToken()
     });
 });
 
-app.use('/app', helmet(), require('./server/routes/appApi.js'));
+app.use('/app', csrfProtection, helmet(), require('./server/routes/appApi.js'));
 app.use('/api', require('./server/routes/publicApi.js'));
-app.get('*', helmet(), (req, res, next) => {
+app.get('*', csrfProtection, helmet(), (req, res, next) => {
     res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
 });
-
 
 // catch 404 and forward to error handler
 app.use((req, res, next) => {
