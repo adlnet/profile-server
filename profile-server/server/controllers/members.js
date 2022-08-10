@@ -17,7 +17,8 @@ const User = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
 
 module.exports.getMembers = async function (req, res, next) {
-    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+    // await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname _created' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
     res.send({
         success: true,
