@@ -18,6 +18,7 @@ const organizations = Express.Router();
 const controller = require('../controllers/organizations');
 
 const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
+const { mustBeOrgAdmin } = require("../utils/requirements");
 const getResource = require('../utils/getResource');
 const permissions = require('../utils/permissions');
 const level = require('../utils/level');
@@ -32,6 +33,13 @@ const permissionStack = [
     deny,
 ];
 
+const adminPermissionStack = [
+    mustBeLoggedIn,
+    getResource(Org, 'org', 'uuid'),
+    mustBeOrgAdmin(),
+    deny,
+];
+
 const lock = require('../utils/lock');
 const unlock = require('../utils/unlock');
 
@@ -41,27 +49,29 @@ organizations.post('/', mustBeLoggedIn, controller.createOrganization);
 organizations.get('/:org', getResource(Org, 'org', 'uuid'), (req, res, next) => {
     if (req.user) {
         return permissions()(req, res, () => {
-            if (req.permissionState !== 'denied') return controller.getOrganization(req, res, next);
-            return controller.getOrganizationPublic(req, res, next);
+            if (req.permissionState !== 'denied') 
+                return controller.getOrganization(req, res, next);
+            else
+                return controller.getOrganizationPublic(req, res, next);
         });
     }
     return controller.getOrganizationPublic(req, res, next);
 });
-organizations.get('/:org/lock', ...permissionStack, lock());
-organizations.get('/:org/unlock', ...permissionStack, unlock());
-organizations.put('/:org', ...permissionStack, level('admin'), unlock(true), controller.updateOrganization);
-organizations.delete('/:org', ...permissionStack, level('admin'), lock(true), controller.deleteOrganization);
+
+organizations.get('/:org/lock', ...adminPermissionStack, lock());
+organizations.get('/:org/unlock', ...adminPermissionStack, unlock());
+organizations.put('/:org', ...adminPermissionStack, unlock(true), controller.updateOrganization);
+organizations.delete('/:org', ...adminPermissionStack, lock(true), controller.deleteOrganization);
 organizations.post('/:org/join', mustBeLoggedIn, getResource(Org, 'org', 'uuid'), controller.requestJoinOrganization);
-organizations.post('/:org/join/member', ...permissionStack, controller.approveJoinOrganization);
-organizations.delete('/:org/deny/member/:userId', ...permissionStack, controller.denyJoinOrganization);
-organizations.delete('/:org/join/member/:userId', ...permissionStack, controller.revokeJoinOrganization);
+organizations.post('/:org/join/member', ...adminPermissionStack, controller.approveJoinOrganization);
+organizations.delete('/:org/deny/member/:userId', ...adminPermissionStack, controller.denyJoinOrganization);
+organizations.delete('/:org/join/member/:userId', ...adminPermissionStack, controller.revokeJoinOrganization);
 
 const apiKeys = require('./apiKeys');
 const profiles = require('./profiles');
 const members = require('./members');
 
-
-organizations.use('/:org/apiKey', ...permissionStack, getResource(Org, 'org', 'uuid', true, 'organization'), apiKeys);
+organizations.use('/:org/apiKey', ...adminPermissionStack, getResource(Org, 'org', 'uuid', true, 'organization'), apiKeys);
 organizations.use('/:org/profile', profiles);
 organizations.use('/:org/member', members);
 

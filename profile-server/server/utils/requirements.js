@@ -13,18 +13,33 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-const Express = require('express');
-const admin = Express.Router({ mergeParams: true });
-const controller = require('../controllers/admin');
+/**
+ * Middleware added to routes that require a logged in user. Will
+ * look for a user in req.user.
+ */
+const permissions = require("./permissions");
 
-const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
-const { mustBeSiteAdmin } = require("../utils/requirements");
+const mustBeLoggedIn = function(req, res, next) {
+    if (!req.user) {
+        return res.status(401).send({
+            success: false,
+            message: 'Must be logged in',
+        });
+    }
+    next();
+};
 
-admin.use(mustBeLoggedIn, mustBeSiteAdmin);
-admin.get('/users', controller.getUsers);
-admin.get('/user/:userId', controller.getUser);
-admin.post('/user/:userId', controller.updateUser);
-admin.get('/verificationRequests', controller.verificationRequests);
-admin.post('/verify/:versionId', controller.verify);
+const mustBeSiteAdmin = function(req, res, next) {
+    if (!req.user || req.user.type !== 'admin') { return next('Permission Denied'); }
+    next();
+};
 
-module.exports = admin;
+const mustBeOrgAdmin = function() {
+    return permissions("resource", ["admin"]);
+};
+
+module.exports = {
+    mustBeLoggedIn,
+    mustBeSiteAdmin,
+    mustBeOrgAdmin
+}
