@@ -249,7 +249,9 @@ exports.getTemplate = async function (req, res) {
             })
             .populate({
                 path: 'updatedBy',
-                select: 'email firstname lastname uuid',
+                // select: 'email firstname lastname uuid',
+                // TODO: Username
+                select: 'firstname lastname',
             });
 
         if (!template) {

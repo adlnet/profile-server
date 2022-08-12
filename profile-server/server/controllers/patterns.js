@@ -221,7 +221,9 @@ exports.getPattern = async function (req, res) {
     let pattern;
     try {
         pattern = await patternModel.findByUuid(req.params.pattern)
-            .populate('updatedBy', 'firstname lastname email uuid')
+            // .populate('updatedBy', 'firstname lastname email uuid')
+            // TODO: Username
+            .populate('updatedBy', 'firstname lastname')
             .populate({
                 path: 'parentProfile',
                 select: 'uuid iri name state',
