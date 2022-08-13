@@ -33,11 +33,13 @@ users.post('/reset', controller.resetPassword);
 users.get('/checkResetKey', controller.checkResetKey);
 
 
-function stripType(req, res, next) {
+function blockTypeManipulation(req, res, next) {
     delete req.body.type;
+    delete req.body.admin;
     next();
 }
-users.post('/update', stripType, controller.editAccount);
+
+users.post('/update', blockTypeManipulation, controller.editAccount);
 const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
 const getResource = require('../utils/getResource');
 const hooks = require('./hooks');

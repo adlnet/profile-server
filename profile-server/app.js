@@ -14,12 +14,13 @@
 * limitations under the License.
 **************************************************************** */
 const express = require('express');
+const serverSession = require('express-session');
 const { xss } = require("express-xss-sanitizer");
 const path = require('path');
 const favicon = require('serve-favicon');
 
 const cookieParser = require('cookie-parser');
-const cookieSession = require('cookie-session');
+// const cookieSession = require('cookie-session');
 const bodyParser = require('body-parser');
 const compression = require('compression');
 
@@ -44,10 +45,22 @@ app.use(express.static(path.join(__dirname, 'client', 'build')));
 app.use(express.static(path.join(__dirname, 'client', 'public')));
 app.use(compression());
 
-app.use(cookieSession({
+// app.use(cookieSession({
+//     name: 'profileSession', // stop colliding with other  projects
+//     keys: [cookieSecret],
+//     maxAge: 24 * 60 * 60 * 1000
+// }));
+
+app.use(serverSession({
     name: 'profileSession', // stop colliding with other  projects
-    keys: [cookieSecret],
-    maxAge: 24 * 60 * 60 * 1000
+    secret: cookieSecret,
+    resave: true,
+    saveUninitialized: true,
+    rolling: true,
+    cookie: {
+        secure: false,
+        maxAge: 24 * 60 * 60 * 1000
+    }
 }));
 
 const csurf = require("csurf");

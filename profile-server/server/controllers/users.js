@@ -26,6 +26,9 @@ const safeCompare = require('safe-compare');
 // var CryptoJS = require("./utils/pbkdf2.js").CryptoJS;
 
 const crypto = require('crypto');
+const SessionHandler = require("./util/SessionHandler");
+
+const sessionHandler = new SessionHandler();
 
 
 function escapeRegExp(text) {
@@ -33,46 +36,64 @@ function escapeRegExp(text) {
     return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
-
 function toCaseInsenstiveRegexp(text) {
     return new RegExp(escapeRegExp(text), 'i');
 }
 module.exports.passport = passport;
+
 exports.setupPassport = function () {
     const settings = require('../settings');
-    passport.use(
-        'rootSiteLogin',
-        new LocalStrategy({ passReqToCallback: true, usernameField: 'email' }, (req, email, password, done) => {
-            user.findOne({ email: email },
-                async (err, user) => {
-                    if (err) {
-                        console.log(err);
-                        done(null, false);
-                        return;
-                    }
-                    if (user) {
-                        if (user.checkPassword(password) || safeCompare(password, settings.SERVER_SECRET)) {
-                            user.passwordResetKey = null;
-                            user.lastLogin = new Date();
-                            user.lastLoginIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
 
-                            await user.save();
+    const passportConfig = { 
+        passReqToCallback: true, 
+        usernameField: 'email' 
+    };
 
-                            done(null, user);
-                        } else if (user.checkResetKey(password)) {
-                            console.log('Used reset key');
-                            done(null, user, {
-                                resetLogin: true,
-                            }); // pass along the info that the user used the temp credentials
-                        } else {
-                            done(null, false);
-                        }
-                    } else {
-                        done(null, false);
-                    }
-                });
-        }),
-    );
+    const passportStrategy = new LocalStrategy(passportConfig, (req, email, password, done) => {
+        user.findOne({ email: email }, async (err, user) => {
+            if (err) {
+                console.log(err);
+                done(null, false);
+                return;
+            }
+            if (user) {
+
+                let hasCorrectPassword = user.checkPassword(password) || safeCompare(password, settings.SERVER_SECRET);
+                if (hasCorrectPassword) {
+                    user.passwordResetKey = null;
+                    user.lastLogin = new Date();
+                    user.lastLoginIp = req.headers['x-forwarded-for'] || req.connection.remoteAddress;
+
+                    await user.save();
+
+                    sessionHandler.addToSessionMap(user.uuid, req.sessionID);
+
+                    done(null, user);
+                } 
+                
+                else if (user.checkResetKey(password)) {
+
+                    sessionHandler.addToSessionMap(user.uuid, req.sessionID);
+
+                    console.log('Used reset key');
+                    done(null, user, {
+                        resetLogin: true,
+                    }); // pass along the info that the user used the temp credentials
+                } 
+                
+                else {
+                    done(null, false);
+                }
+            } 
+            
+            else {
+                done(null, false);
+            }
+        });
+    });
+
+    passport.use('rootSiteLogin', passportStrategy);
+
     passport.serializeUser((user, done) => {
         console.log('serializing user', user);
         done(null, {
@@ -81,7 +102,9 @@ exports.setupPassport = function () {
             type: user.type,
         });
     });
+
     passport.deserializeUser(async (id, done) => {
+
         // be sure to handle the admin case
         // holy crap be careful here to make sure that users can't modify their own session
         user.findOne(
@@ -93,33 +116,59 @@ exports.setupPassport = function () {
             },
         );
     });
+
     return passport;
 };
+
 function postLogoutCookie(req, res) {
     // totally destroy session on logout
     res.cookie('session', '', { expires: new Date() });
-}
+};
+
 exports.logout = function (req, res, next) {
-    req.logout();
-    req.session = null;
-    postLogoutCookie(req, res);
-    res.send({
-        success: true,
+
+    sessionHandler.killThisSession(req, res, () => {
+        res.cookie('session', '', { expires: new Date() });
+        res.send({
+            success: true,
+        });
     });
 };
 
 exports.status = function (req, res, next) {
+
+    let user = req.user;
+    if (!user) {
+        return res.send({
+            success: true,
+            loggedIn: false,
+            user: null,
+        });
+    }
+
+    let userID = req.user.uuid;
+    let knownSession = sessionHandler.userHasKnownSession(userID, req.sessionID);
+    if (!knownSession) {
+        return sessionHandler.killThisSession(req, res, () => {
+            res.send({
+                success: true,
+                loggedIn: false,
+                user: null,
+            });
+        });
+    }
+
     res.send({
         success: true,
-        loggedIn: !!req.user,
-        user: req.user ? {
+        loggedIn: true,
+        user: {
             fullname: req.user.fullname,
             firstname: req.user.firstname,
             lastname: req.user.lastname,
             email: req.user.email,
             type: req.user.type,
             uuid: req.user.uuid,
-        } : null,
+        },
     });
 };
 
@@ -128,7 +177,6 @@ exports.createUser = function (req, res, next) {
     const request = req.body;
 
     // Ensure that the email address is unique
-
     user.findOne(
         {
             email: toCaseInsenstiveRegexp(req.body.email),
@@ -164,7 +212,6 @@ exports.createUser = function (req, res, next) {
         },
     );
 };
-
 
 exports.getUser = function (req, res, next) {
     user.findOne(
@@ -234,7 +281,7 @@ exports.login = function (req, res, next) {
         }
         // console.log("login");
         req.login(user, async err => {
-            // console.log("login " + err)
+
             if (err) {
                 return next(err);
             }
@@ -426,20 +473,37 @@ exports.editAccount = async function (req, res) {
                 err: 'Another account on the system already uses this email address.',
             });
         }
+
         req.user.email = req.body.email;
         req.user.firstname = req.body.firstname;
         req.user.lastname = req.body.lastname;
 
-        // Note that the user self edit path has a prefilter to remove this, so a user cannot change their own type
-        if (req.body.type) { req.user.type = req.body.type; }
+        // Note that the user self edit path has a prefilter to remove this, 
+        // so a user cannot change their own type or enable themselves to be an admin
+        if (req.body.type) { 
+            req.user.type = req.body.type; 
+        }
 
+        let killOtherSessions = false;
         if (req.body.password && req.body.password === req.body.password2) {
             await req.user.resetPassword(req.body.password);
+            killOtherSessions = true;
         }
         await req.user.save();
-        res.send({
-            success: true,
-        });
+        
+        if (killOtherSessions) {
+            sessionHandler.killOtherUserSessions(req, res, () => {
+                res.send({
+                    success: true,
+                });
+            });
+        }
+        else {
+            res.send({
+                success: true,
+            });
+        }
+
     } catch (e) {
         return res.send({
             success: false,
