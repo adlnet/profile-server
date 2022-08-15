@@ -10,7 +10,8 @@ ENV NODE_ENV=production
 COPY ./profile-server/client /client
 WORKDIR /client
 
-RUN yarn install && yarn build
+RUN yarn install
+RUN yarn build
 
 # ----------------------------------------------------------- #
 # Build the Server component
@@ -23,13 +24,17 @@ FROM node:16-alpine
 
 RUN apk update || : && apk add python3
 
-COPY ./profile-server /app
-COPY .env /app/.env
-COPY --from=builder /client/build /app/client/build
-
+RUN mkdir /app
 WORKDIR /app
+
+COPY profile-server/package.json ./package.json
+COPY profile-server/yarn.lock ./yarn.lock
 
 RUN yarn
 RUN yarn install
+
+COPY ./profile-server/. ./
+COPY .env ./.env
+COPY --from=builder /client/build /app/client/build
 
 CMD ["yarn", "start"]
