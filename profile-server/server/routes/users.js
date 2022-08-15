@@ -21,6 +21,8 @@ const validate = require('../utils/validator');
 const createAccount = require('../schema/createAccount');
 const login = require('../schema/login');
 const captcha = require("./captcha");
+const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
+const getResource = require('../utils/getResource');
 
 users.get('/status', controller.status);
 users.get('/salt', controller.salt);
@@ -32,19 +34,19 @@ users.post('/forgot', captcha.checkCaptcha(), controller.forgotPassword);
 users.post('/reset', controller.resetPassword);
 users.get('/checkResetKey', controller.checkResetKey);
 
+users.post('/username', mustBeLoggedIn, captcha.checkCaptcha(), controller.setUsername);
 
 function blockTypeManipulation(req, res, next) {
     delete req.body.type;
     delete req.body.admin;
+    delete req.body.username;
+    delete req.body.usernameChosen;
     next();
 }
 
 users.post('/update', blockTypeManipulation, controller.editAccount);
-const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
-const getResource = require('../utils/getResource');
 const hooks = require('./hooks');
 const Hook = require('../ODM/models').hook;
-
 
 users.use('/hooks', mustBeLoggedIn, hooks);
 

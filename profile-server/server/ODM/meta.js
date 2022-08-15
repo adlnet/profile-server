@@ -14,27 +14,22 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
-const meta = require("./server/utils/meta");
-require("./server/logging");
 
-const app = require('./app');
-let settings = require("./server/settings");
+const metaSchema = mongoose.Schema(
+    {
+        tempUsernameIndex: {
+            type: Number,
+            default: 0
+        },
+        singleton: {
+            type: Boolean,
+            unique: true
+        }
+    },
+    {
+        usePushEach: true,
+        toJSON: { virtuals: true },
+    },
+);
 
-async function main() {
-    if (settings.go()) {
-    
-        mongoose.connect(settings.connectionString, {
-            useNewUrlParser: true,
-            useUnifiedTopology: true,
-            useFindAndModify: false,
-        });
-
-        console.prodLog("Starting temporary username migration ...");
-        await meta.ensureTemporaryUsernames();
-    
-        app.listen(settings.port);
-        console.prodLog(`Server started on port ${settings.port}`);
-    }
-}
-
-main();
+module.exports = metaSchema;

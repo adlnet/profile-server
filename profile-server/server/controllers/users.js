@@ -30,6 +30,22 @@ const SessionHandler = require("./util/SessionHandler");
 
 const sessionHandler = new SessionHandler();
 
+function doesUsernameHaveErrors(value) {
+
+    if (value == undefined) {
+        return 'You must provide a username';
+    }
+    
+    if (typeof value != "string") {
+        return 'Username must be a string';
+    }
+
+    if (value != value.replace(/[^a-zA-Z0-9]/g, "")) {
+        return 'Username cannot contain special characters.';
+    }
+
+    return undefined;
+}
 
 function escapeRegExp(text) {
     if (!text) return '.*';
@@ -162,6 +178,8 @@ exports.status = function (req, res, next) {
         success: true,
         loggedIn: true,
         user: {
+            username: req.user.username,
+            usernameChosen: req.user.usernameChosen,
             fullname: req.user.fullname,
             firstname: req.user.firstname,
             lastname: req.user.lastname,
@@ -184,12 +202,23 @@ exports.createUser = function (req, res, next) {
         async (err, _user) => {
             if (_user) {
                 return res.status(400).send({
-                    success: false,
+                    success: true,
                     err: 'user exists',
                 });
             }
 
+            let usernameError = doesUsernameHaveErrors(request.username);
+            if (usernameError) {
+                return res.status(400).send({
+                    success: true,
+                    err: usernameError,
+                });
+            }
+
             const newuser = new user();
+
+            newuser.username = request.username;
+            newuser.usernameChosen = true;
             newuser.firstname = request.firstname;
             newuser.lastname = request.lastname;
             // var randomSalt = CryptoJS.lib.WordArray.random(128 / 8)
@@ -210,6 +239,53 @@ exports.createUser = function (req, res, next) {
                 success: true,
             });
         },
+    );
+};
+
+exports.setUsername = function(req, res, next) {
+
+    if (req.user == undefined) {
+        return res.send({
+            success: true,
+            err: 'You do not appear to be logged in.',
+        });
+    }
+
+    user.findOne(
+        {
+            username: toCaseInsenstiveRegexp(req.body.username),
+        },
+        async (err, _user) => {
+
+            if (req.user.usernameChosen) {
+                return res.status(400).send({
+                    success: true,
+                    err: 'You have already chosen a username.'
+                });
+            }
+
+            if (_user) {
+                return res.status(400).send({
+                    success: true,
+                    err: 'This username is already taken.',
+                });
+            }
+
+            let usernameError = doesUsernameHaveErrors(request.username);
+            if (usernameError) {
+                return res.status(400).send({
+                    success: true,
+                    err: usernameError,
+                });
+            }
+
+            req.user.username = req.body.username;
+            req.user.usernameChosen = true;
+
+            await req.user.save();
+
+            res.redirect("/user/account");
+        }
     );
 };
 

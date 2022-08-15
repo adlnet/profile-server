@@ -23,6 +23,14 @@ const mongoSanitize = require('mongo-sanitize');
 
 const userSchema = mongoose.Schema(
     {
+        username: {
+            type: String,
+            unique: true
+        },
+        usernameChosen: {
+            type: Boolean,
+            default: false
+        },
         firstname: String,
         lastname: String,
         passwordHash: String,
@@ -122,7 +130,9 @@ userSchema.methods.resetPassword = function (plaintext, ignoreHistory = false) {
 userSchema.pre('save', function (next) {
     // do stuff
     this._modified = Date.now();
-    if (!this._created) this._created = Date.now();
+    if (!this._created) 
+        this._created = Date.now();
+    
     next();
 });
 

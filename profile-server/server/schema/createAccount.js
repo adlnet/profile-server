@@ -17,9 +17,15 @@ module.exports = {
     title: 'createAccount',
     type: 'object',
     properties: {
+        username: {
+            type: 'string',
+            pattern: "^[a-zA-Z0-9]*$",
+            customError: "Username is required and must not have special characters."
+        },
         email: {
             type: 'string',
             pattern: "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
+            customError: "Email format looks incorrect."
         },
         password: {
             type: 'string',

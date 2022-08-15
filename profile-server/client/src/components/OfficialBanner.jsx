@@ -38,6 +38,7 @@ export default class OfficialBanner extends React.Component {
         }
         if (!expanded)
             style.display = "none";
+        
         return (<>
             <a className="usa-skipnav" href="#main-content">Skip to main content</a>
             <div className="usa-banner">
@@ -62,7 +63,7 @@ export default class OfficialBanner extends React.Component {
                                 <img className="usa-banner__icon usa-media-block__img" src="/assets/uswds/2.4.0/img/icon-dot-gov.svg" alt="Dot gov" />
                                 <div className="usa-media-block__body">
                                     <p>
-                                        <strong>The .gov means it’s official.</strong>
+                                        <strong>The .gov means it's official.</strong>
                                         <br />
                                         Federal government websites often end in .gov or .mil. Before sharing sensitive information, make sure you’re on a federal government site.
                                     </p>

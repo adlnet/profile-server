@@ -21,6 +21,7 @@ const template = require('./template');
 const profile = require('./profile');
 const profileVersion = require('./profileVersion');
 const user = require('./user');
+const meta = require('./meta');
 const apiKey = require('./apiKey');
 const hook = require('./hook.js');
 const harvestData = require('./harvestData');
@@ -35,6 +36,7 @@ module.exports = {
     profile: mongoose.model('profile', profile),
     profileVersion: mongoose.model('profileVersion', profileVersion),
     user: mongoose.model('user', user),
+    meta: mongoose.model('meta', meta),
     apiKey: mongoose.model('apiKey', apiKey),
     patternComponent: mongoose.model('patternComponent', patternComponent),
     hook: mongoose.model('hook', hook),

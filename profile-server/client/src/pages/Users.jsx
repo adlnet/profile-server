@@ -18,6 +18,7 @@ import { Switch, Route, NavLink, matchPath, useRouteMatch } from 'react-router-d
 import Login from "../components/users/Login";
 import Create from "../components/users/Create";
 import AccountDetails from "../components/users/AccountDetails";
+import SelectUsername from "../components/users/SetUsername";
 import NotLoggedInRoute from "../components/users/NotLoggedInRoute";
 import PrivateRoute from "../components/users/PrivateRoute";
 import RequestPasswordReset from '../components/users/RequestPasswordReset';
@@ -34,6 +35,9 @@ export default function Users(props) {
             <NotLoggedInRoute path={`${match.path}/create`} {...props}>
                 <Create></Create>
             </NotLoggedInRoute>
+            <PrivateRoute path={`${match.path}/username`} {...props}>
+                <SelectUsername></SelectUsername>
+            </PrivateRoute>
             <PrivateRoute path={`${match.path}/account`} {...props}>
                 <AccountDetails></AccountDetails>
             </PrivateRoute>

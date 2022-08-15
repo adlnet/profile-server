@@ -142,6 +142,11 @@ export function createAccount(createRequest) {
         try {
             createResult = await API.createUser(createRequest);
             if (!createResult.success) {
+
+                if (window.grecaptcha != undefined && window.grecaptcha.reset != undefined) {
+                    window.grecaptcha.reset();
+                }
+
                 return batch(() => {
                     dispatch({
                         type: ERROR_CREATE,
@@ -171,6 +176,5 @@ export function createAccount(createRequest) {
         });
 
         history.push('./login')
-
     };
 }

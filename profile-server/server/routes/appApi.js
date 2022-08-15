@@ -32,7 +32,6 @@ router.use('/user', users);
 const organizations = require('./organizations');
 router.use('/org', organizations);
 
-
 const concepts = require('./concepts');
 router.use('/concept', concepts);
 
