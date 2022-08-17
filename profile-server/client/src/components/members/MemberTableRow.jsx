@@ -22,9 +22,6 @@ export default function MemberTableRow({ member, isAdmin }) {
     // if (member.level === "owner")
     //     disabled = "disabled";
 
-
-    console.log(member);
-
     return (
         <tr >
             <td>{member.user.username}</td>

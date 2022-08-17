@@ -22,14 +22,11 @@ function removePrivateNames(members) {
         if (member == undefined || member.user == undefined)
             continue;
 
-        if (member.user.publicizeName == false) {
+        if (!member.user.publicizeName) {
             delete member.user.fullname;
+            delete member.user.firstname;
+            delete member.user.lastname;
         }
-
-        delete member.user.firstname;
-        delete member.user.lastname;
-
-        console.prodLog(member.user);
     }
 }
 
@@ -37,7 +34,11 @@ module.exports.getMembers = async function (req, res, next) {
     await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
 
+    console.prodLog("Pre-Clean Members:", members);
+
     removePrivateNames(members);
+
+    console.prodLog("Post-Clean Members:", members);
 
     res.send({
         success: true,

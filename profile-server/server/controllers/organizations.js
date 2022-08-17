@@ -94,12 +94,12 @@ exports.getOrganizations = async function (req, res) {
         if (req.query.search !== undefined) {
             organizations = searchOrganizations(req.query.search, req.query.limit, req.query.page, req.query.sort);
             organizations = await organizations.populate({ path: 'profiles', select: 'uuid name' })
-                .populate({ path: 'members.user', select: 'uuid fullname username _created publicizeName' })
-                .populate({ path: 'memberRequests.user', select: 'uuid fullname username _created publicizeName' });
+                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
+                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' });
         } else {
             organizations = await organizationModel.find({}).populate({ path: 'profiles', select: 'uuid name' })
-                .populate({ path: 'members.user', select: 'uuid fullname username _created publicizeName' })
-                .populate({ path: 'memberRequests.user', select: 'uuid fullname username _created publicizeName' });
+                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
+                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' });
         }
         
         removePrivateNames(organizations);
@@ -211,8 +211,8 @@ exports.getOrganization = async function (req, res) {
                     { path: 'currentPublishedVersion', select: 'uuid name isVerified' },
                 ],
             })
-            .populate({ path: 'members.user', select: 'uuid fullname username _created publicizeName' })
-            .populate({ path: 'memberRequests.user', select: 'uuid fullname username _created publicizeName' })
+            .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
+            .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
             .populate({ path: 'apiKeys', select: 'uuid' });
 
         if (!organization) {
