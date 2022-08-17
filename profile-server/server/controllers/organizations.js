@@ -19,6 +19,39 @@ const userModel = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
 const { resendValidation } = require('./users');
 
+function removePrivateNames(organizations) {
+
+    for (let org of organizations) {
+
+        if (org == undefined)
+            continue;
+
+        for (let member of org.members) {
+
+            if (member == undefined || member.user == undefined)
+                continue;
+
+            if (member.user.publicizeName == false) {
+                delete member.user.fullname;
+                delete member.user.firstname;
+                delete member.user.lastname;
+            }
+        }
+
+        for (let request of org.memberRequests) {
+
+            if (request == undefined || request.user == undefined)
+                continue;
+            
+            if (request.user.publicizeName == false) {
+                delete request.user.fullname;
+                delete request.user.firstname;
+                delete request.user.lastname;
+            }
+        }
+    }
+}
+
 function setRegex(column, searchArray) {
     return searchArray.map(s => ({ [column]: { $regex: `.*${s}.*`, $options: 'i' } }));
 }
@@ -61,13 +94,15 @@ exports.getOrganizations = async function (req, res) {
         if (req.query.search !== undefined) {
             organizations = searchOrganizations(req.query.search, req.query.limit, req.query.page, req.query.sort);
             organizations = await organizations.populate({ path: 'profiles', select: 'uuid name' })
-                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
-                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' });
+                .populate({ path: 'members.user', select: 'uuid fullname username _created publicizeName' })
+                .populate({ path: 'memberRequests.user', select: 'uuid fullname username _created publicizeName' });
         } else {
             organizations = await organizationModel.find({}).populate({ path: 'profiles', select: 'uuid name' })
-                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
-                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' });
+                .populate({ path: 'members.user', select: 'uuid fullname username _created publicizeName' })
+                .populate({ path: 'memberRequests.user', select: 'uuid fullname username _created publicizeName' });
         }
+        
+        removePrivateNames(organizations);
 
         orphanProfile = await profileModel.findOne({ orphanContainer: true});
     } catch (err) {
@@ -131,7 +166,7 @@ exports.getOrganizationPublic = async function (req, res) {
     let organization;
     try {
         organization = await organizationModel.findOne({ uuid: req.params.org })
-            .populate('createdBy', 'uuid firstname lastname fullname')
+            .populate('createdBy', 'uuid fullname')
             .populate({
                 path: 'profiles',
                 select: 'uuid updatedOn',
@@ -167,7 +202,7 @@ exports.getOrganization = async function (req, res) {
     let organization;
     try {
         organization = await organizationModel.findByUuid(req.params.org)
-            .populate('createdBy', 'uuid firstname lastname fullname')
+            .populate('createdBy', 'uuid fullname')
             .populate({
                 path: 'profiles',
                 select: 'uuid updatedOn',
@@ -176,8 +211,8 @@ exports.getOrganization = async function (req, res) {
                     { path: 'currentPublishedVersion', select: 'uuid name isVerified' },
                 ],
             })
-            .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
-            .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' })
+            .populate({ path: 'members.user', select: 'uuid fullname username _created publicizeName' })
+            .populate({ path: 'memberRequests.user', select: 'uuid fullname username _created publicizeName' })
             .populate({ path: 'apiKeys', select: 'uuid' });
 
         if (!organization) {
@@ -186,6 +221,9 @@ exports.getOrganization = async function (req, res) {
                 message: 'No organization found for this uuid',
             });
         }
+
+        removePrivateNames([organization]);
+
     } catch (err) {
         console.error(err);
         return res.status(500).send({

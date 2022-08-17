@@ -77,7 +77,7 @@ export default function AddMember({ url }) {
         // remove users already in the member request queue
         res = res.filter(user => organization.memberRequests.find(member => member.user.id === user._id) === undefined);
 
-        setUsers(res.map(v => ({ id: v._id, name: v.fullname + " - " + v.email })))
+        setUsers(res.map(v => ({ id: v._id, name: v.username + " - " + (v.fullname || "Name Not Provided") })))
     }
 
     if (!organization) {
@@ -115,11 +115,11 @@ export default function AddMember({ url }) {
                                 {
                                     member ?
                                         <div style={{ paddingTop: "1.5em" }}>
-                                            <Detail title='name'>
-                                                {props.values.user.fullname}
+                                            <Detail title='username'>
+                                                {props.values.user.username}
                                             </Detail>
-                                            <Detail title='email'>
-                                                {props.values.user.email}
+                                            <Detail title='name'>
+                                                {props.values.user.fullname != undefined ? props.values.user.fullname : "Not Made Public"}
                                             </Detail>
                                         </div>
                                         :
@@ -194,9 +194,9 @@ export default function AddMember({ url }) {
                         <div className="grid-col">
                             {
                                 pending ?
-                                    <span>Are you sure you want to deny <strong>{member.user.fullname}</strong> from joining <strong>{organization.name}</strong>?</span>
+                                    <span>Are you sure you want to deny <strong>{member.user.username}</strong> from joining <strong>{organization.name}</strong>?</span>
                                     :
-                                    <span>Are you sure you want to remove <strong>{member.user.fullname}</strong> from <strong>{organization.name}</strong>?</span>
+                                    <span>Are you sure you want to remove <strong>{member.user.username}</strong> from <strong>{organization.name}</strong>?</span>
 
                             }
                         </div>

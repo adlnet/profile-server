@@ -159,6 +159,11 @@ export function createAccount(createRequest) {
                 });
             }
         } catch (err) {
+
+            if (window.grecaptcha != undefined && window.grecaptcha.reset != undefined) {
+                window.grecaptcha.reset();
+            }
+            
             return batch(() => {
                 dispatch({
                     type: ERROR_CREATE,

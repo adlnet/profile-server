@@ -19,8 +19,8 @@ module.exports = {
     properties: {
         username: {
             type: 'string',
-            pattern: "^[a-zA-Z0-9]*$",
-            customError: "Username is required and must not have special characters."
+            pattern: "^[a-zA-Z0-9]([\-_]*[a-zA-Z0-9])*$",
+            customError: "Username is required.  Hyphens and underscores are allowed, but not as the first or last characters."
         },
         email: {
             type: 'string',
@@ -51,6 +51,10 @@ module.exports = {
         lastname:
         {
             type: 'string',
+        },
+        publicizeName:
+        {
+            type: 'boolean',
         },
     },
     additionalProperties: false,

@@ -33,6 +33,10 @@ const userSchema = mongoose.Schema(
         },
         firstname: String,
         lastname: String,
+        publicizeName: {
+            type: Boolean,
+            default: false
+        },
         passwordHash: String,
         email: {
             type: String,
@@ -70,7 +74,7 @@ const userSchema = mongoose.Schema(
 userSchema.plugin(uniqueValidator);
 
 userSchema.virtual('fullname').get(function () {
-    return `${this.firstname} ${this.lastname}`;
+    return this.publicizeName ? `${this.firstname} ${this.lastname}` : undefined;
 });
 
 userSchema.methods.checkPassword = function (plaintext) {

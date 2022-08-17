@@ -30,6 +30,13 @@ const SessionHandler = require("./util/SessionHandler");
 
 const sessionHandler = new SessionHandler();
 
+function isUsernameTaken(username) {
+    return new Promise((resolve, reject) => {
+        let usernameExpr = toCaseInsenstiveRegexp(username)
+        user.findOne({ username: usernameExpr }, async (err, _user) => resolve(!!_user));
+    });
+}
+
 function doesUsernameHaveErrors(value) {
 
     if (value == undefined) {
@@ -40,21 +47,24 @@ function doesUsernameHaveErrors(value) {
         return 'Username must be a string';
     }
 
-    if (value != value.replace(/[^a-zA-Z0-9]/g, "")) {
-        return 'Username cannot contain special characters.';
+    if (/^[a-zA-Z0-9]([\-_]*[a-zA-Z0-9])*$/g.test(value) == false) {
+        return 'Username is required.  Hyphens and underscores are allowed, but not as the first or last characters.';
     }
 
     return undefined;
 }
 
 function escapeRegExp(text) {
-    if (!text) return '.*';
-    return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
+    if (!text) 
+        return '.*';
+    else
+        return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, '\\$&');
 }
 
 function toCaseInsenstiveRegexp(text) {
     return new RegExp(escapeRegExp(text), 'i');
 }
+
 module.exports.passport = passport;
 
 exports.setupPassport = function () {
@@ -180,12 +190,13 @@ exports.status = function (req, res, next) {
         user: {
             username: req.user.username,
             usernameChosen: req.user.usernameChosen,
-            fullname: req.user.fullname,
+            fullname: `${req.user.firstname} ${req.user.lastname}`,
             firstname: req.user.firstname,
             lastname: req.user.lastname,
             email: req.user.email,
             type: req.user.type,
             uuid: req.user.uuid,
+            publicizeName: req.user.publicizeName
         },
     });
 };
@@ -207,6 +218,14 @@ exports.createUser = function (req, res, next) {
                 });
             }
 
+            let usernameTaken = await isUsernameTaken(request.username);
+            if (usernameTaken) {
+                return res.status(400).send({
+                    success: true,
+                    err: "Username is taken, please choose a different one.",
+                });
+            }
+
             let usernameError = doesUsernameHaveErrors(request.username);
             if (usernameError) {
                 return res.status(400).send({
@@ -221,10 +240,12 @@ exports.createUser = function (req, res, next) {
             newuser.usernameChosen = true;
             newuser.firstname = request.firstname;
             newuser.lastname = request.lastname;
+
             // var randomSalt = CryptoJS.lib.WordArray.random(128 / 8)
             const randomSalt = crypto.randomBytes(16);
             newuser.salt = randomSalt.toString('hex');
             newuser.passwordHash = hashPassword(newuser.email, newuser.salt, request.password);
+            
             newuser.verifiedEmail = true;
             newuser.email = request.email;
             // newuser.verifyCode = CryptoJS.lib.WordArray.random(128 / 8).toString();
@@ -549,7 +570,8 @@ exports.editAccount = async function (req, res) {
                 err: 'Another account on the system already uses this email address.',
             });
         }
-
+        
+        req.user.publicizeName = req.body.publicizeName;
         req.user.email = req.body.email;
         req.user.firstname = req.body.firstname;
         req.user.lastname = req.body.lastname;

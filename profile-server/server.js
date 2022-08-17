@@ -30,7 +30,9 @@ async function main() {
         });
 
         console.prodLog("Starting temporary username migration ...");
-        await meta.ensureTemporaryUsernames();
+        let additions = await meta.ensureTemporaryUsernames();
+
+        console.prodLog(`Assigned ${additions} temporary usernames.`);
     
         app.listen(settings.port);
         console.prodLog(`Server started on port ${settings.port}`);

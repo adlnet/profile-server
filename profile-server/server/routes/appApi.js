@@ -130,22 +130,45 @@ function setRegex(column, searchArray) {
 
 router.get('/user', async (req, res, next) => {
     let search = req.query.search;
-    let query = {};
+    let queryUsernames = {};
+    let queryRealNames = {};
     if (search) {
         search = search.split(' ')
             .map(s => s.trim())
             .filter(s => s);
-        query = {
+        queryUsernames = {
+            $or: [
+                { username: new RegExp(search, 'ig') },
+            ],
+        };
+        queryRealNames = {
             $or: [
                 { firstname: new RegExp(search, 'ig') },
                 { lastname: new RegExp(search, 'ig') },
-                { email: new RegExp(search, 'ig') },
             ],
         };
     }
 
-    const results = await models.user.find(query).select('firstname lastname fullname email uuid');
-    console.log('results', JSON.stringify(results));
+    let usernameResults = await models.user.find(queryUsernames).select('username');
+    let realNameResults = await models.user.find(queryRealNames).select('username fullname publicizeName');
+
+    let resultMap = {};
+
+    for (let user of usernameResults) {
+        delete user.fullname;
+        resultMap[user.username] = user;
+    }
+    for (let user of realNameResults) {
+        if (user.publicizeName) {
+            resultMap[user.username] = user;
+        }
+    }
+
+    let uniqueUsernames = Object.keys(resultMap);
+    let upperBound = uniqueUsernames.length >= 8 ? 8 : uniqueUsernames.length;
+    let top8 = Object.keys(resultMap).slice(0, upperBound);
+    let results = top8.map(username => resultMap[username]);
+
     res.send({
         success: true,
         users: results,

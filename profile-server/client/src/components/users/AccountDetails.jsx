@@ -26,6 +26,16 @@ import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 import api from "../../api"
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
+const MakePublicCheckbox = ({ field }) => {
+
+    return (
+        <div className="usa-checkbox">
+            <input {...field} type="checkbox" style={{width: "20px", height: "20px", margin: "5px"}}/>
+            <span className="details-label">Show Your Name?</span>
+        </div>  
+    );
+}
+
 export default function AccountDetails(props) {
     let dispatch = useDispatch();
     let userData = useSelector((store) => store.userData)
@@ -38,13 +48,12 @@ export default function AccountDetails(props) {
     const [orgToLeave, setOrgToLeave] = useState();
     const [isEditing, setIsEditing] = useState(false);
 
-
     useEffect(() => {
         dispatch(getOrganizations());
     }, [dispatch, userData]);
 
     const myOrgs = organizations && organizations.filter(org => org.members.find(mem => mem.user.uuid === userData.user.uuid));
-    const myOrgRequests = organizations && organizations.filter(org => org.memberRequests.find(mem => mem.user.uuid === userData.user.uuid))
+    const myOrgRequests = organizations && organizations.filter(org => org.memberRequests.find(mem => mem.user != undefined && mem.user.uuid === userData.user.uuid))
 
     function join() {
         history.push('/organization');
@@ -249,6 +258,7 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
                 firstname: user.firstname,
                 lastname: user.lastname,
                 email: user.email,
+                publicizeName: !!user.publicizeName,
                 newEmail: '',
                 type: user.type,
                 password: '',
@@ -257,6 +267,8 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
                 needsUsername: !user.usernameChosen
             }}
             validationSchema={Yup.object({
+                publicizeName: Yup.bool(),
+                username: Yup.string(),
                 email: Yup.string().email(),
                 lastname: Yup.string()
                     .required('Required'),
@@ -269,7 +281,6 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
             })}
             validateOnMount={true}
             onSubmit={async (values) => {
-
                 if (values.admin) {
                     values.type = "admin";
                     delete values.admin;
@@ -310,7 +321,20 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
                                         <label className="usa-label" htmlFor="lastname"><span className="text-secondary">*</span> <span className="details-label">Last Name</span></label>
                                         <Field name="lastname" type="text" className="usa-input" id="input-lastname" aria-required="true" />
                                     </ErrorValidation>
-
+                                    <br/>
+                                    <ErrorValidation name="publicizeName" type="input">
+                                        <Field 
+                                            name="publicizeName" 
+                                            type="checkbox" 
+                                            checked={formikProps.values.publicizeName}
+                                            component={MakePublicCheckbox} 
+                                        />
+                                        <br/>
+                                        <span className="usa-checkbox__label-description text-light">
+                                            Enabling this will cause your name to be publicly visible with your profile.  
+                                            If unchecked, only your username will be visible.
+                                        </span>
+                                    </ErrorValidation>
                                 </div>
                                 <div className="grid-col padding-left-2">
 

@@ -24,9 +24,13 @@ const assignTemporaryUsernames = (startingIndex) => new Promise((resolve, reject
 
         for (let k=0; k<users.length; k++) {
             let user = users[k];
+            if (user.username != undefined)
+                continue;
 
             user.username = `user-${startingIndex + k}`;
             user.save();
+
+            console.prodLog(`Assigning username of ${user.username} to ${user.email}`);
 
             additions = k;
         }
@@ -36,7 +40,7 @@ const assignTemporaryUsernames = (startingIndex) => new Promise((resolve, reject
 });
 
 module.exports = {
-    ensureTemporaryUsernames: async function() {
+    ensureTemporaryUsernames: () => new Promise((resolve, reject) => {
         
         metaModel.findOne(
             {
@@ -55,7 +59,9 @@ module.exports = {
                 metadata.startingIndex = startingIndex + additions;
     
                 await metadata.save();
+
+                resolve(additions);
         });
-    }
+    })
 }
 
