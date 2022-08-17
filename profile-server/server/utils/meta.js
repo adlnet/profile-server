@@ -27,7 +27,7 @@ const assignTemporaryUsernames = (startingIndex) => new Promise((resolve, reject
             if (user.username != undefined)
                 continue;
 
-            user.username = `user-${startingIndex + k}`;
+            user.username = `temp-username-${startingIndex + k}`;
             user.save();
 
             console.prodLog(`Assigning username of ${user.username} to ${user.email}`);
