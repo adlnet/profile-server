@@ -40,11 +40,15 @@ function isUsernameTaken(username) {
 function doesUsernameHaveErrors(value) {
 
     if (value == undefined) {
-        return 'You must provide a username';
+        return 'You must provide a username.';
     }
     
     if (typeof value != "string") {
-        return 'Username must be a string';
+        return 'Username must be a string.';
+    }
+
+    if (value.length < 4 || value.length > 24) {
+        return 'Username must be between 4 and 24 characters.';
     }
 
     if (/^[a-zA-Z0-9]([\-_]*[a-zA-Z0-9])*$/g.test(value) == false) {
@@ -292,7 +296,7 @@ exports.setUsername = function(req, res, next) {
                 });
             }
 
-            let usernameError = doesUsernameHaveErrors(request.username);
+            let usernameError = doesUsernameHaveErrors(req.body.username);
             if (usernameError) {
                 return res.status(400).send({
                     success: true,
@@ -305,7 +309,9 @@ exports.setUsername = function(req, res, next) {
 
             await req.user.save();
 
-            res.redirect("/user/account");
+            return res.status(200).send({
+                success: true,
+            });
         }
     );
 };

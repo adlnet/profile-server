@@ -166,7 +166,7 @@ router.get('/user', async (req, res, next) => {
 
     let uniqueUsernames = Object.keys(resultMap);
     let upperBound = uniqueUsernames.length >= 8 ? 8 : uniqueUsernames.length;
-    let top8 = Object.keys(resultMap).slice(0, upperBound);
+    let top8 = uniqueUsernames.slice(0, upperBound);
     let results = top8.map(username => resultMap[username]);
 
     res.send({

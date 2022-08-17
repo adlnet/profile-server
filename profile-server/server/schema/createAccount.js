@@ -20,7 +20,9 @@ module.exports = {
         username: {
             type: 'string',
             pattern: "^[a-zA-Z0-9]([\-_]*[a-zA-Z0-9])*$",
-            customError: "Username is required.  Hyphens and underscores are allowed, but not as the first or last characters."
+            customError: "The username must be between 4 and 24 characters.  Hyphens and underscores are allowed, but not as the first or last characters.",
+            minLength: 4,
+            maxLength: 24,
         },
         email: {
             type: 'string',

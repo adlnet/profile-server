@@ -24,15 +24,12 @@ const level = require('../utils/level');
 
 const Org = require('../ODM/models').organization;
 
-
 const permissionStack = [
     mustBeLoggedIn,
     getResource(Org, 'org', 'uuid'),
     permissions(undefined, ['admin']),
     level('admin'),
 ];
-
-
 
 members.get('/', getResource(Org, 'org', 'uuid'), controller.getMembers);
 members.post('/', ...permissionStack, controller.addMember);

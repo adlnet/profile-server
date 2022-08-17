@@ -578,6 +578,11 @@ class API {
 
         return body;
     }
+    async setUsername(setRequest) {
+        let body = await this.postJSON(`${appApiRoot}/user/username`, setRequest);
+
+        return body;
+    }
     async getSalt(email) {
         let body = await this.getJSON(`${appApiRoot}/user/salt?email=` + email);
 

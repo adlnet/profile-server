@@ -17,14 +17,16 @@ import React, { useState } from 'react';
 import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
 import ErrorValidation from '../controls/errorValidation';
-import { useSelector } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import api from "../../api";
+import * as user_actions from "../../actions/user";
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 import ReCAPTCHA from 'react-google-recaptcha';
 
 const recaptchaRef = React.createRef();
 
 export default function SelectUsername(props) {
+    let dispatch = useDispatch();
     let userData = useSelector((store) => store.userData)
     const [showConfirmation, setShowConfirmation] = useState(false);
     const alreadyHasUsername = userData.user.usernameChosen;
@@ -33,6 +35,10 @@ export default function SelectUsername(props) {
         username: "", 
         recaptcha: ""
     };
+
+    async function setUsername(setRequest) {
+        dispatch(user_actions.setUsername(setRequest));
+    }
 
     const validationSchema = Yup.object().shape({
         username: Yup.string().required(),
@@ -76,10 +82,8 @@ export default function SelectUsername(props) {
                     validationSchema={validationSchema}
                     validateOnchange={false}
                     validateOnMount={true}
-                    onSubmit={(values) => {
-                        //dispatch(... something about request password reset)
-                        setShowConfirmation(true);
-                        api.postJSON("/app/user/username", values);
+                    onSubmit={async(values) => {
+                        setUsername(values);
                     }}
                 >
                     {(formikProps) => (
@@ -90,6 +94,8 @@ export default function SelectUsername(props) {
                                 </div>
                                 <div className="grid-row">
                                     <div>This service has recently implemented usernames.  Please enter the username you would like to have.</div>
+                                    <br/>
+                                    <div>You can only set this <b>*once*</b>, so do pick carefully.</div>
                                 </div>
                                 <fieldset className="usa-fieldset">
 

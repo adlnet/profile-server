@@ -40,7 +40,6 @@ export default function Login(props) {
         history.push('./create')
     }
 
-
     async function signIn(loginRequest) {
         let salt = await api.getSalt(loginRequest.email);
         salt = CryptoJS.enc.Utf8.parse(salt);
@@ -62,7 +61,6 @@ export default function Login(props) {
 
             onSubmit={(values) => {
                 signIn(values);
-
             }}
         >
             {(formikProps) => (
