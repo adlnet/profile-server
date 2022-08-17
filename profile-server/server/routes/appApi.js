@@ -143,6 +143,7 @@ router.get('/user', async (req, res, next) => {
         };
         queryRealNames = {
             $or: [
+                { username: new RegExp(search, 'ig') },
                 { firstname: new RegExp(search, 'ig') },
                 { lastname: new RegExp(search, 'ig') },
             ],
@@ -150,12 +151,11 @@ router.get('/user', async (req, res, next) => {
     }
 
     let usernameResults = await models.user.find(queryUsernames).select('username');
-    let realNameResults = await models.user.find(queryRealNames).select('username fullname publicizeName');
+    let realNameResults = await models.user.find(queryRealNames).select('username firstname lastname fullname publicizeName');
 
     let resultMap = {};
 
     for (let user of usernameResults) {
-        delete user.fullname;
         resultMap[user.username] = user;
     }
     for (let user of realNameResults) {
