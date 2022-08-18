@@ -20,12 +20,40 @@
  * but I'd like to port this to a library at some point given how barebones Passport
  * is about actually doing this. 
  */
+const Redis = require("ioredis").default;
+const redisHelper = require("../../utils/redis");
+
+const PROFILE_SESSION_KEY = "PROFILE_SESSION_KEY";
+const PROFILE_SESSION_SAVE_FREQUENCY_MS = (process.env.PROFILE_SESSION_SAVE_FREQUENCY_MS || 2000);
+
 class SessionHandler {
     
+    /** @type {Redis} */
+    redisClient = null;
     sessionMap = {};
     
     constructor() {
+        this.redisClient = redisHelper.createClient();
         this.sessionMap = {};
+    }
+
+    async init() {
+        let existsResponse = await this.redisClient.exists(PROFILE_SESSION_KEY);
+        if (existsResponse === 1) {
+            let previousSessionStr = await this.redisClient.get(PROFILE_SESSION_KEY);
+            this.sessionMap = JSON.parse(previousSessionStr);
+        }
+
+        else {
+            this.sessionMap = {};
+        }
+
+        setInterval(async() => await this.saveSession(), PROFILE_SESSION_SAVE_FREQUENCY_MS);
+    }
+
+    async saveSession() {
+        let sessionStr = JSON.stringify(this.sessionMap);
+        await this.redisClient.set(PROFILE_SESSION_KEY, sessionStr);
     }
 
     /**
@@ -126,4 +154,13 @@ class SessionHandler {
     }
 }
 
-module.exports = SessionHandler;
+/** @type {SessionHandler} */
+const sessionHandler = new SessionHandler();
+
+module.exports = {
+    getSessionHandler: () => sessionHandler,
+    initSessionHandler: async() => {
+        await sessionHandler.init();
+    },
+    SessionHandler
+};

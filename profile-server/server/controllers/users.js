@@ -26,13 +26,12 @@ const safeCompare = require('safe-compare');
 // var CryptoJS = require("./utils/pbkdf2.js").CryptoJS;
 
 const crypto = require('crypto');
-const SessionHandler = require("./util/SessionHandler");
-
-const sessionHandler = new SessionHandler();
+const sessionHandling = require("./util/SessionHandler");
+const sessionHandler = sessionHandling.getSessionHandler();
 
 function isUsernameTaken(username) {
     return new Promise((resolve, reject) => {
-        let usernameExpr = toCaseInsenstiveRegexp(username)
+        let usernameExpr = toCaseInsenstiveRegexp(username);
         user.findOne({ username: usernameExpr }, async (err, _user) => resolve(!!_user));
     });
 }

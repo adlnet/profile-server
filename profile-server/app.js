@@ -20,13 +20,17 @@ const path = require('path');
 const favicon = require('serve-favicon');
 
 const cookieParser = require('cookie-parser');
-// const cookieSession = require('cookie-session');
 const bodyParser = require('body-parser');
 const compression = require('compression');
+const redisHelper = require("./server/utils/redis");
+
+let RedisStore = require("connect-redis")(serverSession);
+let redisClient = redisHelper.createClient();
 
 require('dotenv').config();
 
 const app = express();
+
 
 // view engine setup
 app.set('views', path.join(process.cwd(), 'server', 'views'));
@@ -45,18 +49,15 @@ app.use(express.static(path.join(__dirname, 'client', 'build')));
 app.use(express.static(path.join(__dirname, 'client', 'public')));
 app.use(compression());
 
-// app.use(cookieSession({
-//     name: 'profileSession', // stop colliding with other  projects
-//     keys: [cookieSecret],
-//     maxAge: 24 * 60 * 60 * 1000
-// }));
-
 app.use(serverSession({
     name: 'profileSession', // stop colliding with other  projects
     secret: cookieSecret,
     resave: true,
     saveUninitialized: true,
     rolling: true,
+    store: new RedisStore({
+        client: redisClient
+    }),
     cookie: {
         secure: false,
         maxAge: 24 * 60 * 60 * 1000

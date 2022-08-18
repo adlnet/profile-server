@@ -15,6 +15,8 @@
 **************************************************************** */
 const mongoose = require('mongoose');
 const meta = require("./server/utils/meta");
+const sessionHandling = require("./server/controllers/util/SessionHandler");
+
 require("./server/logging");
 
 const app = require('./app');
@@ -33,6 +35,9 @@ async function main() {
         let additions = await meta.ensureTemporaryUsernames();
 
         console.prodLog(`Assigned ${additions} temporary usernames.`);
+
+        console.prodLog(`Initializing session handler ...`);
+        await sessionHandling.initSessionHandler();
     
         app.listen(settings.port);
         console.prodLog(`Server started on port ${settings.port}`);
