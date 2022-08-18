@@ -18,6 +18,9 @@ const searchRouter = express.Router();
 module.exports = searchRouter;
 
 function escapeRegExp(string) {
+    if (string == undefined)
+        string = "";
+    
     return string.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); // $& means the whole matched string
 }
 
