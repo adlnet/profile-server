@@ -101,8 +101,6 @@ exports.getOrganizations = async function (req, res) {
                 .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
                 .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' });
         }
-        
-        removePrivateNames(organizations);
 
         orphanProfile = await profileModel.findOne({ orphanContainer: true});
     } catch (err) {
@@ -112,7 +110,10 @@ exports.getOrganizations = async function (req, res) {
             message: err.message,
         });
     }
+
     organizations = organizations.map(i => i.toObject({ virtuals: true }));
+    removePrivateNames(organizations);
+
     if (req.user) {
         for (const i in organizations) {
             organizations[i].membership = organizations[i].members.filter(
@@ -166,7 +167,7 @@ exports.getOrganizationPublic = async function (req, res) {
     let organization;
     try {
         organization = await organizationModel.findOne({ uuid: req.params.org })
-            .populate('createdBy', 'uuid fullname')
+            .populate('createdBy', 'uuid fullname publicizeName')
             .populate({
                 path: 'profiles',
                 select: 'uuid updatedOn',
@@ -190,8 +191,14 @@ exports.getOrganizationPublic = async function (req, res) {
             message: err.message,
         });
     }
+
     organization = organization.toObject({ virtuals: true });
     organization.membership = req.permissionLevel;
+
+    if (organization.createdBy != null && organization.createdBy.publicizeName == false) {
+        delete organization.createdBy.fullname;
+    }
+
     res.send({
         success: true,
         organization: organization,
@@ -222,8 +229,6 @@ exports.getOrganization = async function (req, res) {
             });
         }
 
-        removePrivateNames([organization]);
-
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -233,6 +238,9 @@ exports.getOrganization = async function (req, res) {
     }
     organization = organization.toObject({ virtuals: true });
     organization.membership = req.permissionLevel;
+
+    removePrivateNames([organization]);
+
     res.send({
         success: true,
         organization: organization,
