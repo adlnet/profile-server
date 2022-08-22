@@ -193,7 +193,15 @@ template.methods.export = async function (profileVersionIRI) {
 
     // can't have both objectActivityType and objectStatementRefTemplate
     if (this.objectActivityType) {
-        t.objectActivityType = (await this.populate('objectActivityType', 'iri').execPopulate()).objectActivityType.iri;
+        let populatedObject = await this.populate('objectActivityType', 'iri').execPopulate();
+        let populatedActivityType = populatedObject.objectActivityType;
+
+        // console.prodLog("Called by:", this);
+        // console.prodLog("Current Object:", t);
+        // console.prodLog("Populated Object:", populatedObject);
+        // console.prodLog("Populated Type:", populatedActivityType);
+
+        t.objectActivityType = populatedActivityType.iri;
     } else if (this.objectStatementRefTemplate && this.objectStatementRefTemplate.length) {
         t.objectStatementRefTemplate = (await this.populate('objectStatementRefTemplate', 'iri').execPopulate()).objectStatementRefTemplate.map(v => v.iri);
     }
@@ -214,9 +222,11 @@ template.methods.export = async function (profileVersionIRI) {
                 presence: v.presence,
                 scopeNote: v.scopeNote,
             };
+            
             if (v.any && v.any.length) ret.any = v.any;
             if (v.all && v.all.length) ret.all = v.all;
             if (v.none && v.none.length) ret.none = v.none;
+            
             return ret;
         });
     }

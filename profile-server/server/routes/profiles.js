@@ -50,6 +50,7 @@ function countUIViewProfile(req, res, next) {
 const metrics = require('../controllers/metrics');
 
 const getProfile = getResource(Profile, 'profile');
+
 // Protected by parent router
 profiles.post('/', ...orgPermissionStack, controller.createProfile);
 profiles.get('/', controller.getProfiles);

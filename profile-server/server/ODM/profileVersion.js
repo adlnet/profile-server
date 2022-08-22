@@ -49,7 +49,10 @@ const profileVersion = new mongoose.Schema({
         type: String,
         validate: {
             validator: function(value) {
-                return checkIRI(value);
+                let valueIsEmpty = value == "";
+                let valueIsIRI = checkIRI(value);
+
+                return valueIsEmpty || valueIsIRI;
             }
         }
     },

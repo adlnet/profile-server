@@ -225,8 +225,7 @@ exports.getConcept = async function (req, res) {
             })
             .populate('recommendedTerms')
             // .populate('updatedBy', 'firstname lastname email uuid');
-            // TODO: Username
-            .populate('updatedBy', 'firstname lastname');
+            .populate('updatedBy', 'username uuid');
 
         if (!concept) {
             return res.status(404).send({
