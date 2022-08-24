@@ -38,6 +38,16 @@ const mustBeOrgAdmin = function() {
     return permissions("resource", ["admin"]);
 };
 
+const doesUserBelongToOrg = async function(user, orgUUID) {
+    if (!user)
+        return false;
+
+    if (user.type === 'admin')        
+        return true;
+
+    return false;
+}
+
 module.exports = {
     mustBeLoggedIn,
     mustBeSiteAdmin,

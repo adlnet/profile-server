@@ -33,7 +33,7 @@ module.exports.ensureOrphanProfileExists = async function(organizationUuid, user
         const newProfile = new profileModel();
         newProfile.organization = organization._id;
         newProfile.orphanContainer = true;
-        newProfile.iri = 'https://profiles.usalearning.net/profiles/OrphanProfile';
+        newProfile.iri = 'https://profiles.adlnet.gov/profiles/OrphanProfile';
 
         const profileVersion = new profileVersionModel();
         profileVersion.organization = organization._id;

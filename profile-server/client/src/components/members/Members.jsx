@@ -42,6 +42,9 @@ export default function Members({ isMember }) {
         return '';
     }
 
+    let knownMembers = Array.isArray(organization.members) ? organization.members : [];
+    let knownMemberRequests = Array.isArray(organization.memberRequests) ? organization.memberRequests : [];
+
     return (
         <Switch>
             <Route exact path={path}>
@@ -61,7 +64,7 @@ export default function Members({ isMember }) {
                         }
                     </div>
                 </div>
-                <MemberTable isAdmin={isAdmin} members={[...organization.memberRequests, ...organization.members]}></MemberTable>
+                <MemberTable isAdmin={isAdmin} members={[...knownMemberRequests, ...knownMembers]}></MemberTable>
             </Route>
             <Route exact path={`${path}/add`}>
                 {

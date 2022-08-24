@@ -72,9 +72,11 @@ export default function Profile() {
         return false;
     }
 
-    let isMember = organization
-        && (organization.membership
-            || (userData && userData.user && organization.members.map(m => m.user.uuid).includes(userData.user.uuid)));
+    // let isMember = organization
+    //     && (organization.membership
+    //         || (userData && userData.user && organization.members.map(m => m.user.uuid).includes(userData.user.uuid)));
+
+    let isMember = organization && !!organization.membership;
 
     async function verifyProfile(values) {
         showVerificationReview(false);

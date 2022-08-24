@@ -52,6 +52,38 @@ function removePrivateNames(organizations) {
     }
 }
 
+function cleanMembershipInfo(organizations, user) {
+
+    for (let org of organizations) {
+
+        org.memberCount = org.members.length;
+
+        let matchingMembers = org.members.filter(i => i.user.id.toString() == user.id);
+        let belongsToOrg = matchingMembers.length > 0;
+        if (belongsToOrg) { 
+            org.membership = matchingMembers[0].level; 
+        } 
+        
+        else {
+            delete org.members;
+            delete org.memberRequests;
+        }
+    }
+}
+
+function removeMemberInfo(organizations) {
+    for (let org of organizations) {
+
+        if (Array.isArray(org.members))
+            org.memberCount = org.members.length;
+        else
+            org.memberCount = "Unknown";
+
+        delete org.members;
+        delete org.memberRequests;
+    }
+}
+
 function setRegex(column, searchArray) {
     return searchArray.map(s => ({ [column]: { $regex: `.*${s}.*`, $options: 'i' } }));
 }
@@ -115,12 +147,10 @@ exports.getOrganizations = async function (req, res) {
     removePrivateNames(organizations);
 
     if (req.user) {
-        for (const i in organizations) {
-            organizations[i].membership = organizations[i].members.filter(
-                i => i.user.id.toString() == req.user.id,
-            );
-            if (organizations[i].membership[0]) { organizations[i].membership = organizations[i].membership[0].level; } else delete organizations[i].membership;
-        }
+        cleanMembershipInfo(organizations, req.user);
+    }
+    else {
+        removeMemberInfo(organizations);
     }
 
     // Remove orphanProfile from results
@@ -193,7 +223,13 @@ exports.getOrganizationPublic = async function (req, res) {
     }
 
     organization = organization.toObject({ virtuals: true });
-    organization.membership = req.permissionLevel;
+
+    removePrivateNames([organization]);
+    removeMemberInfo([organization]);
+
+    if (req.permissionLevel) {
+        organization.membership = req.permissionLevel;
+    }
 
     if (organization.createdBy != null && organization.createdBy.publicizeName == false) {
         delete organization.createdBy.fullname;
@@ -240,6 +276,11 @@ exports.getOrganization = async function (req, res) {
     organization.membership = req.permissionLevel;
 
     removePrivateNames([organization]);
+    
+    if (req.user)
+        cleanMembershipInfo([organization], req.user);
+    else
+        removeMemberInfo([organization]);
 
     res.send({
         success: true,

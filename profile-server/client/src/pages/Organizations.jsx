@@ -209,7 +209,7 @@ function getColumns(user, joinAction) {
         },
         {
             Header: 'Members',
-            accessor: 'members.length',
+            accessor: 'memberCount',
             style: {
                 width: '11%',
                 textAlign: 'center'

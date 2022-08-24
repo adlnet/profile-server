@@ -24,17 +24,23 @@ const level = require('../utils/level');
 
 const Org = require('../ODM/models').organization;
 
-const permissionStack = [
+const memberPermissionStack = [
+    mustBeLoggedIn,
+    getResource(Org, 'org', 'uuid'),
+    permissions(undefined, ['admin', 'member'])
+];
+
+const adminPermissionStack = [
     mustBeLoggedIn,
     getResource(Org, 'org', 'uuid'),
     permissions(undefined, ['admin']),
     level('admin'),
 ];
 
-members.get('/', getResource(Org, 'org', 'uuid'), controller.getMembers);
-members.post('/', ...permissionStack, controller.addMember);
-members.put('/', ...permissionStack, controller.updateMember);
-members.delete('/:memberId', ...permissionStack, controller.removeMember);
+members.get('/', ...memberPermissionStack, controller.getMembers);
+members.post('/', ...adminPermissionStack, controller.addMember);
+members.put('/', ...adminPermissionStack, controller.updateMember);
+members.delete('/:memberId', ...adminPermissionStack, controller.removeMember);
 
 
 module.exports = members;

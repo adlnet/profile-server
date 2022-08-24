@@ -34,11 +34,7 @@ module.exports.getMembers = async function (req, res, next) {
     await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
 
-    console.prodLog("Pre-Clean Members:", members);
-
     removePrivateNames(members);
-
-    console.prodLog("Post-Clean Members:", members);
 
     res.send({
         success: true,

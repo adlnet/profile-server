@@ -132,7 +132,7 @@ export default function OrganizationHeader({ organization, url, isMember, user, 
                                 <NavLink to={`${url}/members`}
                                     className="usa-nav__link"
                                     activeClassName="usa-current">
-                                    <span className="text-bold">{`Members (${organization.members ? organization.members.length : '0'})`}</span>
+                                    <span className="text-bold">{`Members (${organization.members ? organization.members.length : organization.memberCount ? organization.memberCount : '0'})`}</span>
                                 </NavLink>
 
                             </li>
