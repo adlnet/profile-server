@@ -17,7 +17,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function ProfileTableRow({ profile, site_url, isMember, onOptionalSingleSelect, forceShowDrafts }) {
-    if (!isMember && profile && !profile.currentPublishedVersion) return <></>;
+    if (!isMember && profile && !profile.currentPublishedVersion) 
+        return <></>;
 
     function selectedRow(e) {
         if (onOptionalSingleSelect) {
@@ -27,8 +28,8 @@ export default function ProfileTableRow({ profile, site_url, isMember, onOptiona
 
     let canClick = (onOptionalSingleSelect);
     
-    let hasDraftVersion = profile.currentDraftVersion;
-    let hasPublishedVersion = profile.currentDraftVersion;
+    let hasDraftVersion = !!profile.currentDraftVersion;
+    let hasPublishedVersion = !!profile.currentPublishedVersion;
 
     return (
         <tr onClick={selectedRow}>
@@ -57,7 +58,7 @@ export default function ProfileTableRow({ profile, site_url, isMember, onOptiona
                                 className="usa-link button-link"
                                 style={canClick ? {pointerEvents: "none"} : null}
                             >
-                                {profile?.uuid}
+                                {profile.currentPublishedVersion != undefined ? profile.currentPublishedVersion.name : profile.currentPublishedVersion.uuid}
                                 {profile.currentPublishedVersion?.isVerified && <img className="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />}
                             </Link>
                 }
