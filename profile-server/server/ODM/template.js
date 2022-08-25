@@ -196,14 +196,20 @@ template.methods.export = async function (profileVersionIRI) {
         let populatedObject = await this.populate('objectActivityType', 'iri').execPopulate();
         let populatedActivityType = populatedObject.objectActivityType;
 
-        // console.prodLog("Called by:", this);
-        // console.prodLog("Current Object:", t);
-        // console.prodLog("Populated Object:", populatedObject);
-        // console.prodLog("Populated Type:", populatedActivityType);
+        try {
+            t.objectActivityType = populatedActivityType.iri;
+        }
+        catch (err) {
+            console.prodLog("Could not locate IRI for Template.");
+            console.prodLog("Searched for this.objectActivityType with", this.objectActivityType);
+            t.objectActivityType = "error:not-found";
+        }
 
-        t.objectActivityType = populatedActivityType.iri;
     } else if (this.objectStatementRefTemplate && this.objectStatementRefTemplate.length) {
-        t.objectStatementRefTemplate = (await this.populate('objectStatementRefTemplate', 'iri').execPopulate()).objectStatementRefTemplate.map(v => v.iri);
+        let populatedObject = await this.populate('objectStatementRefTemplate', 'iri').execPopulate();
+        let templateIRIs = populatedObject.objectStatementRefTemplate.map(v => v.iri);
+
+        t.objectStatementRefTemplate = templateIRIs;
     }
 
     for (const typeprop of ['contextStatementRefTemplate', 'contextGroupingActivityType', 'contextParentActivityType', 'contextOtherActivityType', 'contextCategoryActivityType', 'attachmentUsageType']) {
