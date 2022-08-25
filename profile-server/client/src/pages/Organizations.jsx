@@ -76,9 +76,12 @@ export default function Organizations(props) {
 
         for(let org of data) {
             let userFound = false;
-            for(let member of org.members) {
-                if (member.user.uuid === user.uuid) {
-                    userFound = true;
+            
+            if (Array.isArray(org.members)) {
+                for(let member of org.members) {
+                    if (member.user.uuid === user.uuid) {
+                        userFound = true;
+                    }
                 }
             }
             if (userFound) {
@@ -251,8 +254,8 @@ function JoinButton(user, joinAction) {
     return function JoinCell({ cell: { row: { original } } }) {
         try {
             if (user) {
-                const orgMember = user && original.members && original.members.find(m => m.user && m.user.uuid === user.uuid);
-                const pendingMember = user && original.memberRequests && original.memberRequests.find(m => m.user && m.user.uuid === user.uuid);
+                const orgMember = user && original.members && Array.isArray(original.members) && original.members.find(m => m.user && m.user.uuid === user.uuid);
+                const pendingMember = user && original.memberRequests && Array.isArray(original.memberRequests) && original.memberRequests.find(m => m.user && m.user.uuid === user.uuid);
                 return orgMember
                     ? <em>{`(${orgMember.level})`}</em>
                     : (pendingMember)
