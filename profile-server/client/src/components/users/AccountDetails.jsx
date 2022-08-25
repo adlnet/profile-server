@@ -52,8 +52,8 @@ export default function AccountDetails(props) {
         dispatch(getOrganizations());
     }, [dispatch, userData]);
 
-    const myOrgs = organizations && organizations.filter(org => org.members.find(mem => mem.user.uuid === userData.user.uuid));
-    const myOrgRequests = organizations && organizations.filter(org => org.memberRequests.find(mem => mem.user != undefined && mem.user.uuid === userData.user.uuid))
+    const myOrgs = organizations && organizations.filter(org => Array.isArray(org.members) ? org.members.find(mem => mem.user.uuid === userData.user.uuid) : []);
+    const myOrgRequests = organizations && organizations.filter(org => Array.isArray(org.memberRequests) ? org.memberRequests.find(mem => mem.user != undefined && mem.user.uuid === userData.user.uuid) : [])
 
     function join() {
         history.push('/organization');

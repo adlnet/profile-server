@@ -65,8 +65,12 @@ function cleanMembershipInfo(organizations, user) {
         } 
         
         else {
-            delete org.members;
-            delete org.memberRequests;
+            // delete org.members;
+            // delete org.memberRequests;
+
+            // TODO: Resolve on UI side and eventually remove this.
+            org.members = [];
+            org.memberRequests = [];
         }
     }
 }
