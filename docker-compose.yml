@@ -33,6 +33,7 @@ services:
       - RECAPTCHA_SECRET_KEY
       - REDIS_HOST
       - PROFILE_SESSION_SAVE_FREQUENCY_MS
+      - NODE_ENV
   
   redis:
     image: redis
