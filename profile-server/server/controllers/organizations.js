@@ -17,7 +17,6 @@ const organizationModel = require('../ODM/models').organization;
 const profileModel = require('../ODM/models').profile;
 const userModel = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
-const { resendValidation } = require('./users');
 
 function removePrivateNames(organizations) {
 
@@ -377,7 +376,7 @@ exports.approveJoinOrganization = async function (req, res, next) {
     try {
         const org = req.resource;
         if (!org) {
-            return resendValidation.status(404).send({
+            return res.status(404).send({
                 success: false,
                 message: 'The requested organization was not found.',
             });
@@ -415,7 +414,7 @@ async function removeMemberFromOrganization(org, userId) {
  */
 exports.denyJoinOrganization = async function (req, res) {
     if (!req.resource) {
-        return resendValidation.status(404).send({
+        return res.status(404).send({
             success: false,
             message: 'The requested organization was not found.',
         });
@@ -444,7 +443,7 @@ exports.denyJoinOrganization = async function (req, res) {
  */
 exports.revokeJoinOrganization = async function (req, res) {
     if (!req.resource) {
-        return resendValidation.status(404).send({
+        return res.status(404).send({
             success: false,
             message: 'The requested organization was not found.',
         });
