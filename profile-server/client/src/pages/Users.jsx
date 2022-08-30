@@ -23,6 +23,8 @@ import NotLoggedInRoute from "../components/users/NotLoggedInRoute";
 import PrivateRoute from "../components/users/PrivateRoute";
 import RequestPasswordReset from '../components/users/RequestPasswordReset';
 import ResetPassword from '../components/users/ResetPassword';
+import ValidateEmail from '../components/users/ValidateEmail';
+import ResendValidationEmail from '../components/users/ResendValidationEmail';
 
 export default function Users(props) {
     const match = useRouteMatch();
@@ -46,6 +48,12 @@ export default function Users(props) {
             </NotLoggedInRoute>
             <NotLoggedInRoute path={`${match.path}/resetpassword`} {...props}>
                 <ResetPassword></ResetPassword>
+            </NotLoggedInRoute>
+            <NotLoggedInRoute path={`${match.path}/validate`} {...props}>
+                <ValidateEmail></ValidateEmail>
+            </NotLoggedInRoute>
+            <NotLoggedInRoute path={`${match.path}/resend`} {...props}>
+                <ResendValidationEmail></ResendValidationEmail>
             </NotLoggedInRoute>
         </Switch>
     </main>

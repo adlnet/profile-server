@@ -29,6 +29,10 @@ export const START_CREATE = 'START_CREATE';
 export const FINISH_CREATE = 'FINISH_CREATE';
 export const ERROR_CREATE = 'ERROR_CREATE';
 
+export const START_VALIDATE = 'START_VALIDATE';
+export const FINISH_VALIDATE = 'FINISH_VALIDATE';
+export const ERROR_VALIDATE = 'ERROR_VALIDATE';
+
 export const START_SET_USERNAME = 'START_SET_USERNAME';
 export const FINISH_SET_USERNAME = 'FINISH_SET_USERNAME';
 export const ERROR_SET_USERNAME = 'ERROR_SET_USERNAME';
@@ -219,7 +223,102 @@ export function createAccount(createRequest) {
             type: FINISH_CREATE,
         });
 
-        history.push('./login')
+        // history.push('./login');
+        history.push('./validate');
+    };
+}
+
+export function resendValidation(values) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_VALIDATE,
+        });
+
+        let validateResult;
+        try {
+            validateResult = await API.resendValidation(values);
+            if (!validateResult.success) {
+
+                return batch(() => {
+                    dispatch({
+                        type: ERROR_VALIDATE,
+                        error: validateResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_VALIDATE,
+                    });
+                });
+            }
+        } catch (err) {
+
+            return batch(() => {
+                dispatch({
+                    type: ERROR_VALIDATE,
+                    error: err.message,
+                    errorType: 'Validate Account'
+                });
+
+                dispatch({
+                    type: FINISH_VALIDATE,
+                });
+            });
+        }
+        dispatch({
+            type: FINISH_VALIDATE,
+        });
+
+        history.push('./validate');
+    };
+}
+
+export function attemptValidation(values) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_VALIDATE,
+        });
+
+        let loggedIn = false;
+        try {
+            let validateResult = await API.attemptValidation(values);
+            if (!validateResult.success) {
+
+                return batch(() => {
+                    dispatch({
+                        type: ERROR_VALIDATE,
+                        error: validateResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_VALIDATE,
+                    });
+                });
+            }
+            loggedIn = await checkStatus()(dispatch);
+        } catch (err) {
+            return dispatch({
+                type: ERROR_VALIDATE,
+                error: err.message,
+                errorType: 'Account Validation'
+            });
+        }
+
+        if (loggedIn) {
+
+            history.push('/')
+            dispatch({
+                type: FINISH_LOGIN,
+            });
+        }
+        else
+            return dispatch({
+                type: LOGIN_FAILED,
+                error: "Validation unsuccessful.",
+            });
+
+        dispatch({
+            type: FINISH_VALIDATE,
+        });
     };
 }
 

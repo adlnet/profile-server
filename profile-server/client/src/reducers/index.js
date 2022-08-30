@@ -378,6 +378,9 @@ function userData(userData, action) {
     if (action.type == user_actions.LOGIN_FAILED) {
         userData.loginFeedback = action.error;
     }
+    if (action.type == user_actions.ERROR_VALIDATE) {
+        userData.loginFeedback = action.error;
+    }
 
     return userData;
 }

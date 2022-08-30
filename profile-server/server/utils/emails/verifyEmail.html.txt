@@ -8,9 +8,9 @@
 <body>
 You're receiving this email because you signed up for an account on the xAPI Profile Server. You'll need to verify the account's email address before you can start using the system.
 <br><br>
-Here's the link to verify {{fullname}}'s email:
-<br><br>
-<a href='{{verify_url}}'> Verify your account </a>
+Here's the link to verify your email: 
+
+{{link}}
 
 </body>
 </html>

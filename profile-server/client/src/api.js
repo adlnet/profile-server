@@ -578,6 +578,16 @@ class API {
 
         return body;
     }
+    async attemptValidation(validationRequest) {
+        let body = await this.postJSON(`${appApiRoot}/user/validate`, validationRequest);
+
+        return body;
+    }
+    async resendValidation(resendRequest) {
+        let body = await this.postJSON(`${appApiRoot}/user/resendValidation`, resendRequest);
+
+        return body;
+    }
     async setUsername(setRequest) {
         let body = await this.postJSON(`${appApiRoot}/user/username`, setRequest);
 

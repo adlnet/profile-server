@@ -36,6 +36,9 @@ const app = express();
 app.set('views', path.join(process.cwd(), 'server', 'views'));
 app.set('view engine', 'hjs');
 
+// Required for the rate limiter
+app.set('trust proxy', 1);
+
 // uncomment after placing your favicon in /public
 // app.use(favicon(path.join(__dirname, 'public', 'favicon.ico')));
 

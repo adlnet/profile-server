@@ -20,6 +20,7 @@ const passport = new Passport.Passport();
 const LocalStrategy = require('passport-local');
 const hashPassword = require('../utils/hashPassword');
 const mongoSanitize = require('mongo-sanitize');
+const ValidationError = require("../errorTypes/validationError");
 
 const safeCompare = require('safe-compare');
 
@@ -73,12 +74,12 @@ module.exports.passport = passport;
 exports.setupPassport = function () {
     const settings = require('../settings');
 
-    const passportConfig = { 
+    const rootSiteConfig = { 
         passReqToCallback: true, 
         usernameField: 'email' 
     };
 
-    const passportStrategy = new LocalStrategy(passportConfig, (req, email, password, done) => {
+    const rootSiteStrategy = new LocalStrategy(rootSiteConfig, (req, email, password, done) => {
         user.findOne({ email: email }, async (err, user) => {
             if (err) {
                 console.log(err);
@@ -121,7 +122,31 @@ exports.setupPassport = function () {
         });
     });
 
-    passport.use('rootSiteLogin', passportStrategy);
+    const validationConfig = {
+        passReqToCallback: true, 
+        usernameField: 'validationCode',
+        passwordField: 'validationCode'
+    };
+
+    const validationStrategy = new LocalStrategy(validationConfig, (req, code, _, done) => {
+        user.findOne({ verifyCode: code }, async (err, user) => {
+            if (err) {
+                console.log(err);
+                done(null, false);
+                return;
+            }
+            if (!user.verifiedEmail) {
+                sessionHandler.addToSessionMap(user.uuid, req.sessionID);
+                done(null, user);
+            } 
+            else {
+                done(null, false);
+            }
+        });
+    });
+
+    passport.use('rootSiteLogin', rootSiteStrategy);
+    passport.use('emailValidationLogin', validationStrategy);
 
     passport.serializeUser((user, done) => {
         console.log('serializing user', user);
@@ -134,6 +159,7 @@ exports.setupPassport = function () {
 
     passport.deserializeUser(async (id, done) => {
 
+        console.log('deserializing user', id);
         // be sure to handle the admin case
         // holy crap be careful here to make sure that users can't modify their own session
         user.findOne(
@@ -217,7 +243,7 @@ exports.createUser = function (req, res, next) {
             if (_user) {
                 return res.status(400).send({
                     success: true,
-                    err: 'user exists',
+                    err: 'Email address already associated with an account.',
                 });
             }
 
@@ -244,20 +270,18 @@ exports.createUser = function (req, res, next) {
             newuser.firstname = request.firstname;
             newuser.lastname = request.lastname;
 
-            // var randomSalt = CryptoJS.lib.WordArray.random(128 / 8)
-            const randomSalt = crypto.randomBytes(16);
-            newuser.salt = randomSalt.toString('hex');
+            newuser.salt = crypto.randomBytes(16).toString('hex');
             newuser.passwordHash = hashPassword(newuser.email, newuser.salt, request.password);
             
-            newuser.verifiedEmail = true;
+            newuser.verifiedEmail = false;
             newuser.email = request.email;
-            // newuser.verifyCode = CryptoJS.lib.WordArray.random(128 / 8).toString();
+
             newuser.verifyCode = crypto.randomBytes(16).toString('hex');
             newuser.uuid = require('uuid').v4();
 
             await newuser.save();
 
-            //    email.sendAccountValidateEmail(newuser);
+            email.sendAccountValidateEmail(newuser);
 
             res.send({
                 success: true,
@@ -344,12 +368,10 @@ exports.salt = function (req, res, next) {
             } else {
                 // be sure to generate a random salt so this endpoint  cannot be used to test that a given address is
                 // actually used by an account
-                // var CryptoJS = require("./utils/pbkdf2.js").CryptoJS;
-                // var randomSalt = CryptoJS.lib.WordArray.random(128 / 8)
-                const randomSalt = crypto.randomBytes(16);
+                const randomSalt = crypto.randomBytes(16).toString('hex');
                 res.send({
                     success: true,
-                    salt: randomSalt.toString('hex'),
+                    salt: randomSalt,
                 });
             }
         },
@@ -378,9 +400,10 @@ exports.login = function (req, res, next) {
         if (!user.verifiedEmail) {
             return res.status(200).send({
                 success: false,
-                err: 'User email address is not validated',
+                err: 'User email address has not been validated',
             });
         }
+
         // console.log("login");
         req.login(user, async err => {
 
@@ -407,42 +430,94 @@ exports.login = function (req, res, next) {
 };
 
 exports.validateEmail = function (req, res, next) {
+
     // Get user by verify code
+    let code = req.body.validationCode;
+    if (code == undefined || code == "")
+        return res.send({
+            success: false,
+            err: 'Invalid code.',
+        });
 
-    user.findOne(
-        {
-            verifyCode: req.params[0].replace('/', ''),
-        },
-        (err, user) => {
-            if (!err && user && !user.verifiedEmail) {
-                // mark them as verified, save, and go ahead and log them in
-                user.verifiedEmail = true;
-                // email.sendAccountConfirmationEmail(user);
+    passport.authenticate('emailValidationLogin', async(err, user, info) => {
 
-                // once it's used, don't let them use the link again.
-                // user.verifyCode = require('uuid').v4();
-                user.lastLogin = new Date();
-                return user.save(() => {
-                    req.login(user, err => {
-                        res.send({
-                            success: true,
-                        });
-                    });
-                });
+        if (!err && user && !user.verifiedEmail) {
+            
+            if (err) {
+                return next(err);
             }
-            if (user && user.verifiedEmail) {
-                res.status(400).send({
-                    success: false,
-                    err: 'User is already verified',
+            
+            user.verifiedEmail = true;
+            user.lastLogin = new Date();
+
+            await user.save();
+
+            req.user = user;
+            
+            req.login(user, async err => {
+
+                if (err) {
+                    return next(err);
+                }
+                req.user = user;
+                
+                await user.save();
+
+                return res.send({
+                    success: true,
                 });
-            } else {
-                res.status(400).send({
-                    success: false,
-                    err: 'Invalid key',
-                });
+            });
+        }
+        else if (user && user.verifiedEmail) {
+            res.status(400).send({
+                success: false,
+                err: 'User is already verified',
+            });
+        } 
+        else {
+            res.status(400).send({
+                success: false,
+                err: 'Invalid key',
+            });
+        }
+    })(req, res, next);    
+};
+
+exports.validateEmailWithLink = function (req, res, next) {
+
+    let code = req.params.code;
+    
+    req.body = {
+        validationCode: code
+    };
+
+    passport.authenticate('emailValidationLogin', async(err, user, info) => {
+
+        if (!err && user && !user.verifiedEmail) {
+            
+            if (err) {
+                return next(err);
             }
-        },
-    );
+            
+            user.verifiedEmail = true;
+            user.lastLogin = new Date();
+
+            await user.save();
+
+            return req.login(user, async(err) => {
+
+                req.user = user;
+                await req.user.save();
+
+                res.redirect("/");
+            });
+        }
+        else if (user && user.verifiedEmail) {
+            return res.status(404).send("User already verified.");
+        } else {
+            return res.status(404).send("Invalid Code.");
+        }
+    })(req, res, next);
 };
 
 exports.resendValidation = function (req, res, next) {

@@ -19,7 +19,7 @@ import { Formik, Field, Form } from 'formik';
 import * as Yup from 'yup';
 import ErrorValidation from '../controls/errorValidation';
 import { useDispatch, useSelector } from 'react-redux';
-import * as user_actions from "../../actions/user"
+import * as user_actions from "../../actions/user";
 import api from "../../api";
 import { useState } from 'react';
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
@@ -39,24 +39,25 @@ export default function Login(props) {
     function createAccount() {
         history.push('./create')
     }
+    function goToResendPage() {
+        history.push('./resend')
+    }
 
-    async function signIn(loginRequest) {
-        let salt = await api.getSalt(loginRequest.email);
+    async function signIn(values) {
+        let salt = await api.getSalt(values.email);
         salt = CryptoJS.enc.Utf8.parse(salt);
-        var key512Bits = CryptoJS.PBKDF2(loginRequest.password, salt, { hasher: CryptoJS.algo.SHA256, keySize: 4, iterations: 10000 });
-        loginRequest.password = key512Bits.toString(CryptoJS.enc.Hex)
+        var key512Bits = CryptoJS.PBKDF2(values.password, salt, { hasher: CryptoJS.algo.SHA256, keySize: 4, iterations: 10000 });
+        values.password = key512Bits.toString(CryptoJS.enc.Hex)
 
-        dispatch(user_actions.login(loginRequest, location));
+        dispatch(user_actions.login(values, location));
     }
 
     return (<>
         <Formik
             initialValues={{ email: '', password: '' }}
             validationSchema={Yup.object({
-                email: Yup.string().email()
-                    .required('Required'),
-                password: Yup.string()
-                    .required('Required'),
+                email: Yup.string().email().required('Required'),
+                password: Yup.string().required('Required'),
             })}
 
             onSubmit={(values) => {
@@ -92,7 +93,11 @@ export default function Login(props) {
                                 </ValidationControlledSubmitButton>
                             </div>
                             <div className="grid-row">
-                                <button onClick={() => forgotPassword()} className="usa-button usa-button--unstyled" type="reset">Forgot password?</button>
+                                <p>
+                                    <a onClick={() => forgotPassword()} className="usa-link" type="reset">Forgot your password?</a>
+                                    &nbsp; Need to &nbsp;
+                                    <a onClick={() => goToResendPage()} className="usa-link" type="reset">validate your email?</a>
+                                </p>
                             </div>
                         </fieldset>
                     </Form>
