@@ -34,6 +34,9 @@ services:
       - REDIS_HOST
       - PROFILE_SESSION_SAVE_FREQUENCY_MS
       - NODE_ENV
+      - VERIFY_URL_ROOT=https://${HOSTNAME}/app/user/validate
+      - COOKIE_SECRET
+      - SERVER_SECRET
   
   redis:
     image: redis
