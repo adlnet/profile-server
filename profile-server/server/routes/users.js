@@ -60,6 +60,8 @@ function blockTypeManipulation(req, res, next) {
     delete req.body.admin;
     delete req.body.username;
     delete req.body.usernameChosen;
+    delete req.body.verifyCode;
+    delete req.body.verifiedEmail;
     next();
 }
 
