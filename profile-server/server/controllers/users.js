@@ -397,7 +397,7 @@ exports.login = function (req, res, next) {
             });
         }
         // Login fails if the user gave the right password, but email is not yet verified
-        if (!user.verifiedEmail) {
+        else if (!user.verifiedEmail) {
             return res.status(200).send({
                 success: false,
                 err: 'User email address has not been validated',
