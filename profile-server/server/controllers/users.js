@@ -130,12 +130,12 @@ exports.setupPassport = function () {
 
     const validationStrategy = new LocalStrategy(validationConfig, (req, code, _, done) => {
         user.findOne({ verifyCode: code }, async (err, user) => {
-            if (err) {
+            if (err || !user) {
                 console.log(err);
                 done(null, false);
                 return;
             }
-            if (!user.verifiedEmail) {
+            if (user && !user.verifiedEmail) {
                 sessionHandler.addToSessionMap(user.uuid, req.sessionID);
                 done(null, user);
             } 
