@@ -70,10 +70,22 @@ app.use(serverSession({
 const csurf = require("csurf");
 const helmet = require("helmet");
 
-const csrfProtection = (req, res, next) => {
-    csurf({cookie: true})(req, res, function(err) {
+const REQUIRE_TOKEN_FOR_APP_API = true;
+const REQUIRE_TOKEN_FOR_EVERYTHING = false;
+
+const csrfProtection = (requireForGet = false) => (req, res, next) => {
+
+    const alwaysIgnoredHeaders = ["OPTIONS", "HEAD"];
+    const mostlyIgnoredHeaders = ["OPTIONS", "HEAD", "GET"];
+
+    let csurfArgs = {
+        cookie: true,
+        ignoreMethods: requireForGet ? alwaysIgnoredHeaders : mostlyIgnoredHeaders
+    };
+
+    csurf(csurfArgs)(req, res, function(err) {
         if (err)
-            res.status(400).send("Improper CSRF Token.");
+            res.status(400).send("Unauthorized Request.");
         else
             next();
     });
@@ -89,16 +101,16 @@ app.use(async (req, res, next) => {
     next();
 });
 
-app.use(csrfProtection);
-app.get("/csrf", csrfProtection, (req, res, next) => {
+app.use(csrfProtection(REQUIRE_TOKEN_FOR_EVERYTHING));
+app.get("/csrf", csrfProtection(REQUIRE_TOKEN_FOR_EVERYTHING), (req, res, next) => {
     res.json({
         token: req.csrfToken()
     });
 });
 
-app.use('/app', csrfProtection, helmet(), require('./server/routes/appApi.js'));
+app.use('/app', csrfProtection(REQUIRE_TOKEN_FOR_APP_API), helmet(), require('./server/routes/appApi.js'));
 app.use('/api', require('./server/routes/publicApi.js'));
-app.get('*', csrfProtection, helmet(), (req, res, next) => {
+app.get('*', csrfProtection(REQUIRE_TOKEN_FOR_EVERYTHING), helmet(), (req, res, next) => {
     res.sendFile(path.join(__dirname, 'client', 'build', 'index.html'));
 });
 

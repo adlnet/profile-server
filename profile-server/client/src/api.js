@@ -160,7 +160,7 @@ class API {
                     "X-CSRF-Token": token
                 },
                 body: JSON.stringify(json)
-            })
+            });
 
             return this.checkStatus(res, "POST");
         } catch (err) {
@@ -168,16 +168,21 @@ class API {
             throw err;
         }
     }
-    async getJSON(url) {
-
+    async getJSON(url, requireToken = true) {
+        
+        let token = requireToken ? await this.getCSRFToken() : undefined;
         try {
             let res = await fetch(url, {
                 method: "GET",
-            })
+                headers: {
+                    'Content-Type': 'application/json',
+                    "X-CSRF-Token": token
+                }
+            });
 
             return this.checkStatus(res);
         } catch (err) {
-            console.error(err);
+            console.error("Unauthorized.");
             throw err;
         }
     }
@@ -624,7 +629,7 @@ class API {
     }
 
     async getCSRFToken() {
-        let body = await this.getJSON("/csrf");
+        let body = await this.getJSON("/csrf", false);
         return body.token;
     }
 }
