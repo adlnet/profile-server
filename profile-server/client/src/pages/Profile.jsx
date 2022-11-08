@@ -200,7 +200,7 @@ export default function Profile() {
     let requestedByObj = profileVersion.verificationRequestedBy;
     let requestAuthor = (requestedByObj && requestedByObj.username) 
         ? `${requestedByObj.username} (${requestedByObj.uuid})`  
-        : requestedByObj.uuid;
+        : "Unknown User";
 
     return (<>
         {profileVersion && profileVersion.state !== 'draft' && !profileVersion.isVerified && profileVersion.verificationRequest && userData.user && userData.user.type === "admin" &&
