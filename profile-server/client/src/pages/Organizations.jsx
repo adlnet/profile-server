@@ -273,7 +273,7 @@ function NameLink(
 ) {
     return (
         <Link
-            to={`organization/${uuid}`}
+            to={`/organization/${uuid}`}
             className="usa-link button-link"
             style={!canClickOrganizationEntries ? {pointerEvents: "none"} : null}
         >
