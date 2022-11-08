@@ -80,7 +80,7 @@ exports.getProfileVersion = async function (req, res) {
     try {
         profileVersion = await profileVersionModel.findByUuid(req.params.version)
             .populate({ path: 'organization parentProfile', select: 'uuid name' })
-            .populate({ path: 'verificationRequestedBy', select: 'uuid email fullname' })
+            .populate({ path: 'verificationRequestedBy', select: 'uuid username' })
             .populate({ path: 'harvestDatas', populate: { path: 'match.data.verb.match.model.parentProfile match.data.activity.match.model.parentProfile', model: 'profileVersion', select: 'uuid name' } });
 
         if (!profileVersion) {
