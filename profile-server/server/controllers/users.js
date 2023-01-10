@@ -27,8 +27,47 @@ const safeCompare = require('safe-compare');
 // var CryptoJS = require("./utils/pbkdf2.js").CryptoJS;
 
 const crypto = require('crypto');
+const passwordValidator = require("password-validator");
 const sessionHandling = require("./util/SessionHandler");
 const sessionHandler = sessionHandling.getSessionHandler();
+
+const passwordSchema = new passwordValidator();
+
+passwordSchema
+    .is().min(8)                                    
+    .is().max(20)                                 
+    .has().uppercase()                              
+    .has().lowercase()                              
+    .has().digits(1)                                
+    .has().not().spaces()                           
+    .is().not().oneOf([
+        'password',
+        'Passw0rd', 
+        'Password123'
+    ]); 
+
+function doesPasswordHaveErrors(value) {
+    let results = passwordSchema.validate(value, {
+        details: true
+    });
+
+    if (results.length > 0) {
+        let rules = results.map(result => result.message.replace("The string should have", ""));
+        if (results.length == 1)
+            return "Your password should have " + rules[0];
+
+        if (results.length == 2)
+            return `Your password should have ${rules[0]} and ${rules[1]}`;
+
+        let earlyRules = rules.slice(0, -1);
+        let lastRule = rules[rules.length - 1];
+        let earlyBlock = earlyRules.join(", ");
+        
+        return `Your password should have ${earlyBlock}, and ${lastRule}`;
+    }
+
+    return undefined;
+}
 
 function isUsernameTaken(username) {
     return new Promise((resolve, reject) => {
@@ -252,6 +291,14 @@ exports.createUser = function (req, res, next) {
                 return res.status(400).send({
                     success: true,
                     err: "Username is taken, please choose a different one.",
+                });
+            }
+
+            let weakPasswordMessage = await doesPasswordHaveErrors(request.password);
+            if (weakPasswordMessage) {
+                return res.status(400).send({
+                    success: true,
+                    err: weakPasswordMessage,
                 });
             }
 
@@ -664,6 +711,16 @@ exports.editAccount = async function (req, res) {
 
         let killOtherSessions = false;
         if (req.body.password && req.body.password === req.body.password2) {
+            
+            let desiredPassword = req.body.password;
+            let weakPasswordMessage = await doesPasswordHaveErrors(desiredPassword);
+            if (weakPasswordMessage) {
+                return res.status(400).send({
+                    success: true,
+                    err: weakPasswordMessage,
+                });
+            }
+            
             await req.user.resetPassword(req.body.password);
             killOtherSessions = true;
         }
