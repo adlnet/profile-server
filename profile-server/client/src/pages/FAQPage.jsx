@@ -161,10 +161,10 @@ export default function FAQPage(props) {
             <a href="tel:+1 (571) 480-4640">+1 (571) 480-4640</a>
           </div>{" "}
           <div className="usa-footer__contact-info">
-            <a href="mailto:support@adlnet.gov">support@adlnet.gov</a>
+            <a href="mailto:xapi@adlnet.gov">xapi@adlnet.gov</a>
           </div>
           <div className="usa-footer__contact-info" style={{ textAlign: "center" }}>
-            <a href="https://adlnet.atlassian.net/servicedesk/customer/portal/4">Submit a ticket</a>
+            <a href="https://adlnet.atlassian.net/servicedesk/customer/portal/10">Submit a ticket</a>
           </div>
         </p>
       </section>
