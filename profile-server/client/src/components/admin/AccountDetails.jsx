@@ -47,7 +47,7 @@ export default function AccountDetails(props) {
     }, []);
 
 
-    const myOrgs = organizations && organizations.filter(org => Array.isArray(org.members) && org.members.find(mem => mem.user === user._id));
+    let myOrgs = organizations && organizations.filter(org => Array.isArray(org.members) && org.members.find(mem => mem.user === user._id));
     const myOrgRequests = organizations && organizations.filter(org => Array.isArray(org.membershipRequests) && org.memberRequests.find(mem => mem.user === user._id))
     myOrgs = JSON.parse(JSON.stringify(myOrgs));
 
