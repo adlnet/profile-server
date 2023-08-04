@@ -29,6 +29,14 @@ export const START_CREATE = 'START_CREATE';
 export const FINISH_CREATE = 'FINISH_CREATE';
 export const ERROR_CREATE = 'ERROR_CREATE';
 
+export const START_VALIDATE = 'START_VALIDATE';
+export const FINISH_VALIDATE = 'FINISH_VALIDATE';
+export const ERROR_VALIDATE = 'ERROR_VALIDATE';
+
+export const START_SET_USERNAME = 'START_SET_USERNAME';
+export const FINISH_SET_USERNAME = 'FINISH_SET_USERNAME';
+export const ERROR_SET_USERNAME = 'ERROR_SET_USERNAME';
+
 export const START_CHECK = 'START_CHECK';
 export const FINISH_CHECK = 'FINISH_CHECK';
 export const ERROR_CHECK = 'ERROR_CHECK';
@@ -63,9 +71,9 @@ export function checkStatus() {
             type: START_CHECK,
         });
 
-        let user;
+        let statusResponse;
         try {
-            user = await API.getUserStatus();
+            statusResponse = await API.getUserStatus();
         } catch (err) {
             dispatch({
                 type: ERROR_CHECK,
@@ -75,11 +83,39 @@ export function checkStatus() {
         } finally {
             dispatch({
                 type: FINISH_CHECK,
-                user: user.user,
+                user: statusResponse.user,
             });
         }
 
-        return user.loggedIn;
+        return statusResponse.loggedIn;
+    };
+}
+
+export function checkUsernameStatus() {
+    return async function (dispatch) {
+        dispatch({
+            type: START_CHECK,
+        });
+
+        let statusResponse;
+        let usernameChosen = false;
+        try {
+            statusResponse = await API.getUserStatus();
+            usernameChosen = statusResponse.user.usernameChosen;
+        } catch (err) {
+            dispatch({
+                type: ERROR_CHECK,
+                error: err.message,
+                errorType: 'user',
+            });
+        } finally {
+            dispatch({
+                type: FINISH_CHECK,
+                user: statusResponse.user,
+            });
+        }
+
+        return usernameChosen;
     };
 }
 
@@ -93,7 +129,6 @@ export function login(loginRequest, redirectto) {
         let loggedIn
         try {
             loginResult = await API.login(loginRequest);
-
 
             if (!loginResult.success) {
                 return batch(() => {
@@ -116,7 +151,15 @@ export function login(loginRequest, redirectto) {
             });
         }
         if (loggedIn) {
-            history.push(redirectto.originurl || '/')
+
+            let hasUsername = await checkUsernameStatus()(dispatch);
+            if (hasUsername) {
+                history.push(redirectto.originurl || '/')
+            }
+            else {
+                history.push(redirectto.originurl || '/user/username')
+            }
+
             dispatch({
                 type: FINISH_LOGIN,
             });
@@ -142,6 +185,11 @@ export function createAccount(createRequest) {
         try {
             createResult = await API.createUser(createRequest);
             if (!createResult.success) {
+
+                if (window.grecaptcha != undefined && window.grecaptcha.reset != undefined) {
+                    window.grecaptcha.reset();
+                }
+
                 return batch(() => {
                     dispatch({
                         type: ERROR_CREATE,
@@ -154,6 +202,11 @@ export function createAccount(createRequest) {
                 });
             }
         } catch (err) {
+
+            if (window.grecaptcha != undefined && window.grecaptcha.reset != undefined) {
+                window.grecaptcha.reset();
+            }
+            
             return batch(() => {
                 dispatch({
                     type: ERROR_CREATE,
@@ -170,7 +223,154 @@ export function createAccount(createRequest) {
             type: FINISH_CREATE,
         });
 
-        history.push('./login')
-
+        // history.push('./login');
+        history.push('./validate');
     };
 }
+
+export function resendValidation(values) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_VALIDATE,
+        });
+
+        let validateResult;
+        try {
+            validateResult = await API.resendValidation(values);
+            if (!validateResult.success) {
+
+                return batch(() => {
+                    dispatch({
+                        type: ERROR_VALIDATE,
+                        error: validateResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_VALIDATE,
+                    });
+                });
+            }
+        } catch (err) {
+
+            return batch(() => {
+                dispatch({
+                    type: ERROR_VALIDATE,
+                    error: err.message,
+                    errorType: 'Validate Account'
+                });
+
+                dispatch({
+                    type: FINISH_VALIDATE,
+                });
+            });
+        }
+        dispatch({
+            type: FINISH_VALIDATE,
+        });
+
+        history.push('./validate');
+    };
+}
+
+export function attemptValidation(values) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_VALIDATE,
+        });
+
+        let loggedIn = false;
+        try {
+            let validateResult = await API.attemptValidation(values);
+            if (!validateResult.success) {
+
+                return batch(() => {
+                    dispatch({
+                        type: ERROR_VALIDATE,
+                        error: validateResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_VALIDATE,
+                    });
+                });
+            }
+            loggedIn = await checkStatus()(dispatch);
+        } catch (err) {
+            return dispatch({
+                type: ERROR_VALIDATE,
+                error: err.message,
+                errorType: 'Account Validation'
+            });
+        }
+
+        if (loggedIn) {
+
+            history.push('/')
+            dispatch({
+                type: FINISH_LOGIN,
+            });
+        }
+        else
+            return dispatch({
+                type: LOGIN_FAILED,
+                error: "Validation unsuccessful.",
+            });
+
+        dispatch({
+            type: FINISH_VALIDATE,
+        });
+    };
+}
+
+export function setUsername(setRequest) {
+    return async function (dispatch) {
+        dispatch({
+            type: START_SET_USERNAME,
+        });
+
+        let setResult;
+        try {
+            setResult = await API.setUsername(setRequest);
+            if (!setResult.success) {
+
+                if (window.grecaptcha != undefined && window.grecaptcha.reset != undefined) {
+                    window.grecaptcha.reset();
+                }
+
+                return batch(() => {
+                    dispatch({
+                        type: ERROR_SET_USERNAME,
+                        error: setResult.err,
+                    });
+
+                    dispatch({
+                        type: FINISH_SET_USERNAME,
+                    });
+                });
+            }
+        } catch (err) {
+
+            if (window.grecaptcha != undefined && window.grecaptcha.reset != undefined) {
+                window.grecaptcha.reset();
+            }
+            
+            return batch(() => {
+                dispatch({
+                    type: ERROR_SET_USERNAME,
+                    error: err.message,
+                    errorType: 'Set Username'
+                });
+
+                dispatch({
+                    type: FINISH_SET_USERNAME,
+                });
+            });
+        }
+        dispatch({
+            type: FINISH_SET_USERNAME,
+        });
+
+        history.push('/user/account')
+    };
+}
+

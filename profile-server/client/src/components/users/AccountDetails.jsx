@@ -26,23 +26,34 @@ import ModalBoxWithoutClose from '../controls/modalBoxWithoutClose';
 import api from "../../api"
 import ValidationControlledSubmitButton from '../controls/validationControlledSubmitButton';
 
+const MakePublicCheckbox = ({ field }) => {
+
+    return (
+        <div className="usa-checkbox">
+            <input {...field} type="checkbox" style={{width: "20px", height: "20px", margin: "5px"}}/>
+            <span className="details-label">Show Your Name?</span>
+        </div>  
+    );
+}
+
 export default function AccountDetails(props) {
     let dispatch = useDispatch();
     let userData = useSelector((store) => store.userData)
     const organizations = useSelector((state) => state.organizations);
     const isAdmin = userData.type === 'admin';
+    const needsUsername = !userData.user.usernameChosen;
+
     const history = useHistory();
     const [showDialog, setShowDialog] = useState(false);
     const [orgToLeave, setOrgToLeave] = useState();
     const [isEditing, setIsEditing] = useState(false);
 
-
     useEffect(() => {
         dispatch(getOrganizations());
     }, [dispatch, userData]);
 
-    const myOrgs = organizations && organizations.filter(org => org.members.find(mem => mem.user.uuid === userData.user.uuid));
-    const myOrgRequests = organizations && organizations.filter(org => org.memberRequests.find(mem => mem.user.uuid === userData.user.uuid))
+    const myOrgs = organizations && organizations.filter(org => Array.isArray(org.members) ? org.members.find(mem => mem.user.uuid === userData.user.uuid) : []);
+    const myOrgRequests = organizations && organizations.filter(org => Array.isArray(org.memberRequests) ? org.memberRequests.find(mem => mem.user != undefined && mem.user.uuid === userData.user.uuid) : [])
 
     function join() {
         history.push('/organization');
@@ -76,9 +87,9 @@ export default function AccountDetails(props) {
         <div className="grid-container" style={{ padding: 0 }}>
             {
                 isEditing ?
-                    <MyAccountForm user={userData.user} isAdmin={isAdmin} saveAction={saveAccountEdits} cancelAction={() => setIsEditing(false)} />
+                    <MyAccountForm user={userData.user} needsUsername={needsUsername} isAdmin={isAdmin} saveAction={saveAccountEdits} cancelAction={() => setIsEditing(false)} />
                     :
-                    <MyAccountDetails user={userData.user} isAdmin={isAdmin} editAction={() => setIsEditing(true)} />
+                    <MyAccountDetails user={userData.user} needsUsername={needsUsername} isAdmin={isAdmin} editAction={() => setIsEditing(true)} />
             }
         </div>
         <div className="grid-container" style={{ padding: 0 }}>
@@ -177,7 +188,7 @@ export function WorkingGroupRow({ org, user, adminView, pending, setShowDialog, 
     )
 }
 
-export function MyAccountDetails({ user, isAdmin, editAction, adminView }) {
+export function MyAccountDetails({ user, needsUsername, isAdmin, editAction, adminView }) {
     return (<>
         <div className="grid-row margin-top-4">
             {!adminView && <h1>My Account</h1>}
@@ -186,6 +197,14 @@ export function MyAccountDetails({ user, isAdmin, editAction, adminView }) {
         </div>
         <div className="grid-row ">
             {adminView && <h3>Account Information</h3>}
+            {
+                isAdmin &&
+                <div className="grid-col-4">
+                    <Detail title='Server role'>
+                        (Administrator)
+                    </Detail>
+                </div>
+            }
         </div>
         <div className="grid-row">
             <div className="grid-col-4">
@@ -194,8 +213,8 @@ export function MyAccountDetails({ user, isAdmin, editAction, adminView }) {
                 </Detail>
             </div>
             <div className="grid-col">
-                <Detail title='email'>
-                    {user.email}
+                <Detail title='username'>
+                    {user.username}
                 </Detail>
             </div>
         </div>
@@ -205,17 +224,18 @@ export function MyAccountDetails({ user, isAdmin, editAction, adminView }) {
                     {user.lastname}
                 </Detail>
             </div>
-            {
-                isAdmin &&
-                <div className="grid-col-4">
-                    <Detail title='Server role'>
-                        Administrator
-                    </Detail>
-                </div>
-            }
+            <div className="grid-col">
+                <Detail title='email'>
+                    {user.email}
+                </Detail>
+            </div>
         </div>
         <div className="grid-row">
             <button className="usa-button" onClick={editAction}><i className="fa fa-pencil"></i> Edit Account</button>
+            {
+                needsUsername && 
+                <a className="usa-button usa-button--accent-cool" href="/user/username"><i className="fa fa-pencil"></i> Select Username</a>
+            }
         </div>
     </>)
 }
@@ -234,16 +254,21 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
     return (<>
         <Formik
             initialValues={{
+                username: user.username,
                 firstname: user.firstname,
                 lastname: user.lastname,
                 email: user.email,
+                publicizeName: !!user.publicizeName,
                 newEmail: '',
                 type: user.type,
                 password: '',
                 password2: '',
-                admin: user.type === "admin"
+                admin: user.type === "admin",
+                needsUsername: !user.usernameChosen
             }}
             validationSchema={Yup.object({
+                publicizeName: Yup.bool(),
+                username: Yup.string(),
                 email: Yup.string().email(),
                 lastname: Yup.string()
                     .required('Required'),
@@ -256,7 +281,6 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
             })}
             validateOnMount={true}
             onSubmit={async (values) => {
-
                 if (values.admin) {
                     values.type = "admin";
                     delete values.admin;
@@ -270,8 +294,6 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
                 } else {
                     setError(res.err)
                 }
-
-
             }}
         >
             {(formikProps) => (
@@ -287,6 +309,10 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
                             <div className="display-flex ">
                                 <div className="grid-col padding-right-2">
 
+                                    <ErrorValidation name="username" type="input">
+                                        <label className="usa-label" htmlFor="firstname"><span className="text-secondary">*</span> <span className="details-label">Username</span></label>
+                                        <Field name="username" type="text" disabled className="usa-input" id="input-username" aria-required="true" />
+                                    </ErrorValidation>
                                     <ErrorValidation name="firstname" type="input">
                                         <label className="usa-label" htmlFor="firstname"><span className="text-secondary">*</span> <span className="details-label">First Name</span></label>
                                         <Field name="firstname" type="text" className="usa-input" id="input-firstname" aria-required="true" />
@@ -294,6 +320,20 @@ export function MyAccountForm({ user, currentUser, isAdmin, saveAction, cancelAc
                                     <ErrorValidation name="lastname" type="input">
                                         <label className="usa-label" htmlFor="lastname"><span className="text-secondary">*</span> <span className="details-label">Last Name</span></label>
                                         <Field name="lastname" type="text" className="usa-input" id="input-lastname" aria-required="true" />
+                                    </ErrorValidation>
+                                    <br/>
+                                    <ErrorValidation name="publicizeName" type="input">
+                                        <Field 
+                                            name="publicizeName" 
+                                            type="checkbox" 
+                                            checked={formikProps.values.publicizeName}
+                                            component={MakePublicCheckbox} 
+                                        />
+                                        <br/>
+                                        <span className="usa-checkbox__label-description text-light">
+                                            Enabling this will cause your name to be publicly visible with your profile.  
+                                            If unchecked, only your username will be visible.
+                                        </span>
                                     </ErrorValidation>
                                 </div>
                                 <div className="grid-col padding-left-2">

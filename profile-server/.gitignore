@@ -4,3 +4,5 @@ node_modules
 docker-compose.yml
 /builds
 /node_modules
+/scratch
+

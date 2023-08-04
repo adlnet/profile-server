@@ -35,6 +35,8 @@ exports.getNewProfileVersion = function (organization, profile, version) {
     if (!version.iri) {
         version.iri = createIRI.profileVersion(profile.iri, version.version);
     }
+
+    delete version.isVerified;
     delete version._id;
     delete version.state;
     delete version.uuid;
@@ -54,15 +56,19 @@ async function addNewProfileVersion(organizationUuid, profileUuid, version, user
 
     // attach user to version update
     version.updatedBy = user;
+
     profileVersion = exports.getNewProfileVersion(organization, profile, version);
 
     profile.currentDraftVersion = profileVersion._id;
     profile.updatedOn = new Date();
-    const updatedHarvest = await harvestDataModel.update({ parentProfile: profile.currentPublishedVersion }, { $set: { parentProfile: profileVersion._id } }, { multi: true });
+    const updatedHarvest = await harvestDataModel.update(
+        { parentProfile: profile.currentPublishedVersion }, 
+        { $set: { parentProfile: profileVersion._id } }, 
+        { multi: true }
+    );
 
     await profile.save();
     await profileVersion.save();
-
 
     return profileVersion;
 }
@@ -74,7 +80,7 @@ exports.getProfileVersion = async function (req, res) {
     try {
         profileVersion = await profileVersionModel.findByUuid(req.params.version)
             .populate({ path: 'organization parentProfile', select: 'uuid name' })
-            .populate({ path: 'verificationRequestedBy', select: 'uuid email fullname' })
+            .populate({ path: 'verificationRequestedBy', select: 'uuid username' })
             .populate({ path: 'harvestDatas', populate: { path: 'match.data.verb.match.model.parentProfile match.data.activity.match.model.parentProfile', model: 'profileVersion', select: 'uuid name' } });
 
         if (!profileVersion) {
@@ -90,6 +96,9 @@ exports.getProfileVersion = async function (req, res) {
             message: err.message,
         });
     }
+
+    if (profileVersion.moreInformation != undefined && profileVersion.moreInformation.startsWith("javascript:"))
+        profileVersion.moreInformation = "";
 
     res.send({
         success: true,
@@ -132,9 +141,11 @@ exports.updateProfileVersion = async function (req, res) {
         if (profileVersion.verificationRequest) {
             profileVersion.verificationRequestedBy = req.user;
         }
+
         profileVersion.updatedBy = req.user;
         profileVersion.updatedOn = new Date();
         profileVersion.save();
+
     } catch (err) {
         console.error(err);
         return res.status(500).send({

@@ -51,6 +51,7 @@ export default function Organization() {
     if (!organization) {
         return '';
     }
+    
     //A org with empty members means you're not part of it. 
     let isMember = organization.membership;
 

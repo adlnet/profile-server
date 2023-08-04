@@ -56,16 +56,23 @@ async function addNewProfile(organizationUuid, profile) {
         }
 
         const profileVersion = new profileVersionModel();
+
         Object.assign(profileVersion, profile);
+
         profileVersion.organization = organization._id;
         profileVersion.parentProfile = newProfile._id;
         profileVersion.iri = createIRI.profileVersion(newProfile.iri, profileVersion.version);
         profileVersion.state = 'draft';
 
-        newProfile.currentDraftVersion = profileVersion._id;
+        profileVersion.moreInformation = profile.moreInformation;
+        profileVersion.translations = profile.translations;
+        profileVersion.tags = profile.tags;
 
-        await newProfile.save();
         await profileVersion.save();
+
+        newProfile.currentDraftVersion = profileVersion._id;
+        await newProfile.save();
+        
         EventBus.emit('profileCreated', organization._id, newProfile);
     } catch (err) {
         throw new Error(err);

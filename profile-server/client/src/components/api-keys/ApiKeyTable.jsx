@@ -23,7 +23,8 @@ export default function ApiKeyTable({ apiKeys, onRemove }) {
     const { url } = useRouteMatch()
     const organization = useSelector((state) => state.application.selectedOrganization);
     if (!organization) return '';
-    const isMember = organization.membership;
+    
+    const isMember = !!organization.membership;
 
     return (
         <div className="grid-row">

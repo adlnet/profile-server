@@ -21,8 +21,8 @@ export default function MemberTable({ members, isAdmin }) {
         <table className="usa-table usa-table--borderless" width="100%">
             <thead>
                 <tr>
-                    <th width="20%" scope="col">Name</th>
-                    <th width="30%" scope="col">Email</th>
+                    <th width="20%" scope="col">Username</th>
+                    <th width="30%" scope="col">Full Name</th>
                     <th width="20%" scope="col">Role</th>
                     <th width="20%" scope="col">Date Joined</th>
                     <th width="10%" scope="col"></th>

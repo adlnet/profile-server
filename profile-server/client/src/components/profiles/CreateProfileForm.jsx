@@ -45,7 +45,8 @@ export default function CreateProfileForm({ initialValue, handleSubmit, handleCa
             else if (!isValidIRI(values.extiri)) errors.extiri = 'IRI did not match expected format.';
         }
         if (values.moreInformation) {
-            if (!isValidIRI(values.moreInformation)) errors.moreInformation = 'More Information needs to be a URL.';
+            if (!isValidIRI(values.moreInformation)) 
+                errors.moreInformation = 'More Information needs to be a URL.';
         }
         return errors;
     }

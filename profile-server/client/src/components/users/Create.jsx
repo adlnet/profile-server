@@ -41,6 +41,7 @@ export default function CreateAccount(props) {
     }
 
     const initialValues = { 
+        username: "", 
         firstname: "", 
         lastname: "", 
         email: "", 
@@ -50,6 +51,7 @@ export default function CreateAccount(props) {
     };
 
     const validationSchema = Yup.object().shape({
+        username: Yup.string().required(),
         firstname: Yup.string().required(),
         lastname: Yup.string().required(),
         email: Yup.string().required(),
@@ -83,6 +85,11 @@ export default function CreateAccount(props) {
                                     Already have an account? <button className="usa-button usa-button--unstyled" style={{ marginTop: 0 }} type="button" onClick={() => login()}>Sign in</button></div>
                             </div>
                             <fieldset className="usa-fieldset">
+
+                                <ErrorValidation name="username" type="input">
+                                    <label className="usa-label" htmlFor="username"><span className="details-label">Username</span></label>
+                                    <Field name="username" type="text" className="usa-input" id="input-username" aria-required="true" />
+                                </ErrorValidation>
 
                                 <ErrorValidation name="firstname" type="input">
                                     <label className="usa-label" htmlFor="firstname"><span className="details-label">first name</span></label>

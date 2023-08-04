@@ -224,7 +224,8 @@ exports.getConcept = async function (req, res) {
                 populate: { path: 'parentProfile', populate: { path: 'parentProfile' } },
             })
             .populate('recommendedTerms')
-            .populate('updatedBy', 'firstname lastname email uuid');
+            // .populate('updatedBy', 'firstname lastname email uuid');
+            .populate('updatedBy', 'username uuid');
 
         if (!concept) {
             return res.status(404).send({

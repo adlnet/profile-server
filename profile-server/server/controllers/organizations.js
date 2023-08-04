@@ -17,7 +17,75 @@ const organizationModel = require('../ODM/models').organization;
 const profileModel = require('../ODM/models').profile;
 const userModel = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
-const { resendValidation } = require('./users');
+
+function removePrivateNames(organizations) {
+
+    for (let org of organizations) {
+
+        if (org == undefined)
+            continue;
+
+        for (let member of org.members) {
+
+            if (member == undefined || member.user == undefined)
+                continue;
+
+            if (member.user.publicizeName == false) {
+                delete member.user.fullname;
+                delete member.user.firstname;
+                delete member.user.lastname;
+            }
+        }
+
+        for (let request of org.memberRequests) {
+
+            if (request == undefined || request.user == undefined)
+                continue;
+            
+            if (request.user.publicizeName == false) {
+                delete request.user.fullname;
+                delete request.user.firstname;
+                delete request.user.lastname;
+            }
+        }
+    }
+}
+
+function cleanMembershipInfo(organizations, user) {
+
+    for (let org of organizations) {
+
+        org.memberCount = org.members.length;
+
+        let matchingMembers = org.members.filter(i => i.user.id.toString() == user.id);
+        let belongsToOrg = matchingMembers.length > 0;
+        if (belongsToOrg) { 
+            org.membership = matchingMembers[0].level; 
+        } 
+        
+        else {
+            // delete org.members;
+            // delete org.memberRequests;
+
+            // TODO: Resolve on UI side and eventually remove this.
+            org.members = [];
+            org.memberRequests = [];
+        }
+    }
+}
+
+function removeMemberInfo(organizations) {
+    for (let org of organizations) {
+
+        if (Array.isArray(org.members))
+            org.memberCount = org.members.length;
+        else
+            org.memberCount = "Unknown";
+
+        delete org.members;
+        delete org.memberRequests;
+    }
+}
 
 function setRegex(column, searchArray) {
     return searchArray.map(s => ({ [column]: { $regex: `.*${s}.*`, $options: 'i' } }));
@@ -61,12 +129,12 @@ exports.getOrganizations = async function (req, res) {
         if (req.query.search !== undefined) {
             organizations = searchOrganizations(req.query.search, req.query.limit, req.query.page, req.query.sort);
             organizations = await organizations.populate({ path: 'profiles', select: 'uuid name' })
-                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
-                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' });
+                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
+                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' });
         } else {
             organizations = await organizationModel.find({}).populate({ path: 'profiles', select: 'uuid name' })
-                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
-                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' });
+                .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
+                .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' });
         }
 
         orphanProfile = await profileModel.findOne({ orphanContainer: true});
@@ -77,14 +145,15 @@ exports.getOrganizations = async function (req, res) {
             message: err.message,
         });
     }
+
     organizations = organizations.map(i => i.toObject({ virtuals: true }));
+    removePrivateNames(organizations);
+
     if (req.user) {
-        for (const i in organizations) {
-            organizations[i].membership = organizations[i].members.filter(
-                i => i.user.id.toString() == req.user.id,
-            );
-            if (organizations[i].membership[0]) { organizations[i].membership = organizations[i].membership[0].level; } else delete organizations[i].membership;
-        }
+        cleanMembershipInfo(organizations, req.user);
+    }
+    else {
+        removeMemberInfo(organizations);
     }
 
     // Remove orphanProfile from results
@@ -131,7 +200,7 @@ exports.getOrganizationPublic = async function (req, res) {
     let organization;
     try {
         organization = await organizationModel.findOne({ uuid: req.params.org })
-            .populate('createdBy', 'uuid firstname lastname fullname')
+            .populate('createdBy', 'uuid fullname publicizeName')
             .populate({
                 path: 'profiles',
                 select: 'uuid updatedOn',
@@ -155,8 +224,20 @@ exports.getOrganizationPublic = async function (req, res) {
             message: err.message,
         });
     }
+
     organization = organization.toObject({ virtuals: true });
-    organization.membership = req.permissionLevel;
+
+    removePrivateNames([organization]);
+    removeMemberInfo([organization]);
+
+    if (req.permissionLevel) {
+        organization.membership = req.permissionLevel;
+    }
+
+    if (organization.createdBy != null && organization.createdBy.publicizeName == false) {
+        delete organization.createdBy.fullname;
+    }
+
     res.send({
         success: true,
         organization: organization,
@@ -167,7 +248,7 @@ exports.getOrganization = async function (req, res) {
     let organization;
     try {
         organization = await organizationModel.findByUuid(req.params.org)
-            .populate('createdBy', 'uuid firstname lastname fullname')
+            .populate('createdBy', 'uuid fullname')
             .populate({
                 path: 'profiles',
                 select: 'uuid updatedOn',
@@ -176,8 +257,8 @@ exports.getOrganization = async function (req, res) {
                     { path: 'currentPublishedVersion', select: 'uuid name isVerified' },
                 ],
             })
-            .populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' })
-            .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname email _created' })
+            .populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
+            .populate({ path: 'memberRequests.user', select: 'uuid firstname lastname fullname username _created publicizeName' })
             .populate({ path: 'apiKeys', select: 'uuid' });
 
         if (!organization) {
@@ -186,6 +267,7 @@ exports.getOrganization = async function (req, res) {
                 message: 'No organization found for this uuid',
             });
         }
+
     } catch (err) {
         console.error(err);
         return res.status(500).send({
@@ -195,6 +277,14 @@ exports.getOrganization = async function (req, res) {
     }
     organization = organization.toObject({ virtuals: true });
     organization.membership = req.permissionLevel;
+
+    removePrivateNames([organization]);
+    
+    if (req.user)
+        cleanMembershipInfo([organization], req.user);
+    else
+        removeMemberInfo([organization]);
+
     res.send({
         success: true,
         organization: organization,
@@ -286,7 +376,7 @@ exports.approveJoinOrganization = async function (req, res, next) {
     try {
         const org = req.resource;
         if (!org) {
-            return resendValidation.status(404).send({
+            return res.status(404).send({
                 success: false,
                 message: 'The requested organization was not found.',
             });
@@ -324,7 +414,7 @@ async function removeMemberFromOrganization(org, userId) {
  */
 exports.denyJoinOrganization = async function (req, res) {
     if (!req.resource) {
-        return resendValidation.status(404).send({
+        return res.status(404).send({
             success: false,
             message: 'The requested organization was not found.',
         });
@@ -353,7 +443,7 @@ exports.denyJoinOrganization = async function (req, res) {
  */
 exports.revokeJoinOrganization = async function (req, res) {
     if (!req.resource) {
-        return resendValidation.status(404).send({
+        return res.status(404).send({
             success: false,
             message: 'The requested organization was not found.',
         });

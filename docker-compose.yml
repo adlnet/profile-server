@@ -31,6 +31,23 @@ services:
       - PUBLIC_URL=/public
       - RECAPTCHA_SITE_KEY
       - RECAPTCHA_SECRET_KEY
+      - REDIS_HOST
+      - PROFILE_SESSION_SAVE_FREQUENCY_MS
+      - NODE_ENV
+      - VERIFY_URL_ROOT=https://${HOSTNAME}/app/user/validate
+      - COOKIE_SECRET
+      - SERVER_SECRET
+  
+  redis:
+    image: redis
+    restart: always
+    container_name: redis
+    volumes:
+      - ./data/redis:/data
+    ports:
+      - 127.0.0.1:6379:6379
+    networks:
+      - public
 
   mongoose:
     image: mongo

@@ -20,7 +20,7 @@ import { useField, useFormikContext } from 'formik';
 import 'ace-builds';
 import "ace-builds/webpack-resolver";
 
-import AceEditor from 'react-ace/dist/react-ace';
+import AceEditor from 'react-ace';
 import "ace-builds/src-noconflict/mode-json";
 import "ace-builds/src-noconflict/theme-github";
 import "ace-builds/src-noconflict/ext-language_tools"

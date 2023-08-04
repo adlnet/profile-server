@@ -7,10 +7,13 @@ ARG RECAPTCHA_SITE_KEY
 ENV REACT_APP_RECAPTCHA_SITE_KEY $RECAPTCHA_SITE_KEY
 ENV NODE_ENV=production
  
+RUN apk update || : && apk add python3 git
+
 COPY ./profile-server/client /client
 WORKDIR /client
 
-RUN yarn install && yarn build
+RUN yarn install
+RUN yarn build
 
 # ----------------------------------------------------------- #
 # Build the Server component
@@ -21,15 +24,19 @@ RUN yarn install && yarn build
 # ----------------------------------------------------------- #
 FROM node:16-alpine
 
-RUN apk update || : && apk add python3
+RUN apk update || : && apk add python3 git
 
-COPY ./profile-server /app
-COPY .env /app/.env
-COPY --from=builder /client/build /app/client/build
-
+RUN mkdir /app
 WORKDIR /app
+
+COPY profile-server/package.json ./package.json
+# COPY profile-server/yarn.lock ./yarn.lock
 
 RUN yarn
 RUN yarn install
+
+COPY ./profile-server/. ./
+COPY .env ./.env
+COPY --from=builder /client/build /app/client/build
 
 CMD ["yarn", "start"]

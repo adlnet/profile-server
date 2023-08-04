@@ -10,7 +10,10 @@ module.exports = {
 
         recaptcha.verify(req, (err, _) => {
             if (err) {
-                res.status(400).send("Bad Captcha");
+                res.status(400).send({
+                    success: true,
+                    err: "Captcha was either bad or it expired."
+                });
             }
             else {
                 delete req.body["recaptcha"];

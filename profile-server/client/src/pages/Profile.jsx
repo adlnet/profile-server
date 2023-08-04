@@ -72,9 +72,11 @@ export default function Profile() {
         return false;
     }
 
-    let isMember = organization
-        && (organization.membership
-            || (userData && userData.user && organization.members.map(m => m.user.uuid).includes(userData.user.uuid)));
+    // let isMember = organization
+    //     && (organization.membership
+    //         || (userData && userData.user && organization.members.map(m => m.user.uuid).includes(userData.user.uuid)));
+
+    let isMember = organization && !!organization.membership;
 
     async function verifyProfile(values) {
         showVerificationReview(false);
@@ -194,13 +196,19 @@ export default function Profile() {
         }
     }
 
+    let requestDate = new Date(profileVersion.verificationRequest).toDateString();
+    let requestedByObj = profileVersion.verificationRequestedBy;
+    let requestAuthor = (requestedByObj && requestedByObj.username) 
+        ? `${requestedByObj.username} (${requestedByObj.uuid})`  
+        : "Unknown User";
+
     return (<>
         {profileVersion && profileVersion.state !== 'draft' && !profileVersion.isVerified && profileVersion.verificationRequest && userData.user && userData.user.type === "admin" &&
             <div className="outer-alert">
                 <div className="usa-alert usa-alert--slim usa-alert--info margin-top-2" >
                     <div className="usa-alert__body" style={{ width: "100%", display: "inline-block" }}>
                         <p className="usa-alert__text" style={{ width: "100%", }}>
-                            <span>This profile was sent for verification by {(profileVersion.verificationRequestedBy && profileVersion.verificationRequestedBy.email) ? profileVersion.verificationRequestedBy.email : profileVersion.verificationRequestedBy} on {(new Date(profileVersion.verificationRequest)).toDateString()}. </span> <button className="usa-button usa-button--unstyled text-bold float-right" onClick={() => showVerificationReview(true)}> Verify profile</button>
+                            <span>This profile was sent for verification by {requestAuthor} on {requestDate}. </span> <button className="usa-button usa-button--unstyled text-bold float-right" onClick={() => showVerificationReview(true)}> Verify profile</button>
                         </p>
                     </div>
                 </div>

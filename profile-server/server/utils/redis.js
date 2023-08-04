@@ -1,5 +1,5 @@
 /** ***************************************************************
-* Copyright 2020 Advanced Distributed Learning (ADL)
+* Copyright 2022 Advanced Distributed Learning (ADL)
 *
 * Licensed under the Apache License, Version 2.0 (the "License");
 * you may not use this file except in compliance with the License.
@@ -13,18 +13,11 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-const Express = require('express');
-const admin = Express.Router({ mergeParams: true });
-const controller = require('../controllers/admin');
 
-const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
-const { mustBeSiteAdmin } = require("../utils/requirements");
+const Redis = require("ioredis").default;
 
-admin.use(mustBeLoggedIn, mustBeSiteAdmin);
-admin.get('/users', controller.getUsers);
-admin.get('/user/:userId', controller.getUser);
-admin.post('/user/:userId', controller.updateUser);
-admin.get('/verificationRequests', controller.verificationRequests);
-admin.post('/verify/:versionId', controller.verify);
-
-module.exports = admin;
+module.exports = {
+    createClient: () => new Redis({
+        host: (process.env.REDIS_HOST || "redis")
+    }),
+}

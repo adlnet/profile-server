@@ -14,19 +14,34 @@
 * limitations under the License.
 **************************************************************** */
 const mongoose = require('mongoose');
+const meta = require("./server/utils/meta");
+const sessionHandling = require("./server/controllers/util/SessionHandler");
+
 require("./server/logging");
 
 const app = require('./app');
 let settings = require("./server/settings");
 
-if (settings.go()) {
+async function main() {
+    if (settings.go()) {
+    
+        mongoose.connect(settings.connectionString, {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+            useFindAndModify: false,
+        });
 
-    mongoose.connect(settings.connectionString, {
-        useNewUrlParser: true,
-        useUnifiedTopology: true,
-        useFindAndModify: false,
-    });
+        console.prodLog("Starting temporary username migration ...");
+        let additions = await meta.ensureTemporaryUsernames();
 
-    app.listen(settings.port);
-    console.prodLog('server started on port ' + settings.port);
+        console.prodLog(`Assigned ${additions} temporary usernames.`);
+
+        console.prodLog(`Initializing session handler ...`);
+        await sessionHandling.initSessionHandler();
+    
+        app.listen(settings.port);
+        console.prodLog(`Server started on port ${settings.port}`);
+    }
 }
+
+main();

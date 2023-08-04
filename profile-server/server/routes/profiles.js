@@ -28,7 +28,7 @@ const getResource = require('../utils/getResource');
 const permissions = require('../utils/permissions');
 const deny = require('../utils/deny');
 
-const permissionStack = [
+const profilePermissionStack = [
     mustBeLoggedIn,
     getResource(Profile, 'profile', 'uuid'),
     permissions(),
@@ -50,6 +50,7 @@ function countUIViewProfile(req, res, next) {
 const metrics = require('../controllers/metrics');
 
 const getProfile = getResource(Profile, 'profile');
+
 // Protected by parent router
 profiles.post('/', ...orgPermissionStack, controller.createProfile);
 profiles.get('/', controller.getProfiles);
@@ -61,15 +62,15 @@ profiles.post('/:profile/publish', controller.publishProfile);
 profiles.get('/:profile', countUIViewProfile, controller.getProfile);
 profiles.get('/resolve/:profile', controller.resolveProfile);
 
-profiles.get('/:profile/lock', ...permissionStack, lock());
+profiles.get('/:profile/lock', ...profilePermissionStack, lock());
 profiles.get('/:profile/usage', metrics.serveProfileSparkline());
 profiles.get('/:profile/usage/populate', metrics.populateDemoData);
-profiles.get('/:profile/unlock', ...permissionStack, unlock());
+profiles.get('/:profile/unlock', ...profilePermissionStack, unlock());
 
 
-profiles.put('/:profile', ...permissionStack, unlock(true), controller.updateProfile);
-profiles.delete('/:profile', ...permissionStack, controller.deletePublishedProfile);
-profiles.delete('/:profile/draft', ...permissionStack, controller.deleteProfileDraft);
+profiles.put('/:profile', ...profilePermissionStack, unlock(true), controller.updateProfile);
+profiles.delete('/:profile', ...profilePermissionStack, controller.deletePublishedProfile);
+profiles.delete('/:profile/draft', ...profilePermissionStack, controller.deleteProfileDraft);
 
 const profileVersions = require('./profileVersions');
 

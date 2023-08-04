@@ -47,8 +47,8 @@ export default function AccountDetails(props) {
     }, []);
 
 
-    let myOrgs = organizations && organizations.filter(org => org.members.find(mem => mem.user === user._id));
-    const myOrgRequests = organizations && organizations.filter(org => org.memberRequests.find(mem => mem.user === user._id))
+    let myOrgs = organizations && organizations.filter(org => Array.isArray(org.members) && org.members.find(mem => mem.user === user._id));
+    const myOrgRequests = organizations && organizations.filter(org => Array.isArray(org.membershipRequests) && org.memberRequests.find(mem => mem.user === user._id))
     myOrgs = JSON.parse(JSON.stringify(myOrgs));
 
     async function saveAccountEdits(newAccountDetails) {

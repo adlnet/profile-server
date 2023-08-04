@@ -21,10 +21,11 @@ export default function MemberTableRow({ member, isAdmin }) {
     let pending = !member.level;
     // if (member.level === "owner")
     //     disabled = "disabled";
+
     return (
         <tr >
-            <th scope="row">{member.user.fullname}</th>
-            <td>{member.user.email}</td>
+            <td>{member.user.username}</td>
+            <th scope="row">{member.user.fullname || "Not Made Public"}</th>
             <td>{pending ? <em>Pending Approval</em> : <span style={{ textTransform: "capitalize" }}>{member.level}</span>}</td>
             <td>{member.user._created && (new Date(member.user._created)).toLocaleDateString()}</td>
             <td>

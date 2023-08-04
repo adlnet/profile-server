@@ -13,18 +13,20 @@
 * See the License for the specific language governing permissions and
 * limitations under the License.
 **************************************************************** */
-const Express = require('express');
-const admin = Express.Router({ mergeParams: true });
-const controller = require('../controllers/admin');
+/**  */
+const validate = require("jsonschema").validate;
+const iriSchema = require("../schema/validIRI");
 
-const mustBeLoggedIn = require('../utils/mustBeLoggedIn');
-const { mustBeSiteAdmin } = require("../utils/requirements");
+module.exports = function(value) {
+    try {
+        validate({ iri: value }, iriSchema, { throwError: true });
 
-admin.use(mustBeLoggedIn, mustBeSiteAdmin);
-admin.get('/users', controller.getUsers);
-admin.get('/user/:userId', controller.getUser);
-admin.post('/user/:userId', controller.updateUser);
-admin.get('/verificationRequests', controller.verificationRequests);
-admin.post('/verify/:versionId', controller.verify);
+        let isJS = value.startsWith("javascript:");
+        if (isJS)
+            return false;
 
-module.exports = admin;
+        return true;
+    } catch (e) {
+        return false;
+    }
+}

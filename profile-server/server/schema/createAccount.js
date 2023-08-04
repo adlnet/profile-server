@@ -17,9 +17,17 @@ module.exports = {
     title: 'createAccount',
     type: 'object',
     properties: {
+        username: {
+            type: 'string',
+            pattern: "^[a-zA-Z0-9]([\-_]*[a-zA-Z0-9])*$",
+            customError: "The username must be between 4 and 24 characters.  Hyphens and underscores are allowed, but not as the first or last characters.",
+            minLength: 4,
+            maxLength: 24,
+        },
         email: {
             type: 'string',
             pattern: "[a-z0-9!#$%&'*+/=?^_`{|}~-]+(?:\\.[a-z0-9!#$%&'*+/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?",
+            customError: "Email format looks incorrect."
         },
         password: {
             type: 'string',
@@ -45,6 +53,10 @@ module.exports = {
         lastname:
         {
             type: 'string',
+        },
+        publicizeName:
+        {
+            type: 'boolean',
         },
     },
     additionalProperties: false,

@@ -16,9 +16,26 @@
 const User = require('../ODM/models').user;
 const mongoSanitize = require('mongo-sanitize');
 
+function removePrivateNames(members) {
+    for (let member of members) {
+
+        if (member == undefined || member.user == undefined)
+            continue;
+
+        if (!member.user.publicizeName) {
+            delete member.user.fullname;
+            delete member.user.firstname;
+            delete member.user.lastname;
+        }
+    }
+}
+
 module.exports.getMembers = async function (req, res, next) {
-    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
+
+    removePrivateNames(members);
+
     res.send({
         success: true,
         members,
@@ -33,8 +50,11 @@ module.exports.addMember = async function (req, res, next) {
 
     for (const i in req.resource.members) {
         if (req.resource.members[i].user.toString() == req.body.user.id) {
-            await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+            await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
             const members = req.resource.toObject({ virtuals: true }).members;
+
+            removePrivateNames(members);
+
             return res.send({
                 success: false,
                 message: 'User already in org',
@@ -48,8 +68,11 @@ module.exports.addMember = async function (req, res, next) {
         user: req.body.user.id,
     });
     await req.resource.save();
-    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
+
+    removePrivateNames(members);
+
     return res.send({
         success: true,
         members: members,
@@ -65,14 +88,20 @@ module.exports.updateMember = async function (req, res, next) {
         if (req.resource.members[i].user.toString() == req.body.user.id) {
             req.resource.members[i].level = req.body.level;
             await req.resource.save();
-            await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+            await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
             const members = req.resource.toObject({ virtuals: true }).members;
+
+            removePrivateNames(members);
+
             return res.send({
                 success: true,
                 members: members,
             });
         }
     }
+
+    removePrivateNames(members);
+
     return res.send({
         success: false,
         message: 'member not found in org',
@@ -97,11 +126,13 @@ module.exports.removeMember = async function (req, res, next) {
     }
     req.resource.members.splice(idx, 1);
     await req.resource.save();
-    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname email _created' }).execPopulate();
+    await req.resource.populate({ path: 'members.user', select: 'uuid firstname lastname fullname username _created publicizeName' }).execPopulate();
     const members = req.resource.toObject({ virtuals: true }).members;
+
+    removePrivateNames(members);
+
     return res.send({
         success: true,
         members,
-
     });
 };

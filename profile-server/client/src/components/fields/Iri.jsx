@@ -115,6 +115,11 @@ function IRITypeRadioGroup() {
 export function isValidIRI(value) {
     try {
         validate({ iri: value }, iriSchema, { throwError: true });
+
+        let isJS = value.startsWith("javascript:");
+        if (isJS)
+            return false;
+
         return true;
     } catch (e) {
         return false;

@@ -15,24 +15,21 @@
 **************************************************************** */
 
 const config = process.env;
+const fs = require('fs');
 const Mustache = require('mustache');
+const nodemailer = require('nodemailer');
 
 const templateCache = {};
-const fs = require('fs');
 // these can fail to require in the build when there is no .env, preventing configure from running
 
 templateCache.verifyEmail = fs.readFileSync(__dirname + '/emails/verifyEmail.html.txt', 'utf8');
 templateCache.forgotPassword = fs.readFileSync(__dirname + '/emails/forgotPassword.html.txt', 'utf8');
 templateCache.profileVerificationStatus = fs.readFileSync(__dirname + '/emails/profileVerificationStatus.html.txt', 'utf8');
 
-
 for (const i in templateCache) {
     Mustache.parse(templateCache[i]);
 }
 
-const nodemailer = require('nodemailer');
-
-//const transporter = nodemailer.createTransport(`smtps://${encodeURIComponent(config.email_user)}:${encodeURIComponent(config.email_pass)}@${config.email_server}`);
 const transporter = nodemailer.createTransport({
     host: config.email_server, // Office 365 server
     port: 587,     // secure SMTP,
@@ -49,14 +46,12 @@ const transporter = nodemailer.createTransport({
  * @param {object} mailOptions options to configure sending an email
  */
 function send(mailOptions) {
-    console.log(mailOptions);
+    // console.log(mailOptions);
     return new Promise((res, rej) => {
         transporter.sendMail(mailOptions, (error, info) => {
             if (error) {
                 console.log(error);
                 
-                //console.log("Email server: " + config.email_server);
-
                 rej(error);
                 return;
             }
@@ -87,30 +82,26 @@ exports.sendForgotPasswordEmail = function (user, done) {
         html: message, // html body
     };
 
-
     send(mailOptions);
 };
 
 /**
- * Sends administrator an email to approve new user
+ * Sends an email to the user to confirm they have control over their email address.
  * @param {User} user User model
  * @param {function} done callback, not used
  */
-exports.sendAccountValidateEmail = function (user, done) {
+exports.sendAccountValidateEmail = function (user) {
     console.log("The user's verification key is ", user.verifyCode);
 
     const message = Mustache.render(templateCache.verifyEmail, {
-        fullname: user.fullname,
-        email: user.email,
-        verify_url: `${config.verify_url}${user.verifyCode}`,
-        verify_url_base: config.verify_url,
-        verify_code: user.verifyCode,
+        username: user.username,
+        link: `${config.VERIFY_URL_ROOT}/${user.verifyCode}`
     });
 
     const mailOptions = {
         from: config.system_email_from, // sender address
         to: user.email, // list of receivers
-        subject: 'Verify Email Account', // Subject line
+        subject: 'Profile Server Email Verification', // Subject line
         text: message, // plaintext body
         html: message, // html body
     };

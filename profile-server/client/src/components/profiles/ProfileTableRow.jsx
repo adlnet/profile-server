@@ -17,7 +17,8 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 
 export default function ProfileTableRow({ profile, site_url, isMember, onOptionalSingleSelect, forceShowDrafts }) {
-    if (!isMember && profile && !profile.currentPublishedVersion) return <></>;
+    if (!isMember && profile && !profile.currentPublishedVersion) 
+        return <></>;
 
     function selectedRow(e) {
         if (onOptionalSingleSelect) {
@@ -26,12 +27,15 @@ export default function ProfileTableRow({ profile, site_url, isMember, onOptiona
     }
 
     let canClick = (onOptionalSingleSelect);
+    
+    let hasDraftVersion = !!profile.currentDraftVersion;
+    let hasPublishedVersion = !!profile.currentPublishedVersion;
 
     return (
         <tr onClick={selectedRow}>
             <th width="20%" scope="row">
                 {
-                    !isMember && profile && profile.currentPublishedVersion ?
+                    !isMember && profile && hasPublishedVersion ?
                         <Link
                             to={`/profile/${profile.currentPublishedVersion.uuid}`}
                             className="usa-link button-link"
@@ -40,21 +44,22 @@ export default function ProfileTableRow({ profile, site_url, isMember, onOptiona
                             {profile.currentPublishedVersion.name}
                         </Link>
                         :
-                        profile && profile.currentDraftVersion ?
+                        profile && hasDraftVersion ?
                             <Link
                                 to={`${site_url}/profile/${profile.uuid}/version/${profile.currentDraftVersion.uuid}`}
                                 className="usa-link button-link"
                                 style={canClick ? {pointerEvents: "none"} : null}
                             >
                                 {profile.currentDraftVersion.name}
-                            </Link> :
+                            </Link> 
+                            :
                             <Link
                                 to={`${site_url}/profile/${profile.uuid}/version/${profile.currentPublishedVersion?.uuid}`}
                                 className="usa-link button-link"
                                 style={canClick ? {pointerEvents: "none"} : null}
                             >
-                                {profile.currentPublishedVersion.name}
-                                {profile.currentPublishedVersion.isVerified && <img className="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />}
+                                {profile.currentPublishedVersion != undefined ? profile.currentPublishedVersion.name : profile.currentPublishedVersion.uuid}
+                                {profile.currentPublishedVersion?.isVerified && <img className="margin-left-1" src="/assets/uswds/2.4.0/img/verified.svg" alt="This profile is verified" title="This profile is verified" width="18px" height="18px" />}
                             </Link>
                 }
             </th>

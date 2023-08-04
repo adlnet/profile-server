@@ -29,7 +29,11 @@ export default function SelectOrganization() {
         dispatch(getOrganizations());
     }, [userData]);
 
-    const myOrgs = organizations && organizations.filter(org => org.members.find(mem => mem.user.uuid === userData.user.uuid));
+    const myOrgs = organizations && organizations.filter(org => 
+        Array.isArray(org.members) 
+            ? org.members.find(mem => mem.user.uuid === userData.user.uuid)
+            : []
+    );
 
     const [selectedOrg, setSelectedOrg] = useState(myOrgs && myOrgs.length ? myOrgs[0].uuid : undefined);
 

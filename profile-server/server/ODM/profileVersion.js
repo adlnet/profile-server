@@ -17,6 +17,7 @@ const mongoose = require('mongoose');
 const uniqueValidator = require('mongoose-unique-validator');
 const uuid = require('uuid');
 const locks = require('./locks');
+const checkIRI = require("../utils/checkIRI");
 const createAPIURL = require('../utils/createAPIURL');
 const mongoSanitize = require('mongo-sanitize');
 const errors = require('../errorTypes/errors');
@@ -44,7 +45,17 @@ const profileVersion = new mongoose.Schema({
         type: String,
         required: true,
     },
-    moreInformation: String,
+    moreInformation: {
+        type: String,
+        validate: {
+            validator: function(value) {
+                let valueIsEmpty = value == "";
+                let valueIsIRI = checkIRI(value);
+
+                return valueIsEmpty || valueIsIRI;
+            }
+        }
+    },
     organization: {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'organization',

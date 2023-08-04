@@ -39,7 +39,7 @@
 
     let isMember = organization
         && (organization.membership
-            || (userData && userData.user && organization.members.map(m => m.user.uuid).includes(userData.user.uuid)));
+            || (userData && userData.user && Array.isArray(organization.members) && organization.members.map(m => m.user.uuid).includes(userData.user.uuid)));
     
     let isCurrentVersion = true;
 

@@ -23,8 +23,20 @@ const mongoSanitize = require('mongo-sanitize');
 
 const userSchema = mongoose.Schema(
     {
+        username: {
+            type: String,
+            unique: true
+        },
+        usernameChosen: {
+            type: Boolean,
+            default: false
+        },
         firstname: String,
         lastname: String,
+        publicizeName: {
+            type: Boolean,
+            default: false
+        },
         passwordHash: String,
         email: {
             type: String,
@@ -62,7 +74,7 @@ const userSchema = mongoose.Schema(
 userSchema.plugin(uniqueValidator);
 
 userSchema.virtual('fullname').get(function () {
-    return `${this.firstname} ${this.lastname}`;
+    return this.publicizeName ? `${this.firstname} ${this.lastname}` : undefined;
 });
 
 userSchema.methods.checkPassword = function (plaintext) {
@@ -122,7 +134,9 @@ userSchema.methods.resetPassword = function (plaintext, ignoreHistory = false) {
 userSchema.pre('save', function (next) {
     // do stuff
     this._modified = Date.now();
-    if (!this._created) this._created = Date.now();
+    if (!this._created) 
+        this._created = Date.now();
+    
     next();
 });
 
