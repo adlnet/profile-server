@@ -36,12 +36,12 @@ export default function SelectUsername(props) {
     }
 
     const initialValues = { 
-        email: "", 
+        username: "", 
         recaptcha: ""
     };
 
     const validationDefinition = {
-        email: Yup.string().required(),
+        username: Yup.string().required(),
         recaptcha: Yup.string().required()
     }
 
