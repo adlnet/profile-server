@@ -1,10 +1,15 @@
 const RecaptchaV2 = require("express-recaptcha").RecaptchaV2;
 
 const recaptcha = new RecaptchaV2(process.env.RECAPTCHA_SITE_KEY, process.env.RECAPTCHA_SECRET_KEY);
+const SKIP_RECAPTCHA = (process.env.SKIP_RECAPTCHA || false);
 
 module.exports = {
     
     checkCaptcha: () => (req, res, next) => {
+
+        if (SKIP_RECAPTCHA) {
+            return next();
+        }
 
         req.body["g-recaptcha-response"] = req.body["recaptcha"];
 

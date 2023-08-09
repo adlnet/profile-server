@@ -50,7 +50,7 @@ export default function CreateAccount(props) {
         recaptcha: ""
     };
 
-    const validationSchema = Yup.object().shape({
+    const validationDefinition = {
         username: Yup.string().required(),
         firstname: Yup.string().required(),
         lastname: Yup.string().required(),
@@ -60,7 +60,14 @@ export default function CreateAccount(props) {
             .oneOf([Yup.ref('password'), null], "Passwords don't match")
             .required('Required'),
         recaptcha: Yup.string().required()
-    });
+    }
+
+    if (process.env.REACT_APP_SKIP_RECAPTCHA) {
+        delete initialValues.recaptcha;
+        delete validationDefinition.recaptcha;
+    }
+
+    const validationSchema = Yup.object().shape(validationDefinition);
 
     return (
         <Formik
@@ -116,13 +123,16 @@ export default function CreateAccount(props) {
                                     <Field name="password2" type={showPassword ? "text" : "password"} className="usa-input" id="input-password" aria-required="true" />
                                 </ErrorValidation>
 
-                                <ReCAPTCHA
-                                    ref={recaptchaRef}
-                                    sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-                                    onChange={(value) => {
-                                        formProps.setFieldValue("recaptcha", value);
-                                    }}
-                                />
+                                {
+                                    !process.env.REACT_APP_SKIP_RECAPTCHA &&
+                                    <ReCAPTCHA
+                                        ref={recaptchaRef}
+                                        sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                                        onChange={(value) => {
+                                            formProps.setFieldValue("recaptcha", value);
+                                        }}
+                                    />
+                                }
 
                                 <div className="display-flex flex-column flex-align-end">
                                     <button onClick={() => setShowPassword(!showPassword)} className="usa-button usa-button--unstyled" style={{ marginTop: "0.5em" }} type="button">Show password</button>

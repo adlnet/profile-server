@@ -6,6 +6,7 @@ services:
       context: .
       args:
         RECAPTCHA_SITE_KEY: ${RECAPTCHA_SITE_KEY}
+        SKIP_RECAPTCHA: ${SKIP_RECAPTCHA}
     container_name: server
     ports:
       - 127.0.0.1:3005:3005
@@ -26,11 +27,11 @@ services:
       - system_email_from
       - clientURL
       - debug
-      - MONGOMS_SYSTEM_BINARY=usr/bin/mongod
       - lockTimeout=600000
       - PUBLIC_URL=/public
       - RECAPTCHA_SITE_KEY
       - RECAPTCHA_SECRET_KEY
+      - SKIP_RECAPTCHA
       - REDIS_HOST
       - PROFILE_SESSION_SAVE_FREQUENCY_MS
       - NODE_ENV

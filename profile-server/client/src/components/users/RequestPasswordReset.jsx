@@ -33,10 +33,17 @@ export default function RequestPasswordReset(props) {
         recaptcha: ""
     };
 
-    const validationSchema = Yup.object().shape({
+    const validationDefinition = {
         email: Yup.string().required(),
         recaptcha: Yup.string().required()
-    });
+    }
+
+    if (process.env.REACT_APP_SKIP_RECAPTCHA) {
+        delete initialValues.recaptcha;
+        delete validationDefinition.recaptcha;
+    }
+
+    const validationSchema = Yup.object().shape(validationDefinition);
 
     return (
 
@@ -83,13 +90,16 @@ export default function RequestPasswordReset(props) {
                                         <Field name="email" type="text" className="usa-input" id="input-email" aria-required="true" />
                                     </ErrorValidation>
 
-                                    <ReCAPTCHA
-                                        ref={recaptchaRef}
-                                        sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-                                        onChange={(value) => {
-                                            formikProps.setFieldValue("recaptcha", value);
-                                        }}
-                                    />
+                                    {
+                                        !process.env.REACT_APP_SKIP_RECAPTCHA &&
+                                        <ReCAPTCHA
+                                            ref={recaptchaRef}
+                                            sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                                            onChange={(value) => {
+                                                formikProps.setFieldValue("recaptcha", value);
+                                            }}
+                                        />
+                                    }
 
                                     <div className="grid-row">
                                         <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="submit" >

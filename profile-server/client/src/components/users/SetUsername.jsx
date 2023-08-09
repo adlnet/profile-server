@@ -31,19 +31,26 @@ export default function SelectUsername(props) {
     const [showConfirmation, setShowConfirmation] = useState(false);
     const alreadyHasUsername = userData.user.usernameChosen;
 
-    const initialValues = { 
-        username: "", 
-        recaptcha: ""
-    };
-
     async function setUsername(setRequest) {
         dispatch(user_actions.setUsername(setRequest));
     }
 
-    const validationSchema = Yup.object().shape({
-        username: Yup.string().required(),
+    const initialValues = { 
+        email: "", 
+        recaptcha: ""
+    };
+
+    const validationDefinition = {
+        email: Yup.string().required(),
         recaptcha: Yup.string().required()
-    });
+    }
+
+    if (process.env.REACT_APP_SKIP_RECAPTCHA) {
+        delete initialValues.recaptcha;
+        delete validationDefinition.recaptcha;
+    }
+
+    const validationSchema = Yup.object().shape(validationDefinition);
 
     return (
 
@@ -104,13 +111,16 @@ export default function SelectUsername(props) {
                                         <Field name="username" type="text" className="usa-input" id="input-username" aria-required="true" />
                                     </ErrorValidation>
 
-                                    <ReCAPTCHA
-                                        ref={recaptchaRef}
-                                        sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
-                                        onChange={(value) => {
-                                            formikProps.setFieldValue("recaptcha", value);
-                                        }}
-                                    />
+                                    {
+                                        !process.env.REACT_APP_SKIP_RECAPTCHA &&
+                                        <ReCAPTCHA
+                                            ref={recaptchaRef}
+                                            sitekey={process.env.REACT_APP_RECAPTCHA_SITE_KEY}
+                                            onChange={(value) => {
+                                                formikProps.setFieldValue("recaptcha", value);
+                                            }}
+                                        />
+                                    }
 
                                     <div className="grid-row">
                                         <ValidationControlledSubmitButton errors={formikProps.errors} className="usa-button submit-button" type="submit" >

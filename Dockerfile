@@ -3,8 +3,12 @@
 # ----------------------------------------------------------- #
 FROM node:16-alpine as builder
 
+ARG SKIP_RECAPTCHA
+ENV REACT_APP_SKIP_RECAPTCHA $SKIP_RECAPTCHA
+
 ARG RECAPTCHA_SITE_KEY
 ENV REACT_APP_RECAPTCHA_SITE_KEY $RECAPTCHA_SITE_KEY
+
 ENV NODE_ENV=production
  
 RUN apk update || : && apk add python3 git
