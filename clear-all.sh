@@ -29,4 +29,10 @@ echo '#####################################################'
 docker network rm $(docker network ls -q)
 
 echo ''
+echo '#####################################################'
+echo 'Pruning'
+echo '#####################################################'
+docker system prune -v --force
+
+echo ''
 echo "Done nuking everything!"

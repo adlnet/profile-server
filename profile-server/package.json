@@ -7,7 +7,8 @@
     "test": "jest --forceExit",
     "dev": "nodemon server.js --debug",
     "debug": "node --inspect server.js",
-    "build": "cd client & yarn run build & cd .. & pkg ./package.json --out-path=./builds"
+    "build": "cd client & yarn run build & cd .. & pkg ./package.json --out-path=./builds",
+    "user": "node server.js --createUser"
   },
   "jest": {
     "testEnvironment": "node",
