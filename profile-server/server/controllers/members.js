@@ -38,7 +38,7 @@ module.exports.getMembers = async function (req, res, next) {
 
     let userIsInGroup = false;
     for (const i in req.resource.members) {
-        if (req.resource.members[i].user.toString() == req.body.user.id) {
+        if (req.resource.members[i].user.toString() == req.user.id) {
             userIsInGroup = true;
             break;
         }
