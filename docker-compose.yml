@@ -51,7 +51,7 @@ services:
       - public
 
   mongoose:
-    image: mongo:4.6.4
+    image: mongo:4.4.6
     restart: always
     container_name: mongoose
     volumes:
