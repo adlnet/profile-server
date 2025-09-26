@@ -36,10 +36,25 @@ module.exports.getMembers = async function (req, res, next) {
 
     removePrivateNames(members);
 
-    res.send({
-        success: true,
-        members,
-    });
+    let userIsInGroup = false;
+    for (const i in req.resource.members) {
+        if (req.resource.members[i].user.toString() == req.body.user.id) {
+            userIsInGroup = true;
+            break;
+        }
+    }
+    if (!userIsInGroup) {
+        return res.status(403).send({
+            success: false,
+            message: 'Can only query members of orgs you belong to.',
+        });
+    }
+    else {
+        return res.send({
+            success: true,
+            members,
+        });
+    }
 };
 
 
