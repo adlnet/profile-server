@@ -23,6 +23,8 @@ const permissions = require('../utils/permissions');
 const deny = require('../utils/deny');
 
 const Pattern = require('../ODM/models').pattern;
+const Org = require('../ODM/models').organization;
+const Profile = require('../ODM/models').profile;
 const lock = require('../utils/lock');
 const unlock = require('../utils/unlock');
 
