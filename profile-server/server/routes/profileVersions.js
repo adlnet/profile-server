@@ -59,6 +59,7 @@ const assignUpload = (param) => (req, res, next) => {
 };
 
 const harvestStack = [
+    ...permissionStack,
     upload.single('statement'),
     assignUpload('statement'),
     getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
@@ -66,12 +67,14 @@ const harvestStack = [
 ];
 
 const updateHarvestStack = [
+    ...permissionStack,
     getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
     getResource(HarvestDataModel, 'harvest', 'uuid', true, 'harvest'),
     controller.updateStatementHarvestData,
 ]
 
 const deleteHarvestStack = [
+    ...permissionStack,
     getResource(ProfileVersionModel, 'version', 'uuid', true, 'version'),
     getResource(HarvestDataModel, 'harvest', 'uuid', true, 'harvest'),
     controller.deleteStatementHarvestData,

@@ -57,7 +57,7 @@ profiles.get('/', controller.getProfiles);
 profiles.get('/published', controller.getPublishedProfilesPage);
 profiles.get('/orphan-container', controller.getOrphanContainer);
 
-profiles.post('/:profile/publish', controller.publishProfile);
+profiles.post('/:profile/publish', ...profilePermissionStack, controller.publishProfile);
 
 profiles.get('/:profile', countUIViewProfile, controller.getProfile);
 profiles.get('/resolve/:profile', controller.resolveProfile);

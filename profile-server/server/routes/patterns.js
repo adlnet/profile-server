@@ -33,7 +33,7 @@ const permissionStack = [
 ];
 
 patterns.get('/', controller.getPatterns);
-patterns.post('/', controller.createPattern);
+patterns.post('/', ...permissionStack, controller.createPattern);
 
 patterns.get('/:pattern/lock', ...permissionStack, lock());
 patterns.get('/:pattern/unlock', ...permissionStack, unlock());
