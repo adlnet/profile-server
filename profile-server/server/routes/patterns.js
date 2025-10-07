@@ -25,6 +25,7 @@ const deny = require('../utils/deny');
 const Pattern = require('../ODM/models').pattern;
 const lock = require('../utils/lock');
 const unlock = require('../utils/unlock');
+
 const permissionStack = [
     mustBeLoggedIn,
     getResource(Pattern, 'pattern', 'uuid'),
@@ -32,8 +33,16 @@ const permissionStack = [
     deny,
 ];
 
+const createPatternPermissionStack = [
+    mustBeLoggedIn,
+    getResource(Profile, 'profile', 'uuid'),
+    getResource(Org, 'org', 'uuid'),
+    permissions(),
+    deny,
+];
+
 patterns.get('/', controller.getPatterns);
-patterns.post('/', ...permissionStack, controller.createPattern);
+patterns.post('/', ...createPatternPermissionStack, controller.createPattern);
 
 patterns.get('/:pattern/lock', ...permissionStack, lock());
 patterns.get('/:pattern/unlock', ...permissionStack, unlock());
