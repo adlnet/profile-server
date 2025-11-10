@@ -1,0 +1,72 @@
+body.modal-open {
+  overflow: hidden;
+}
+
+.btn {
+  padding: 6px 12px;
+  border: 1px solid #ccc;
+  background: #eee;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.btn:hover {
+  background: #ddd;
+}
+
+/* Backdrop */
+.modal-backdrop {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background: rgba(0,0,0,0.5);
+  opacity: 1;
+  z-index: 1000;
+  animation: fadeIn 0.3s ease;
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%) scale(1);
+  background: #fff;
+  border-radius: 6px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.3);
+  width: 400px;
+  max-width: 90%;
+  z-index: 1001;
+  animation: popIn 0.3s ease;
+}
+
+.modal-header, .modal-footer {
+  padding: 12px 16px;
+  background: #f5f5f5;
+}
+.modal-header {
+  border-bottom: 1px solid #ddd;
+}
+.modal-footer {
+  border-top: 1px solid #ddd;
+  text-align: right;
+}
+.modal-body {
+  padding: 16px;
+}
+
+.close-btn {
+  float: right;
+  border: none;
+  background: none;
+  font-size: 20px;
+  cursor: pointer;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translate(-50%, -50%) scale(0.95); }
+  to { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
