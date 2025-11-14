@@ -37,6 +37,7 @@ import User from './pages/Users.jsx';
 import history from "./history";
 
 import SunsetModal from './components/home/SunsetModal';
+import SunsetBanner from './components/home/SunsetBanner';
 
 //import OfficialBanner from './components/OfficialBanner';
 import TitleBanner from './components/home/TitleBanner';
@@ -55,6 +56,7 @@ export default class App extends Component {
         return (<>
             {/*<OfficialBanner /> -->*/}
             <SunsetModal />
+            <SunsetBanner />
             <Router history={history}>
                 <TitleBanner />
                 <ErrorBoundary />
